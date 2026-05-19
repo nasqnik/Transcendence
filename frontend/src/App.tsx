@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { RTL_LANGUAGES } from './i18n/config'
 
+import ProtectedRoute from './components/ProtectedRoute'
 import Landing from './pages/Landing'
 import Login from './pages/Login'
 import Signup from './pages/Signup'
@@ -25,13 +26,33 @@ export default function App() {
           <Route path="/signup" element={<Signup />} />
 
           {/* Child (protected) */}
-          <Route path="/dashboard" element={<ChildDashboard />} />
-          <Route path="/character" element={<CharacterCreation />} />
-          <Route path="/profile" element={<Profile />} />
+          <Route path="/dashboard" element={
+            <ProtectedRoute role="child">
+              <ChildDashboard />
+            </ProtectedRoute>
+          } />
+          <Route path="/character" element={
+            <ProtectedRoute role="child">
+              <CharacterCreation />
+            </ProtectedRoute>
+          } />
+          <Route path="/profile" element={
+            <ProtectedRoute role="child">
+              <Profile />
+            </ProtectedRoute>
+          } />
 
           {/* Parent (protected) */}
-          <Route path="/parent/dashboard" element={<ParentDashboard />} />
-          <Route path="/parent/profile" element={<ParentProfile />} />
+          <Route path="/parent/dashboard" element={
+            <ProtectedRoute role="parent">
+              <ParentDashboard />
+            </ProtectedRoute>
+          } />
+          <Route path="/parent/profile" element={
+            <ProtectedRoute role="parent">
+              <ParentProfile />
+            </ProtectedRoute>
+          } />
         </Routes>
       </BrowserRouter>
     </div>
