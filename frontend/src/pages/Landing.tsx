@@ -7,7 +7,7 @@ import { useTranslation } from 'react-i18next'
 export default function Landing() {
 
   const navigate = useNavigate()
-  const { t, i18n } = useTranslation()
+  const { t } = useTranslation()
 
   return (
     <main className="flex flex-col items-center justify-center h-screen bg-primary-50 gap-6">
