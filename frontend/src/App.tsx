@@ -1,11 +1,13 @@
+import { useEffect } from 'react'
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { RTL_LANGUAGES } from './i18n/config'
+import { getLanguageBase, isRTLLanguage } from './i18n/config'
 
 import ProtectedRoute from './components/ProtectedRoute'
 import Landing from './pages/Landing'
 import Login from './pages/Login'
 import Signup from './pages/Signup'
+import ForgotPassword from './pages/ForgotPassword'
 import ChildDashboard from './pages/ChildDashboard'
 import ParentDashboard from './pages/ParentDashboard'
 import CharacterCreation from './pages/CharacterCreation'
@@ -14,16 +16,23 @@ import ParentProfile from './pages/ParentProfile'
 
 export default function App() {
   const { i18n } = useTranslation()
-  const isRTL = RTL_LANGUAGES.includes(i18n.language)
+  const activeLang = i18n.resolvedLanguage ?? i18n.language
+  const isRTL = isRTLLanguage(activeLang)
+
+  useEffect(() => {
+    document.documentElement.lang = getLanguageBase(activeLang)
+    document.documentElement.dir = isRTL ? 'rtl' : 'ltr'
+  }, [activeLang, isRTL])
 
   return (
-    <div dir={isRTL ? 'rtl' : 'ltr'}>
+    <div dir={isRTL ? 'rtl' : 'ltr'} lang={getLanguageBase(activeLang)}>
       <BrowserRouter>
         <Routes>
           {/* Public */}
           <Route path="/" element={<Landing />} />
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
 
           {/* Child (protected) */}
           <Route path="/dashboard" element={

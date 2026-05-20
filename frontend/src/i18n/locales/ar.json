@@ -11,13 +11,22 @@
   },
   "auth": {
     "email": "البريد الإلكتروني",
+    "emailHint": "you@example.com",
     "password": "كلمة المرور",
     "name": "الاسم الكامل",
     "login": "تسجيل الدخول",
     "signup": "إنشاء حساب",
     "forgotPassword": "نسيت كلمة المرور؟",
+    "forgotPasswordHint": "استعادة كلمة المرور قريباً. عد لاحقاً.",
     "orContinueWith": "أو تابع باستخدام",
-    "google": "المتابعة مع Google"
+    "google": "المتابعة مع Google",
+    "parent": "ولي الأمر",
+    "child": "طفل",
+    "username": "اسم المستخدم",
+    "parentEmail": "بريد ولي الأمر",
+    "roleSelector": "أنا...",
+    "noAccount": "ليس لديك حساب؟",
+    "hasAccount": "لديك حساب بالفعل؟"
   },
   "dashboard": {
     "greeting": "مرحباً، {{name}}!",
@@ -28,6 +37,13 @@
     "create": "أنشئ شخصيتك",
     "name": "سمِّ شخصيتك",
     "stats": "وزّع نقاطك"
+  },
+  "a11y": {
+    "languageSwitcher": "اختر اللغة",
+    "switchLanguage": "التبديل إلى {{language}}",
+    "goToSignup": "إنشاء حساب — تسجيل حساب جديد",
+    "goToLogin": "تسجيل الدخول إلى حسابك",
+    "signupFormReady": "نموذج التسجيل جاهز"
   },
   "errors": {
     "required": "هذا الحقل مطلوب",
