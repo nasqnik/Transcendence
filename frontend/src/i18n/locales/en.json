@@ -11,13 +11,22 @@
   },
   "auth": {
     "email": "Email",
+    "emailHint": "you@example.com",
     "password": "Password",
     "name": "Full name",
     "login": "Log in",
     "signup": "Sign up",
     "forgotPassword": "Forgot password?",
+    "forgotPasswordHint": "Password reset is coming soon. Check back later.",
     "orContinueWith": "or continue with",
-    "google": "Continue with Google"
+    "google": "Continue with Google",
+    "parent": "Parent",
+    "child": "Child",
+    "username": "Username",
+    "parentEmail": "Parent's email",
+    "roleSelector": "I am a...",
+    "noAccount": "Don't have an account?",
+    "hasAccount": "Already have an account?"
   },
   "dashboard": {
     "greeting": "Hey, {{name}}!",
@@ -28,6 +37,13 @@
     "create": "Create your character",
     "name": "Name your character",
     "stats": "Distribute your stats"
+  },
+  "a11y": {
+    "languageSwitcher": "Choose language",
+    "switchLanguage": "Switch to {{language}}",
+    "goToSignup": "Sign up — create a new account",
+    "goToLogin": "Log in to your account",
+    "signupFormReady": "Sign up form is ready"
   },
   "errors": {
     "required": "This field is required",

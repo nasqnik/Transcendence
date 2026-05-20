@@ -11,13 +11,22 @@
   },
   "auth": {
     "email": "Эл. почта",
+    "emailHint": "you@example.com",
     "password": "Пароль",
     "name": "Полное имя",
     "login": "Войти",
     "signup": "Зарегистрироваться",
     "forgotPassword": "Забыли пароль?",
+    "forgotPasswordHint": "Сброс пароля скоро появится. Загляните позже.",
     "orContinueWith": "или продолжить с",
-    "google": "Продолжить с Google"
+    "google": "Продолжить с Google",
+    "parent": "Родитель",
+    "child": "Ребенок",
+    "username": "Имя пользователя",
+    "parentEmail": "Email родителя",
+    "roleSelector": "Я...",
+    "noAccount": "Нет аккаунта?",
+    "hasAccount": "Уже есть аккаунт?"
   },
   "dashboard": {
     "greeting": "Привет, {{name}}!",
@@ -28,6 +37,13 @@
     "create": "Создай персонажа",
     "name": "Назови персонажа",
     "stats": "Распредели очки"
+  },
+  "a11y": {
+    "languageSwitcher": "Выберите язык",
+    "switchLanguage": "Переключить на {{language}}",
+    "goToSignup": "Зарегистрироваться — создать аккаунт",
+    "goToLogin": "Войти в аккаунт",
+    "signupFormReady": "Форма регистрации готова"
   },
   "errors": {
     "required": "Это поле обязательно",
