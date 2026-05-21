@@ -36,17 +36,17 @@ export default function App() {
 
           {/* Child (protected) */}
           <Route path="/dashboard" element={
-            <ProtectedRoute role="child">
+            <ProtectedRoute role="kid">
               <ChildDashboard />
             </ProtectedRoute>
           } />
           <Route path="/character" element={
-            <ProtectedRoute role="child">
+            <ProtectedRoute role="kid">
               <CharacterCreation />
             </ProtectedRoute>
           } />
           <Route path="/profile" element={
-            <ProtectedRoute role="child">
+            <ProtectedRoute role="kid">
               <Profile />
             </ProtectedRoute>
           } />

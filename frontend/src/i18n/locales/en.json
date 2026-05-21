@@ -26,7 +26,12 @@
     "parentEmail": "Parent's email",
     "roleSelector": "I am a...",
     "noAccount": "Don't have an account?",
-    "hasAccount": "Already have an account?"
+    "hasAccount": "Already have an account?",
+    "loggingIn": "Logging in...",
+    "signingUp": "Signing up...",
+    "waitingForParent": "Check your parent's email!",
+    "waitingForParentHint": "We sent an invite to {{email}}. Ask your parent to click the link in the email to activate your account.",
+    "backToHome": "Go to home"
   },
   "dashboard": {
     "greeting": "Hey, {{name}}!",
@@ -43,7 +48,8 @@
     "switchLanguage": "Switch to {{language}}",
     "goToSignup": "Sign up — create a new account",
     "goToLogin": "Log in to your account",
-    "signupFormReady": "Sign up form is ready"
+    "signupFormReady": "Sign up form is ready",
+    "loginFormReady": "Login form is ready"
   },
   "errors": {
     "required": "This field is required",

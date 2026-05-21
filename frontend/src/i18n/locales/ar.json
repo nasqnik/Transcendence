@@ -26,7 +26,12 @@
     "parentEmail": "بريد ولي الأمر",
     "roleSelector": "أنا...",
     "noAccount": "ليس لديك حساب؟",
-    "hasAccount": "لديك حساب بالفعل؟"
+    "hasAccount": "لديك حساب بالفعل؟",
+    "loggingIn": "جارٍ تسجيل الدخول...",
+    "signingUp": "جارٍ إنشاء الحساب...",
+    "waitingForParent": "تحقق من بريد ولي الأمر!",
+    "waitingForParentHint": "أرسلنا دعوة إلى {{email}}. اطلب من ولي أمرك النقر على الرابط في البريد لتفعيل حسابك.",
+    "backToHome": "الذهاب إلى الرئيسية"
   },
   "dashboard": {
     "greeting": "مرحباً، {{name}}!",
@@ -43,7 +48,8 @@
     "switchLanguage": "التبديل إلى {{language}}",
     "goToSignup": "إنشاء حساب — تسجيل حساب جديد",
     "goToLogin": "تسجيل الدخول إلى حسابك",
-    "signupFormReady": "نموذج التسجيل جاهز"
+    "signupFormReady": "نموذج التسجيل جاهز",
+    "loginFormReady": "نموذج تسجيل الدخول جاهز"
   },
   "errors": {
     "required": "هذا الحقل مطلوب",
