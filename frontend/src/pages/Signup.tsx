@@ -12,7 +12,7 @@ import { isEmpty, isValidEmail } from '../utils/validation'
 
 export default function Signup() {
   const navigate = useNavigate()
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const login = useAuthStore(state => state.login)
 
   const [role, setRole] = useState<'parent' | 'kid' | null>(null)
@@ -290,6 +290,7 @@ export default function Signup() {
                   }
                 }}
                 onError={() => setError(t('errors.api.invalidGoogleToken'))}
+                locale={i18n.language}
                 width="320"
               />
             </div>
