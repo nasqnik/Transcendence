@@ -1,8 +1,9 @@
 import axios from 'axios'
 import useAuthStore from '../store/authStore'
 
+// VITE_API_URL should be set to https://localhost/api in docker-compose
 const client = axios.create({
-  baseURL: import.meta.env.VITE_API_URL ?? 'http://localhost:8000',
+  baseURL: import.meta.env.VITE_API_URL ?? 'https://localhost/api',
 })
 
 client.interceptors.request.use((config) => {

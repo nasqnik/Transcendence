@@ -26,7 +26,12 @@
     "parentEmail": "Email родителя",
     "roleSelector": "Я...",
     "noAccount": "Нет аккаунта?",
-    "hasAccount": "Уже есть аккаунт?"
+    "hasAccount": "Уже есть аккаунт?",
+    "loggingIn": "Входим...",
+    "signingUp": "Регистрируем...",
+    "waitingForParent": "Проверьте почту родителя!",
+    "waitingForParentHint": "Мы отправили приглашение на {{email}}. Попросите родителя перейти по ссылке в письме, чтобы активировать ваш аккаунт.",
+    "backToHome": "На главную"
   },
   "dashboard": {
     "greeting": "Привет, {{name}}!",
@@ -43,7 +48,8 @@
     "switchLanguage": "Переключить на {{language}}",
     "goToSignup": "Зарегистрироваться — создать аккаунт",
     "goToLogin": "Войти в аккаунт",
-    "signupFormReady": "Форма регистрации готова"
+    "signupFormReady": "Форма регистрации готова",
+    "loginFormReady": "Форма входа готова"
   },
   "errors": {
     "required": "Это поле обязательно",
