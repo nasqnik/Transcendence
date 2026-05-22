@@ -75,7 +75,9 @@
     "invalidLink": "This verification link is invalid or has expired.",
     "successTitle": "Email verified!",
     "parentSuccessHint": "Your account is active. You can now log in.",
-    "kidSuccessHint": "Your email is verified. Now ask your parent to accept the invitation so you can log in."
+    "kidSuccessHint": "Your email is verified. Now ask your parent to accept the invitation so you can log in.",
+    "allSetTitle": "You're all set!",
+    "allSetHint": "Your email is verified and your parent already accepted the invitation. You can log in now."
   },
   "invite": {
     "loading": "Loading invitation...",
