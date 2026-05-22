@@ -95,6 +95,21 @@ class ParentRegisterTests(APITestCase):
             format="json",
         )
         self.assertEqual(login.status_code, status.HTTP_401_UNAUTHORIZED)
+        self.assertEqual(
+            login.data["detail"],
+            "Please verify your email before logging in.",
+        )
+
+        login_with_username = self.client.post(
+            "/api/auth/token/",
+            {"email": "parent_one", "password": "secure-pass-1"},
+            format="json",
+        )
+        self.assertEqual(login_with_username.status_code, status.HTTP_401_UNAUTHORIZED)
+        self.assertEqual(
+            login_with_username.data["detail"],
+            "Please verify your email before logging in.",
+        )
 
         _verify_parent(self.client, "parent@example.com")
         login = self.client.post(
