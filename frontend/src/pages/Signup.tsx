@@ -7,7 +7,7 @@ import Button from '../components/Button'
 import FormAlert from '../components/FormAlert'
 import FormField from '../components/FormField'
 import useAuthStore from '../store/authStore'
-import { registerParent, loginParent, loginWithGoogle, signupKid, decodeJWT, parseApiError, type KidSignupResponse } from '../api/auth'
+import { registerParent, loginWithGoogle, signupKid, parseApiError, type KidSignupResponse } from '../api/auth'
 import { isEmpty, isValidEmail } from '../utils/validation'
 
 export default function Signup() {
@@ -26,8 +26,10 @@ export default function Signup() {
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
   const [isLoading, setIsLoading] = useState(false)
 
-  // After kid signup: show the "waiting for parent" screen
-  // We store the kid's info so we can show their parent_email in the message
+  // After parent signup: show "check your email" screen (login blocked until verified)
+  const [parentPendingEmail, setParentPendingEmail] = useState<string | null>(null)
+
+  // After kid signup: show "verify your email + waiting for parent" screen
   const [kidPending, setKidPending] = useState<KidSignupResponse | null>(null)
   const [kidParentEmail, setKidParentEmail] = useState('')
 
@@ -83,23 +85,9 @@ export default function Signup() {
 
     try {
       if (role === 'parent') {
-        // 1. Create the parent account
         await registerParent(email, username, password)
-        // 2. Auto-login so they don't have to log in manually right after signing up
-        const { access, refresh } = await loginParent(email, password)
-        const payload = decodeJWT(access)
-
-        login(
-          {
-            id: payload.user_id as string,
-            username: payload.username as string,
-            email: payload.email as string,
-            role: 'parent',
-          },
-          access,
-          refresh,
-        )
-        navigate('/parent/dashboard')
+        // Login is blocked until they verify their email — show "check your email" screen
+        setParentPendingEmail(email)
       } else {
         // Kid signup — kid can't log in until a parent accepts the email invite
         const result = await signupKid(name, username, kidEmail, password, parentEmail)
@@ -114,18 +102,38 @@ export default function Signup() {
     }
   }
 
-  // ── "Waiting for parent" screen ────────────────────────────────────────────
-  // Shown after a successful kid signup. The kid can't log in yet —
-  // they have to wait for the parent to accept the invite email.
+  // ── Parent "check your email" screen ─────────────────────────────────────
+  if (parentPendingEmail) {
+    return (
+      <main aria-labelledby="verify-heading" className="flex flex-col items-center justify-center min-h-screen bg-primary-50 gap-6 py-12">
+        <div className="text-5xl" aria-hidden="true">📬</div>
+        <h1 id="verify-heading" className="font-heading text-3xl font-bold text-primary-700 text-center">
+          {t('auth.verifyYourEmail')}
+        </h1>
+        <p className="font-body text-sm text-gray-700 text-center w-80 max-w-full">
+          {t('auth.verifyEmailHint', { email: parentPendingEmail })}
+        </p>
+        <Button variant="primary" onClick={() => navigate('/login')}>
+          {t('auth.login')}
+        </Button>
+        <LanguageSwitcher />
+      </main>
+    )
+  }
+
+  // ── Kid "verify email + waiting for parent" screen ────────────────────────
   if (kidPending) {
     return (
       <main aria-labelledby="waiting-heading" className="flex flex-col items-center justify-center min-h-screen bg-primary-50 gap-6 py-12">
         <div className="text-5xl" aria-hidden="true">📬</div>
         <h1 id="waiting-heading" className="font-heading text-3xl font-bold text-primary-700 text-center">
-          {t('auth.waitingForParent')}
+          {t('auth.almostThere')}
         </h1>
         <p className="font-body text-sm text-gray-700 text-center w-80 max-w-full">
-          {t('auth.waitingForParentHint', { email: kidParentEmail })}
+          {t('auth.kidStep1', { email: kidPending.email })}
+        </p>
+        <p className="font-body text-sm text-gray-700 text-center w-80 max-w-full">
+          {t('auth.kidStep2', { email: kidParentEmail })}
         </p>
         <Button variant="primary" onClick={() => navigate('/')}>
           {t('auth.backToHome')}
