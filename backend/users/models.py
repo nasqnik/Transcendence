@@ -50,6 +50,9 @@ class CustomUser(AbstractUser):
     REQUIRED_FIELDS = ["username"]
 
     objects = CustomUserManager()
+    # mostly will be used for those two cases:
+    # 1. create_user -> default user creation
+    # 2. create_superuser -> we will override this to set the role to admin
 
     def __str__(self):
         return self.email

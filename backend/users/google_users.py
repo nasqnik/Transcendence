@@ -1,7 +1,8 @@
 from django.db import transaction
 from django.utils.crypto import get_random_string
 
-from .models import CustomUser
+from .models import CustomUser, Kid
+from .services import email_belongs_to_kid, username_is_taken
 
 
 class GoogleAccountConflictError(Exception):
@@ -10,13 +11,13 @@ class GoogleAccountConflictError(Exception):
 
 def _unique_username(base: str) -> str:
     username = base[:150]
-    if not CustomUser.objects.filter(username=username).exists():
+    if not username_is_taken(username):
         return username
 
     suffix = 1
     while True:
         candidate = f"{base[:140]}_{suffix}"
-        if not CustomUser.objects.filter(username=candidate).exists():
+        if not username_is_taken(candidate):
             return candidate
         suffix += 1
 
@@ -25,6 +26,16 @@ def _unique_username(base: str) -> str:
 def get_or_create_parent_from_google(idinfo: dict) -> CustomUser:
     google_sub = idinfo["sub"]
     email = idinfo["email"].lower()
+
+    if Kid.objects.filter(google_sub=google_sub).exists():
+        raise GoogleAccountConflictError(
+            "This Google account is registered as a kid account. Use kid sign-in instead."
+        )
+
+    if email_belongs_to_kid(email):
+        raise GoogleAccountConflictError(
+            "This email is registered as a kid account. Use kid sign-in instead."
+        )
 
     user = CustomUser.objects.filter(google_sub=google_sub).first()
     if user:

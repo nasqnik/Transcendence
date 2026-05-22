@@ -1,7 +1,12 @@
 from django.db import transaction
 
-from .models import Kid
-from .services import create_primary_guardian_invitation
+from .models import CustomUser, Kid
+from .services import (
+    create_primary_guardian_invitation,
+    email_belongs_to_kid,
+    email_belongs_to_parent,
+    username_is_taken,
+)
 
 
 class GoogleKidAccountConflictError(Exception):
@@ -24,11 +29,24 @@ def signup_kid_from_google(
     email = idinfo["email"].lower()
     parent_email = parent_email.lower()
 
+    if email == parent_email:
+        raise GoogleKidAccountConflictError(
+            "Kid email must be different from the parent email."
+        )
+
+    if email_belongs_to_kid(parent_email):
+        raise GoogleKidAccountConflictError(
+            "This email is registered as a kid account."
+        )
+
     if Kid.objects.filter(google_sub=google_sub).exists():
         raise GoogleKidAlreadyExistsError("A kid account already exists for this Google account.")
 
-    if Kid.objects.filter(username__iexact=username).exists():
+    if username_is_taken(username):
         raise GoogleKidAccountConflictError("This username is already taken.")
+
+    if email_belongs_to_parent(email):
+        raise GoogleKidAccountConflictError("This email is already registered.")
 
     existing = Kid.objects.filter(email=email).first()
     if existing:
