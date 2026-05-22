@@ -18,7 +18,8 @@ export default function Signup() {
   const [role, setRole] = useState<'parent' | 'kid' | null>(null)
   const [username, setUsername] = useState('')
   const [name, setName] = useState('')
-  const [email, setEmail] = useState('')
+  const [email, setEmail] = useState('')         // parent email OR kid email
+  const [kidEmail, setKidEmail] = useState('')   // kid's own email
   const [password, setPassword] = useState('')
   const [parentEmail, setParentEmail] = useState('')
   const [error, setError] = useState<string | null>(null)
@@ -52,6 +53,10 @@ export default function Signup() {
     if (role === 'parent') {
       if (isEmpty(email)) errs.email = t('errors.required')
       else if (!isValidEmail(email)) errs.email = t('errors.invalidEmail')
+    }
+    if (role === 'kid') {
+      if (isEmpty(kidEmail)) errs.kidEmail = t('errors.required')
+      else if (!isValidEmail(kidEmail)) errs.kidEmail = t('errors.invalidEmail')
     }
     if (isEmpty(password)) errs.password = t('errors.required')
     if (role === 'kid') {
@@ -97,7 +102,7 @@ export default function Signup() {
         navigate('/parent/dashboard')
       } else {
         // Kid signup — kid can't log in until a parent accepts the email invite
-        const result = await signupKid(name, username, password, parentEmail)
+        const result = await signupKid(name, username, kidEmail, password, parentEmail)
         // Save parent email so we can show it on the waiting screen
         setKidParentEmail(parentEmail)
         setKidPending(result)
@@ -193,6 +198,23 @@ export default function Signup() {
                 clearFieldError('username')
               }}
             />
+
+            {role === 'kid' && (
+              <FormField
+                id="kidEmail"
+                label={t('auth.email')}
+                type="email"
+                value={kidEmail}
+                placeholder={t('auth.emailHint')}
+                required
+                autoComplete="email"
+                error={fieldErrors.kidEmail}
+                onChange={e => {
+                  setKidEmail(e.target.value)
+                  clearFieldError('kidEmail')
+                }}
+              />
+            )}
 
             {role === 'kid' && (
               <FormField

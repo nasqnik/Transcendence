@@ -28,6 +28,8 @@ export interface KidSignupResponse {
   kid_id: string
   username: string
   name: string
+  email: string
+  email_verified: boolean
   registration_status: 'awaiting_primary_parent' | 'active' | 'suspended'
   message: string
 }
@@ -114,12 +116,14 @@ export async function loginWithGoogle(idToken: string): Promise<TokenResponse> {
 export async function signupKid(
   name: string,
   username: string,
+  email: string,
   password: string,
   parent_email: string,
 ): Promise<KidSignupResponse> {
   const res = await client.post<KidSignupResponse>('/kids/signup/', {
     name,
     username,
+    email,
     password,
     parent_email,
   })
