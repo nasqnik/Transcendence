@@ -30,10 +30,14 @@ from .services import (
     build_parent_verify_email_url,
     create_primary_guardian_invitation,
     create_secondary_guardian_invitation,
+    email_belongs_to_kid,
+    email_belongs_to_parent,
     ensure_invitation_acceptable,
     get_guardian_invitation_by_token,
     issue_kid_email_verification,
     issue_parent_email_verification,
+    username_belongs_to_kid,
+    username_is_taken,
     verify_kid_email,
     verify_parent_email,
 )
@@ -97,17 +101,32 @@ class KidSignupSerializer(serializers.Serializer):
     parent_email = serializers.EmailField()
 
     def validate_username(self, value):
-        if Kid.objects.filter(username__iexact=value).exists():
+        if username_is_taken(value):
             raise serializers.ValidationError("This username is already taken.")
         return value
 
     def validate_email(self, value):
         email = value.lower()
-        if Kid.objects.filter(email__iexact=email).exists():
-            raise serializers.ValidationError("This email is already registered.")
-        if CustomUser.objects.filter(email__iexact=email).exists():
+        if email_belongs_to_kid(email) or email_belongs_to_parent(email):
             raise serializers.ValidationError("This email is already registered.")
         return email
+
+    def validate_parent_email(self, value):
+        parent_email = value.lower()
+        if email_belongs_to_kid(parent_email):
+            raise serializers.ValidationError(
+                "This email is registered as a kid account."
+            )
+        return parent_email
+
+    def validate(self, attrs):
+        email = attrs["email"]
+        parent_email = attrs["parent_email"]
+        if email == parent_email:
+            raise serializers.ValidationError(
+                "Kid email must be different from the parent email."
+            )
+        return attrs
 
     def validate_password(self, value):
         validate_password(value)
@@ -166,7 +185,15 @@ class ParentRegisterSerializer(serializers.ModelSerializer):
         fields = ("email", "username", "password")
 
     def validate_email(self, value):
-        return value.lower()
+        email = value.lower()
+        if email_belongs_to_kid(email):
+            raise serializers.ValidationError("This email is already registered.")
+        return email
+
+    def validate_username(self, value):
+        if username_belongs_to_kid(value):
+            raise serializers.ValidationError("This username is already taken.")
+        return value
 
     def validate_password(self, value):
         validate_password(value)
@@ -442,12 +469,31 @@ class KidGoogleSignupSerializer(serializers.Serializer):
     parent_email = serializers.EmailField()
 
     def validate_username(self, value):
-        if Kid.objects.filter(username__iexact=value).exists():
+        if username_is_taken(value):
             raise serializers.ValidationError("This username is already taken.")
         return value
 
     def validate_parent_email(self, value):
-        return value.lower()
+        parent_email = value.lower()
+        if email_belongs_to_kid(parent_email):
+            raise serializers.ValidationError(
+                "This email is registered as a kid account."
+            )
+        return parent_email
+
+    def validate(self, attrs):
+        try:
+            idinfo = verify_google_id_token(attrs["id_token"])
+        except GoogleAuthError as exc:
+            raise serializers.ValidationError({"id_token": [str(exc)]}) from exc
+
+        kid_email = idinfo["email"].lower()
+        parent_email = attrs["parent_email"]
+        if kid_email == parent_email:
+            raise serializers.ValidationError(
+                "Kid email must be different from the parent email."
+            )
+        return attrs
 
     @transaction.atomic
     def create(self, validated_data):

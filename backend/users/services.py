@@ -42,6 +42,36 @@ class MaxGuardiansReached(Exception):
     pass
 
 
+EMAIL_ALREADY_REGISTERED = "This email is already registered."
+
+
+def normalize_email(email: str) -> str:
+    return email.lower()
+
+
+def email_belongs_to_kid(email: str) -> bool:
+    return Kid.objects.filter(email__iexact=normalize_email(email)).exists()
+
+
+def email_belongs_to_parent(email: str) -> bool:
+    return CustomUser.objects.filter(email__iexact=normalize_email(email)).exists()
+
+
+USERNAME_ALREADY_TAKEN = "This username is already taken."
+
+
+def username_belongs_to_kid(username: str) -> bool:
+    return Kid.objects.filter(username__iexact=username).exists()
+
+
+def username_belongs_to_parent(username: str) -> bool:
+    return CustomUser.objects.filter(username__iexact=username).exists()
+
+
+def username_is_taken(username: str) -> bool:
+    return username_belongs_to_kid(username) or username_belongs_to_parent(username)
+
+
 def count_active_guardians(kid: Kid) -> int:
     return kid.guardian_invitations.filter(
         status=GuardianInvitation.Status.ACCEPTED,

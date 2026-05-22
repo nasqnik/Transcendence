@@ -4,3 +4,5 @@ security/ssl/server.crt
 
 # Editor / tooling
 .vscode/
+
+.venv/
