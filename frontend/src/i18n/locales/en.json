@@ -32,6 +32,11 @@
     "hasAccount": "Already have an account?",
     "loggingIn": "Logging in...",
     "signingUp": "Signing up...",
+    "verifyYourEmail": "Check your email!",
+    "verifyEmailHint": "We sent a verification link to {{email}}. Click it to activate your account and log in.",
+    "almostThere": "Almost there!",
+    "kidStep1": "1. Check your email ({{email}}) and click the verification link.",
+    "kidStep2": "2. Ask your parent to accept the invitation we sent to {{email}}.",
     "waitingForParent": "Check your parent's email!",
     "waitingForParentHint": "We sent an invite to {{email}}. Ask your parent to click the link in the email to activate your account.",
     "backToHome": "Go to home"
