@@ -51,3 +51,4 @@ Quick one-off install inside the running container (lost on next recreate unless
 docker compose exec backend pip install --no-cache-dir -r requirements.txt
 docker compose restart backend
 ```
+python manage.py createsuperuser
