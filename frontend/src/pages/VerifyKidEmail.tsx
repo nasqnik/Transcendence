@@ -6,7 +6,7 @@ import LanguageSwitcher from '../components/LanguageSwitcher'
 import { verifyKidEmail } from '../api/auth'
 import { parseApiError } from '../api/errors'
 
-type PageState = 'loading' | 'success' | 'error'
+type PageState = 'loading' | 'success' | 'active' | 'error'
 
 export default function VerifyKidEmail() {
   const { t } = useTranslation()
@@ -24,7 +24,14 @@ export default function VerifyKidEmail() {
     }
 
     verifyKidEmail(token)
-      .then(() => setState('success'))
+      .then(data => {
+        // If parent already accepted the invitation, kid is fully active — go straight to login
+        if (data?.registration_status === 'active') {
+          setState('active')
+        } else {
+          setState('success')
+        }
+      })
       .catch(err => {
         setErrorMessage(parseApiError(err))
         setState('error')
@@ -49,6 +56,21 @@ export default function VerifyKidEmail() {
           </p>
           <Button variant="primary" onClick={() => navigate('/')}>
             {t('auth.backToHome')}
+          </Button>
+        </>
+      )}
+
+      {state === 'active' && (
+        <>
+          <div className="text-5xl" aria-hidden="true">🎉</div>
+          <h1 id="verify-heading" className="font-heading text-3xl font-bold text-primary-700 text-center">
+            {t('verify.allSetTitle')}
+          </h1>
+          <p className="font-body text-sm text-gray-700 text-center w-80 max-w-full">
+            {t('verify.allSetHint')}
+          </p>
+          <Button variant="primary" onClick={() => navigate('/login')}>
+            {t('auth.login')}
           </Button>
         </>
       )}
