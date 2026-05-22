@@ -70,6 +70,13 @@
     "successHint": "اطلب من ولي أمرك التحقق من بريده.",
     "sendAnother": "إرسال دعوة أخرى"
   },
+  "verify": {
+    "loading": "جارٍ التحقق من بريدك الإلكتروني...",
+    "invalidLink": "رابط التحقق غير صالح أو انتهت صلاحيته.",
+    "successTitle": "تم التحقق من البريد!",
+    "parentSuccessHint": "حسابك نشط. يمكنك الآن تسجيل الدخول.",
+    "kidSuccessHint": "تم التحقق من بريدك. اطلب من ولي أمرك قبول الدعوة حتى تتمكن من تسجيل الدخول."
+  },
   "invite": {
     "loading": "جارٍ تحميل الدعوة...",
     "notFound": "هذه الدعوة غير صالحة أو انتهت صلاحيتها.",
@@ -117,7 +124,11 @@
       "invalidGoogleIssuer": "فشل تسجيل الدخول عبر Google. حاول مرة أخرى.",
       "googleEmailNotVerified": "يرجى التحقق من بريد Google والمحاولة مرة أخرى.",
       "googleNoEmail": "حساب Google لا يحتوي على بريد إلكتروني.",
-      "googleAccountConflict": "هذا البريد مرتبط بحساب Google آخر."
+      "googleAccountConflict": "هذا البريد مرتبط بحساب Google آخر.",
+      "emailNotVerified": "يرجى التحقق من بريدك الإلكتروني قبل تسجيل الدخول.",
+      "invalidVerificationToken": "رابط التحقق هذا غير صالح.",
+      "verificationExpired": "انتهت صلاحية رابط التحقق. يرجى التسجيل مرة أخرى.",
+      "alreadyVerified": "بريدك الإلكتروني محقق بالفعل. يمكنك تسجيل الدخول."
     }
   }
 }

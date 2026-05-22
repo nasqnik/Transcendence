@@ -70,6 +70,13 @@
     "successHint": "Ask your parent to check their email.",
     "sendAnother": "Send another invitation"
   },
+  "verify": {
+    "loading": "Verifying your email...",
+    "invalidLink": "This verification link is invalid or has expired.",
+    "successTitle": "Email verified!",
+    "parentSuccessHint": "Your account is active. You can now log in.",
+    "kidSuccessHint": "Your email is verified. Now ask your parent to accept the invitation so you can log in."
+  },
   "invite": {
     "loading": "Loading invitation...",
     "notFound": "This invitation is invalid or has expired.",
@@ -117,7 +124,11 @@
       "invalidGoogleIssuer": "Google sign-in failed. Please try again.",
       "googleEmailNotVerified": "Please verify your Google email and try again.",
       "googleNoEmail": "Google account has no email.",
-      "googleAccountConflict": "This email is linked to a different Google account."
+      "googleAccountConflict": "This email is linked to a different Google account.",
+      "emailNotVerified": "Please verify your email before logging in.",
+      "invalidVerificationToken": "This verification link is invalid.",
+      "verificationExpired": "This verification link has expired. Please sign up again.",
+      "alreadyVerified": "Your email is already verified. You can log in."
     }
   }
 }

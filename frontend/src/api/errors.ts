@@ -26,6 +26,12 @@ const API_ERROR_KEYS: Record<string, string> = {
   'Google email is not verified.': 'errors.api.googleEmailNotVerified',
   'Google account has no email.': 'errors.api.googleNoEmail',
   'This email is linked to a different Google account.': 'errors.api.googleAccountConflict',
+  'Email not verified.': 'errors.api.emailNotVerified',
+  'Verify your email first.': 'errors.api.emailNotVerified',
+  'Invalid verification token.': 'errors.api.invalidVerificationToken',
+  'Verification link has expired.': 'errors.api.verificationExpired',
+  'Email is already verified.': 'errors.api.alreadyVerified',
+  'This email is already registered.': 'errors.api.emailExists',
 }
 
 function translateServerMessage(message: string): string {
