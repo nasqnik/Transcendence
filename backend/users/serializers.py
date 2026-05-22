@@ -4,6 +4,7 @@ from django.db import transaction
 from rest_framework import serializers
 from rest_framework.exceptions import AuthenticationFailed
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+from rest_framework_simplejwt.settings import api_settings
 
 from .google_auth import GoogleAuthError, verify_google_id_token
 from .google_kids import (
@@ -51,10 +52,34 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         return token
 
     def validate(self, attrs):
-        data = super().validate(attrs)
-        if not self.user.email_verified:
-            raise AuthenticationFailed("Email not verified.")
-        return data
+        identifier = attrs[self.username_field]
+        password = attrs["password"]
+
+        user = CustomUser.objects.filter(email__iexact=identifier).first()
+        if user is None:
+            user = CustomUser.objects.filter(username__iexact=identifier).first()
+
+        if user is None or not user.check_password(password):
+            raise AuthenticationFailed(
+                "No active account found with the given credentials."
+            )
+
+        if not api_settings.USER_AUTHENTICATION_RULE(user):
+            raise AuthenticationFailed(
+                "No active account found with the given credentials."
+            )
+
+        if not user.email_verified:
+            raise AuthenticationFailed(
+                "Please verify your email before logging in."
+            )
+
+        self.user = user
+        refresh = self.get_token(user)
+        return {
+            "refresh": str(refresh),
+            "access": str(refresh.access_token),
+        }
 
 
 class KidSignupSerializer(serializers.Serializer):
