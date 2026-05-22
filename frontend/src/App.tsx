@@ -11,6 +11,8 @@ import Login from './pages/Login'
 import Signup from './pages/Signup'
 import ForgotPassword from './pages/ForgotPassword'
 import AcceptInvite from './pages/AcceptInvite'
+import VerifyEmail from './pages/VerifyEmail'
+import VerifyKidEmail from './pages/VerifyKidEmail'
 import ChildDashboard from './pages/ChildDashboard'
 import ParentDashboard from './pages/ParentDashboard'
 import CharacterCreation from './pages/CharacterCreation'
@@ -48,6 +50,8 @@ export default function App() {
           <Route path="/signup" element={<Signup />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/accept-invite" element={<AcceptInvite />} />
+          <Route path="/verify-email" element={<VerifyEmail />} />
+          <Route path="/kid/verify-email" element={<VerifyKidEmail />} />
 
           {/* Child (protected) */}
           <Route path="/dashboard" element={
