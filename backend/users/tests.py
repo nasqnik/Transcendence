@@ -425,6 +425,20 @@ class KidAuthAndSecondParentInviteTests(APITestCase):
         )
         self.assertEqual(response_with_email.status_code, status.HTTP_200_OK)
 
+    def test_kid_token_verify(self):
+        self._signup_and_accept_primary()
+        login = self.client.post(
+            "/api/auth/kid/token/",
+            {"emailOrUsername": "alex_kid2", "password": "secure-pass-1"},
+            format="json",
+        )
+        verify = self.client.post(
+            "/api/auth/kid/token/verify/",
+            {"token": login.data["access"]},
+            format="json",
+        )
+        self.assertEqual(verify.status_code, status.HTTP_200_OK)
+
     def test_kid_cannot_login_before_email_verified(self):
         self.client.post(
             "/api/kids/signup/",
