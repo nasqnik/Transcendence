@@ -74,7 +74,7 @@ def username_is_taken(username: str) -> bool:
 
 def count_active_guardians(kid: Kid) -> int:
     return kid.guardian_invitations.filter(
-        status=GuardianInvitation.Status.ACCEPTED,
+        status="accepted",
     ).count()
 
 
@@ -95,8 +95,8 @@ def create_secondary_guardian_invitation(
         kid=kid,
         invite_email=parent_email,
         invited_username_hint=invited_username_hint,
-        role=GuardianInvitation.Role.SECONDARY,
-        status=GuardianInvitation.Status.PENDING,
+        role="secondary",
+        status="pending",
         created_by_kid=True,
         expires_at=expires_at,
     )
@@ -118,18 +118,18 @@ def get_guardian_invitation_by_token(token) -> GuardianInvitation:
 
 def mark_expired_if_needed(invitation: GuardianInvitation) -> GuardianInvitation:
     if (
-        invitation.status == GuardianInvitation.Status.PENDING
+        invitation.status == "pending"
         and invitation.expires_at
         and invitation.expires_at < timezone.now()
     ):
-        invitation.status = GuardianInvitation.Status.EXPIRED
+        invitation.status = "expired"
         invitation.save(update_fields=["status"])
     return invitation
 
 
 def ensure_invitation_acceptable(invitation: GuardianInvitation) -> GuardianInvitation:
     invitation = mark_expired_if_needed(invitation)
-    if invitation.status != GuardianInvitation.Status.PENDING:
+    if invitation.status != "pending":
         raise InvitationNotPending(invitation.status)
     return invitation
 
@@ -142,12 +142,12 @@ def accept_guardian_invitation(
         raise InvitationEmailMismatch
 
     invitation.parent = parent
-    invitation.status = GuardianInvitation.Status.ACCEPTED
+    invitation.status = "accepted"
     invitation.responded_at = timezone.now()
     invitation.save(update_fields=["parent", "status", "responded_at"])
 
     kid: Kid = invitation.kid
-    if invitation.role == GuardianInvitation.Role.PRIMARY:
+    if invitation.role == "primary":
         kid.parent = parent
         kid.registration_status = Kid.RegistrationStatus.ACTIVE
         kid.save(update_fields=["parent", "registration_status"])
@@ -159,7 +159,7 @@ def send_guardian_invitation_email(invitation) -> None:
     invite_url = build_guardian_invite_url(invitation.token)
     role_label = (
         "primary guardian"
-        if invitation.role == GuardianInvitation.Role.PRIMARY
+        if invitation.role == "primary"
         else "secondary guardian"
     )
     context = {
@@ -314,8 +314,8 @@ def create_primary_guardian_invitation(kid: Kid, parent_email: str) -> GuardianI
     invitation = GuardianInvitation.objects.create(
         kid=kid,
         invite_email=parent_email,
-        role=GuardianInvitation.Role.PRIMARY,
-        status=GuardianInvitation.Status.PENDING,
+        role="primary",
+        status="pending",
         created_by_kid=True,
         expires_at=expires_at,
     )

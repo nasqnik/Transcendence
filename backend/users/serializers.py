@@ -5,6 +5,7 @@ from rest_framework import serializers
 from rest_framework.exceptions import AuthenticationFailed
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework_simplejwt.settings import api_settings
+from rest_framework_simplejwt.tokens import AccessToken
 
 from .google_auth import GoogleAuthError, verify_google_id_token
 from .google_kids import (
@@ -94,6 +95,7 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
 
 
 class KidSignupSerializer(serializers.Serializer):
+    # rules and validations
     name = serializers.CharField(max_length=100)
     username = serializers.CharField(max_length=100)
     email = serializers.EmailField()
@@ -132,6 +134,7 @@ class KidSignupSerializer(serializers.Serializer):
         validate_password(value)
         return value
 
+    # write to the database
     @transaction.atomic
     def create(self, validated_data):
         parent_email = validated_data.pop("parent_email").lower()
@@ -152,6 +155,7 @@ class KidSignupSerializer(serializers.Serializer):
         issue_kid_email_verification(kid)
         return kid
 
+    # shape the json response
     def to_representation(self, instance):
         data = {
             "kid_id": str(instance.id),
@@ -164,8 +168,8 @@ class KidSignupSerializer(serializers.Serializer):
         }
         if settings.DEBUG:
             invitation = instance.guardian_invitations.filter(
-                status=GuardianInvitation.Status.PENDING,
-                role=GuardianInvitation.Role.PRIMARY,
+                status="pending",
+                role="primary",
             ).first()
             if invitation:
                 data["invite_url"] = build_guardian_invite_url(invitation.token)
@@ -178,6 +182,7 @@ class KidSignupSerializer(serializers.Serializer):
 
 
 class ParentRegisterSerializer(serializers.ModelSerializer):
+    # rules and validations
     password = serializers.CharField(write_only=True, min_length=8)
 
     class Meta:
@@ -199,6 +204,7 @@ class ParentRegisterSerializer(serializers.ModelSerializer):
         validate_password(value)
         return value
 
+    # write to the database
     def create(self, validated_data):
         password = validated_data.pop("password")
         user = CustomUser.objects.create_user(
@@ -210,6 +216,7 @@ class ParentRegisterSerializer(serializers.ModelSerializer):
         issue_parent_email_verification(user)
         return user
 
+    # shape the json response
     def to_representation(self, instance):
         data = {
             "user_id": str(instance.id),
@@ -343,6 +350,32 @@ class KidTokenRefreshSerializer(serializers.Serializer):
             "refresh": str(refresh),
             "access": str(refresh.access_token),
         }
+
+
+class KidTokenVerifySerializer(serializers.Serializer):
+    token = serializers.CharField()
+
+    def validate(self, attrs):
+        try:
+            token = AccessToken(attrs["token"])
+        except Exception as exc:
+            raise serializers.ValidationError("Invalid token.") from exc
+
+        if token.get("role") != "kid":
+            raise serializers.ValidationError("Not a kid access token.")
+
+        try:
+            kid = Kid.objects.get(pk=token["kid_id"])
+        except Kid.DoesNotExist as exc:
+            raise serializers.ValidationError("Kid not found.") from exc
+
+        if not kid.email_verified:
+            raise serializers.ValidationError("Kid email is not verified.")
+
+        if kid.registration_status != Kid.RegistrationStatus.ACTIVE:
+            raise serializers.ValidationError("Kid account is not active.")
+
+        return {}
 
 
 class InviteSecondParentSerializer(serializers.Serializer):
@@ -526,8 +559,8 @@ class KidGoogleSignupSerializer(serializers.Serializer):
         }
         if settings.DEBUG:
             invitation = instance.guardian_invitations.filter(
-                status=GuardianInvitation.Status.PENDING,
-                role=GuardianInvitation.Role.PRIMARY,
+                status="pending",
+                role="primary",
             ).first()
             if invitation:
                 data["invite_url"] = build_guardian_invite_url(invitation.token)
