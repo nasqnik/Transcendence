@@ -15,7 +15,7 @@ import {
   signupKidWithGoogle,
   type KidSignupResponse,
 } from '../api/auth'
-import { parseApiError } from '../api/errors'
+import { getApiErrorKey } from '../api/errors'
 import { useFormErrors } from '../hooks/useFormErrors'
 import { usePageTitle } from '../hooks/usePageTitle'
 import { isEmpty, isValidEmail, validatePasswordField } from '../utils/validation'
@@ -31,7 +31,7 @@ export default function Signup() {
   const [kidEmail, setKidEmail] = useState('')  // kid's own email (password signup)
   const [password, setPassword] = useState('')
   const [parentEmail, setParentEmail] = useState('')
-  const [error, setError] = useState<string | null>(null)
+  const [errorKey, setErrorKey] = useState<string | null>(null)
   const { fieldErrors, setFieldErrors, clearFieldError, resetFieldErrors } = useFormErrors()
   const [isLoading, setIsLoading] = useState(false)
 
@@ -53,7 +53,7 @@ export default function Signup() {
 
   function selectRole(next: 'parent' | 'kid') {
     setRole(next)
-    setError(null)
+    setErrorKey(null)
     resetFieldErrors()
     setUsername('')
     setName('')
@@ -102,7 +102,7 @@ export default function Signup() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!role) return
-    setError(null)
+    setErrorKey(null)
 
     const errs = validate()
     if (Object.keys(errs).length > 0) { setFieldErrors(errs); return }
@@ -119,7 +119,7 @@ export default function Signup() {
         setKidPending(result)
       }
     } catch (err) {
-      setError(parseApiError(err))
+      setErrorKey(getApiErrorKey(err))
     } finally {
       setIsLoading(false)
     }
@@ -129,7 +129,7 @@ export default function Signup() {
   async function handleGoogleKidSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!kidGoogleToken) return
-    setError(null)
+    setErrorKey(null)
 
     const errs = validateGoogleKid()
     if (Object.keys(errs).length > 0) { setFieldErrors(errs); return }
@@ -141,7 +141,7 @@ export default function Signup() {
       setKidParentEmail(parentEmail)
       setKidPending(result)
     } catch (err) {
-      setError(parseApiError(err))
+      setErrorKey(getApiErrorKey(err))
     } finally {
       setIsLoading(false)
     }
@@ -217,7 +217,7 @@ export default function Signup() {
           aria-labelledby="google-profile-heading"
           aria-busy={isLoading}
         >
-          {error && <FormAlert message={error} />}
+          {errorKey && <FormAlert message={t(errorKey)} />}
 
           <FormField
             id="name"
@@ -226,6 +226,7 @@ export default function Signup() {
             value={name}
             required
             autoComplete="name"
+            disabled={isLoading}
             error={fieldErrors.name}
             onChange={e => { setName(e.target.value); clearFieldError('name') }}
           />
@@ -238,6 +239,7 @@ export default function Signup() {
             value={username}
             required
             autoComplete="username"
+            disabled={isLoading}
             error={fieldErrors.username}
             onChange={e => { setUsername(e.target.value); clearFieldError('username') }}
           />
@@ -250,6 +252,7 @@ export default function Signup() {
             placeholder={t('auth.emailHint')}
             required
             autoComplete="off"
+            disabled={isLoading}
             error={fieldErrors.parentEmail}
             onChange={e => { setParentEmail(e.target.value); clearFieldError('parentEmail') }}
           />
@@ -258,7 +261,7 @@ export default function Signup() {
             {isLoading ? t('auth.signingUp') : t('auth.signup')}
           </Button>
 
-          <Button variant="secondary" onClick={() => { setKidGoogleToken(null); setError(null); resetFieldErrors() }}>
+          <Button variant="secondary" onClick={() => { setKidGoogleToken(null); setErrorKey(null); resetFieldErrors() }}>
             {t('auth.back')}
           </Button>
         </form>
@@ -327,7 +330,7 @@ export default function Signup() {
             aria-labelledby="signup-heading"
             aria-busy={isLoading}
           >
-            {error && <FormAlert message={error} />}
+            {errorKey && <FormAlert message={t(errorKey)} />}
 
             <FormField
               id="username"
@@ -337,6 +340,7 @@ export default function Signup() {
               value={username}
               required
               autoComplete="username"
+              disabled={isLoading}
               error={fieldErrors.username}
               onChange={e => { setUsername(e.target.value); clearFieldError('username') }}
             />
@@ -350,6 +354,7 @@ export default function Signup() {
                 placeholder={t('auth.emailHint')}
                 required
                 autoComplete="email"
+                disabled={isLoading}
                 error={fieldErrors.kidEmail}
                 onChange={e => { setKidEmail(e.target.value); clearFieldError('kidEmail') }}
               />
@@ -363,6 +368,7 @@ export default function Signup() {
                 value={name}
                 required
                 autoComplete="name"
+                disabled={isLoading}
                 error={fieldErrors.name}
                 onChange={e => { setName(e.target.value); clearFieldError('name') }}
               />
@@ -377,6 +383,7 @@ export default function Signup() {
                 placeholder={t('auth.emailHint')}
                 required
                 autoComplete="email"
+                disabled={isLoading}
                 error={fieldErrors.email}
                 onChange={e => { setEmail(e.target.value); clearFieldError('email') }}
               />
@@ -389,6 +396,7 @@ export default function Signup() {
               value={password}
               required
               autoComplete="new-password"
+              disabled={isLoading}
               error={fieldErrors.password}
               onChange={e => { setPassword(e.target.value); clearFieldError('password') }}
             />
@@ -402,6 +410,7 @@ export default function Signup() {
                 placeholder={t('auth.emailHint')}
                 required
                 autoComplete="off"
+                disabled={isLoading}
                 error={fieldErrors.parentEmail}
                 onChange={e => { setParentEmail(e.target.value); clearFieldError('parentEmail') }}
               />
@@ -415,19 +424,20 @@ export default function Signup() {
           {/* Google sign-in — both parent and kid */}
           <GoogleSignInSection
             onSuccess={async credential => {
-              setError(null)
+              setErrorKey(null)
+              resetFieldErrors()
               if (role === 'parent') {
                 try {
                   const tokens = await loginWithGoogle(credential)
                   establishParentSession(tokens, navigate)
                 } catch (err) {
-                  setError(parseApiError(err))
+                  setErrorKey(getApiErrorKey(err))
                 }
               } else {
                 setKidGoogleToken(credential)
               }
             }}
-            onError={() => setError(t('errors.api.invalidGoogleToken'))}
+            onError={() => { resetFieldErrors(); setErrorKey('errors.api.invalidGoogleToken') }}
           />
         </>
       )}
