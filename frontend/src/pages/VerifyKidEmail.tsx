@@ -20,7 +20,7 @@ export default function VerifyKidEmail() {
   const token = searchParams.get('token')
   const parentLoggedIn = isAuthenticated && currentUser?.role === 'parent'
   const [state, setState] = useState<PageState>(() => token ? 'loading' : 'error')
-  const [t(errorMessageKey)Key, setErrorMessageKey] = useState(() => token ? '' : 'verify.invalidLink')
+  const [errorMessageKey, setErrorMessageKey] = useState(() => token ? '' : 'verify.invalidLink')
   const [linkAlreadyUsed, setLinkAlreadyUsed] = useState(false)
 
   useEffect(() => {
@@ -51,7 +51,7 @@ export default function VerifyKidEmail() {
           return
         }
         setLinkAlreadyUsed(false)
-        setErrorMessageKey(getApiErrorKey(err))
+        setErrorMessageKey(key)
         setState('error')
       })
 
@@ -59,7 +59,7 @@ export default function VerifyKidEmail() {
       cancelled = true
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps -- language changes must not re-trigger verification
-  }, [searchParams])
+  }, [token])
 
   if (state === 'loading') {
     return (

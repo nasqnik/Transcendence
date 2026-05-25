@@ -17,7 +17,7 @@ export default function VerifyEmail() {
   const [searchParams] = useSearchParams()
   const token = searchParams.get('token')
   const [state, setState] = useState<PageState>(() => token ? 'loading' : 'error')
-  const [t(errorMessageKey)Key, setErrorMessageKey] = useState(() => token ? '' : 'verify.invalidLink')
+  const [errorMessageKey, setErrorMessageKey] = useState(() => token ? '' : 'verify.invalidLink')
   const [linkAlreadyUsed, setLinkAlreadyUsed] = useState(false)
 
   useEffect(() => {
@@ -43,7 +43,7 @@ export default function VerifyEmail() {
           return
         }
         setLinkAlreadyUsed(false)
-        setErrorMessageKey(getApiErrorKey(err))
+        setErrorMessageKey(key)
         setState('error')
       })
 
@@ -51,7 +51,7 @@ export default function VerifyEmail() {
       cancelled = true
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps -- language changes must not re-trigger verification
-  }, [searchParams])
+  }, [token])
 
   if (state === 'loading') {
     return (
