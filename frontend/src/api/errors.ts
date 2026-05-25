@@ -151,6 +151,39 @@ export function isInvalidKidCredentials(error: unknown): boolean {
   return getDetail(error) === 'No active kid account found with the given credentials.'
 }
 
+// ─── Field-level errors ──────────────────────────────────────────────────────
+
+/**
+ * Extract per-field validation errors from a DRF response.
+ * Returns field → first translated error string for every field key.
+ * `detail` and `non_field_errors` are excluded (those go to parseApiError).
+ *
+ * Example input:  { email: ["user with this email already exists."], password: ["too short"] }
+ * Example output: { email: "An account with this email already exists.", password: "Password must be at least 8 characters." }
+ *
+ * Returns an empty object when there are no field-level errors.
+ */
+export function getFieldErrors(error: unknown): Record<string, string> {
+  const obj = getErrorPayload(error)
+  if (!obj) return {}
+
+  const result: Record<string, string> = {}
+  for (const [field, value] of Object.entries(obj)) {
+    if (field === 'detail' || field === 'non_field_errors') continue
+    if (Array.isArray(value) && typeof value[0] === 'string') {
+      result[field] = translateServerMessage(value[0])
+    } else if (typeof value === 'string') {
+      result[field] = translateServerMessage(value)
+    }
+  }
+  return result
+}
+
+/** Returns true when the response contains at least one field-level validation error. */
+export function hasFieldErrors(error: unknown): boolean {
+  return Object.keys(getFieldErrors(error)).length > 0
+}
+
 // ─── Key / string resolution ─────────────────────────────────────────────────
 
 /** Map a backend/axios error to an `errors.*` i18n key (translate in React with `t(key)`). */
