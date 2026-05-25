@@ -14,13 +14,14 @@ import {
   loginParent,
   loginWithGoogle,
   registerParent,
-  parseApiError,
   type InvitationDetails,
 } from '../api/auth'
 import {
   isAccountNotFound,
   isEmailNotVerified,
   isInvitationAlreadyAccepted,
+  getApiErrorKey,
+  getFieldErrors,
 } from '../api/errors'
 import {
   acceptInvitePath,
@@ -29,11 +30,12 @@ import {
 } from '../utils/inviteToken'
 import { useAuthHydrated } from '../hooks/useAuthHydrated'
 import { useFormErrors } from '../hooks/useFormErrors'
+import { usePageTitle } from '../hooks/usePageTitle'
 import { emailsMatchIgnoreCase, isEmpty, validatePasswordField } from '../utils/validation'
 
 type PageState =
   | { status: 'loading' }
-  | { status: 'error'; message: string }
+  | { status: 'error'; messageKey: string }
   | { status: 'form'; invitation: InvitationDetails }
   | { status: 'wrong_account'; invitation: InvitationDetails; loggedInEmail: string }
   | { status: 'verify_email'; email: string }
@@ -43,18 +45,19 @@ type PageState =
 export default function AcceptInvite() {
   const { t } = useTranslation()
   const navigate = useNavigate()
+  usePageTitle(`${t('invite.title')} — ${t('app.name')}`)
   const [searchParams] = useSearchParams()
   const hydrated = useAuthHydrated()
   const { isAuthenticated, currentUser, logout } = useAuthStore()
   const inviteToken = searchParams.get('token')
 
   const [state, setState] = useState<PageState>(() =>
-    inviteToken ? { status: 'loading' } : { status: 'error', message: t('invite.notFound') }
+    inviteToken ? { status: 'loading' } : { status: 'error', messageKey: 'invite.notFound' }
   )
 
   const [password, setPassword] = useState('')
   const [username, setUsername] = useState('')
-  const [formError, setFormError] = useState<string | null>(null)
+  const [formErrorKey, setFormErrorKey] = useState<string | null>(null)
   const { fieldErrors, setFieldErrors, clearFieldError, resetFieldErrors } = useFormErrors()
   const [isSubmitting, setIsSubmitting] = useState(false)
   const autoAcceptTokenRef = useRef<string | null>(null)
@@ -87,9 +90,9 @@ export default function AcceptInvite() {
         if (invitation.status !== 'pending') {
           clearPendingInviteToken()
           if (invitation.status === 'expired') {
-            setState({ status: 'error', message: t('invite.expired') })
+            setState({ status: 'error', messageKey: 'invite.expired' })
           } else {
-            setState({ status: 'error', message: t('invite.notPending') })
+            setState({ status: 'error', messageKey: 'invite.notPending' })
           }
           return
         }
@@ -110,7 +113,7 @@ export default function AcceptInvite() {
           }
         } else if (isAuthenticated && currentUser?.role === 'kid') {
           clearPendingInviteToken()
-          setState({ status: 'error', message: t('invite.parentOnly') })
+          setState({ status: 'error', messageKey: 'invite.parentOnly' })
         } else {
           savePendingInviteToken(inviteToken)
           setState(prev => {
@@ -127,7 +130,7 @@ export default function AcceptInvite() {
       .catch(() => {
         if (!cancelled) {
           clearPendingInviteToken()
-          setState({ status: 'error', message: t('invite.notFound') })
+          setState({ status: 'error', messageKey: 'invite.notFound' })
         }
       })
 
@@ -150,16 +153,16 @@ export default function AcceptInvite() {
         setState({ status: 'success', kidName: invitation.kid_name })
         return
       }
-      setState({ status: 'error', message: parseApiError(err) })
+      setState({ status: 'error', messageKey: getApiErrorKey(err) })
     }
   }
 
   // ── Form submit ───────────────────────────────────────────────────────────
-  async function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.SubmitEvent) {
     e.preventDefault()
     if (state.status !== 'form') return
 
-    setFormError(null)
+    setFormErrorKey(null)
     const errs: Record<string, string> = {}
     if (isEmpty(username)) errs.username = t('errors.required')
     const passwordError = validatePasswordField(password, t, {
@@ -189,7 +192,9 @@ export default function AcceptInvite() {
             email: invitation.invite_email,
           })
         } catch (registerErr) {
-          setFormError(parseApiError(registerErr))
+          const fields = getFieldErrors(registerErr)
+          if (Object.keys(fields).length > 0) { setFieldErrors(fields); return }
+          setFormErrorKey(getApiErrorKey(registerErr))
         }
       } else if (isEmailNotVerified(err)) {
         setState({
@@ -197,7 +202,7 @@ export default function AcceptInvite() {
           email: invitation.invite_email,
         })
       } else {
-        setFormError(parseApiError(err))
+        setFormErrorKey(getApiErrorKey(err))
       }
     } finally {
       setIsSubmitting(false)
@@ -206,7 +211,8 @@ export default function AcceptInvite() {
 
   // ── Google sign-in (parent must use the invited email) ────────────────────
   async function handleGoogleAccept(invitation: InvitationDetails, credential: string) {
-    setFormError(null)
+    setFormErrorKey(null)
+    resetFieldErrors()
     setIsSubmitting(true)
 
     try {
@@ -227,7 +233,7 @@ export default function AcceptInvite() {
       establishParentSession(tokens)
       await doAccept(invitation)
     } catch (err) {
-      setFormError(parseApiError(err))
+      setFormErrorKey(getApiErrorKey(err))
     } finally {
       setIsSubmitting(false)
     }
@@ -250,8 +256,8 @@ export default function AcceptInvite() {
         headingId="invite-heading"
         icon="❌"
         title={t('invite.errorTitle')}
-        alertMessage={state.message}
-        statusMessage={state.message}
+        alertMessage={t(state.messageKey)}
+        statusMessage={t(state.messageKey)}
         titleSize="md"
       >
         {isAuthenticated && currentUser?.role === 'kid' ? (
@@ -312,7 +318,7 @@ export default function AcceptInvite() {
           aria-labelledby="invite-heading"
           aria-busy={isSubmitting}
         >
-          {formError && <FormAlert message={formError} />}
+          {formErrorKey && <FormAlert message={t(formErrorKey)} />}
 
           <FormField
             id="username"
@@ -322,6 +328,7 @@ export default function AcceptInvite() {
             value={username}
             required
             autoComplete="username"
+            disabled={isSubmitting}
             error={fieldErrors.username}
             onChange={e => { setUsername(e.target.value); clearFieldError('username') }}
           />
@@ -333,6 +340,7 @@ export default function AcceptInvite() {
             value={password}
             required
             autoComplete="new-password"
+            disabled={isSubmitting}
             error={fieldErrors.password}
             onChange={e => { setPassword(e.target.value); clearFieldError('password') }}
           />
@@ -343,8 +351,9 @@ export default function AcceptInvite() {
         </form>
 
         <GoogleSignInSection
+          disabled={isSubmitting}
           onSuccess={credential => handleGoogleAccept(state.invitation, credential)}
-          onError={() => setFormError(t('errors.api.invalidGoogleToken'))}
+          onError={() => { resetFieldErrors(); setFormErrorKey('errors.api.invalidGoogleToken') }}
           hint={t('invite.googleEmailHint', { email: state.invitation.invite_email })}
         />
       </AuthMessageLayout>

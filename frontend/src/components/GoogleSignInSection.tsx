@@ -33,7 +33,7 @@ export default function GoogleSignInSection({
             if (disabled) return
             if (credentialResponse.credential) onSuccess(credentialResponse.credential)
           }}
-          onError={() => onError?.()}
+          onError={onError}
           width="100%"
         />
       </div>

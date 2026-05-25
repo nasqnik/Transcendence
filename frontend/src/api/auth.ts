@@ -17,8 +17,6 @@ export function decodeJWT(token: string): Record<string, unknown> {
   }
 }
 
-export { parseApiError } from './errors'
-
 // ─── API response types ──────────────────────────────────────────────────────
 
 interface TokenResponse {
@@ -30,9 +28,23 @@ export interface KidSignupResponse {
   kid_id: string
   username: string
   name: string
-  email: string
+  email: string | null
   email_verified: boolean
   registration_status: 'awaiting_primary_parent' | 'active' | 'suspended'
+  message: string
+}
+
+export interface KidVerifyEmailResponse {
+  kid_id: string
+  email: string | null
+  email_verified: boolean
+  registration_status: 'awaiting_primary_parent' | 'active' | 'suspended'
+  message: string
+}
+
+export interface ParentVerifyEmailResponse {
+  email: string
+  email_verified: boolean
   message: string
 }
 
@@ -57,7 +69,7 @@ export async function loginKid(identifier: string, password: string): Promise<To
 }
 
 // POST /auth/register/  — parent account creation
-// Returns user info but NOT tokens (we'll call loginParent right after to auto-login)
+// Returns user info, no tokens — parent verifies email then logs in.
 export async function registerParent(email: string, username: string, password: string) {
   const res = await client.post('/auth/register/', { email, username, password })
   return res.data
@@ -89,11 +101,13 @@ export async function acceptInvitation(token: string) {
   return res.data
 }
 
-// POST /auth/token/verify/  — check if the stored access token is still valid
-// Returns true if valid, false if expired or invalid
-export async function verifyToken(token: string): Promise<boolean> {
+// POST /auth/token/verify/ or /auth/kid/token/verify/
+// Returns true if valid, false if expired or invalid.
+// skipAuth: true — we're verifying the token itself, don't attach it as a header too.
+export async function verifyAccessToken(token: string, role: 'parent' | 'kid'): Promise<boolean> {
+  const path = role === 'kid' ? '/auth/kid/token/verify/' : '/auth/token/verify/'
   try {
-    await client.post('/auth/token/verify/', { token })
+    await client.post(path, { token }, { skipAuth: true })
     return true
   } catch {
     return false
@@ -101,10 +115,10 @@ export async function verifyToken(token: string): Promise<boolean> {
 }
 
 // POST /kids/invite-parent/  — kid invites a second guardian (requires kid JWT)
-export async function inviteParent(parent_email: string, invited_username_hint?: string) {
+export async function inviteParent(parentEmail: string, invitedUsernameHint?: string) {
   const res = await client.post('/kids/invite-parent/', {
-    parent_email,
-    ...(invited_username_hint ? { invited_username_hint } : {}),
+    parent_email: parentEmail,
+    ...(invitedUsernameHint ? { invited_username_hint: invitedUsernameHint } : {}),
   })
   return res.data
 }
@@ -130,37 +144,37 @@ function dedupeByToken<T>(cache: Map<string, Promise<T>>, token: string, request
   return promise
 }
 
-const parentVerifyByToken = new Map<string, Promise<unknown>>()
-const kidVerifyByToken = new Map<string, Promise<unknown>>()
+const parentVerifyByToken = new Map<string, Promise<ParentVerifyEmailResponse>>()
+const kidVerifyByToken = new Map<string, Promise<KidVerifyEmailResponse>>()
 
 // POST /auth/verify-email/  — parent confirms their email after registration
-export function verifyParentEmail(token: string) {
+export function verifyParentEmail(token: string): Promise<ParentVerifyEmailResponse> {
   return dedupeByToken(parentVerifyByToken, token, async () => {
-    const res = await client.post('/auth/verify-email/', { token })
+    const res = await client.post<ParentVerifyEmailResponse>('/auth/verify-email/', { token }, { skipAuth: true })
     return res.data
   })
 }
 
 // POST /auth/kid/verify-email/  — kid confirms their email after registration
-export function verifyKidEmail(token: string) {
+export function verifyKidEmail(token: string): Promise<KidVerifyEmailResponse> {
   return dedupeByToken(kidVerifyByToken, token, async () => {
-    const res = await client.post('/auth/kid/verify-email/', { token })
+    const res = await client.post<KidVerifyEmailResponse>('/auth/kid/verify-email/', { token }, { skipAuth: true })
     return res.data
   })
 }
 
-// POST /kids/signup/google/  — kid registration via Google (no email verification needed)
+// POST /kids/signup/google/  — kid registration via Google (no kid email verify step; parent still needs to accept)
 export async function signupKidWithGoogle(
   idToken: string,
   name: string,
   username: string,
-  parent_email: string,
+  parentEmail: string,
 ): Promise<KidSignupResponse> {
   const res = await client.post<KidSignupResponse>('/kids/signup/google/', {
     id_token: idToken,
     name,
     username,
-    parent_email,
+    parent_email: parentEmail,
   })
   return res.data
 }
@@ -172,14 +186,14 @@ export async function signupKid(
   username: string,
   email: string,
   password: string,
-  parent_email: string,
+  parentEmail: string,
 ): Promise<KidSignupResponse> {
   const res = await client.post<KidSignupResponse>('/kids/signup/', {
     name,
     username,
     email,
     password,
-    parent_email,
+    parent_email: parentEmail,
   })
   return res.data
 }

@@ -1,11 +1,5 @@
 import { useTranslation } from 'react-i18next'
-import { matchesLanguageCode } from '../i18n/config'
-
-const LANGUAGES = [
-  { code: 'en', label: 'EN' },
-  { code: 'ru', label: 'RU' },
-  { code: 'ar', label: 'AR' },
-]
+import { LANGUAGES } from '../i18n/config'
 
 export default function LanguageSwitcher() {
   const { t, i18n } = useTranslation()
@@ -18,15 +12,12 @@ export default function LanguageSwitcher() {
       className="flex gap-3"
     >
       {LANGUAGES.map(lang => {
-        const isActive = matchesLanguageCode(activeLang, lang.code)
+        const isActive = activeLang === lang.code
         return (
           <button
             key={lang.code}
             type="button"
-            onClick={() => {
-              i18n.changeLanguage(lang.code)
-              localStorage.setItem('language', lang.code)
-            }}
+            onClick={() => i18n.changeLanguage(lang.code)}
             aria-label={t('a11y.switchLanguage', { language: lang.label })}
             aria-pressed={isActive}
             className={`font-body text-sm font-semibold px-3 py-1 rounded-lg focus-ring ${
