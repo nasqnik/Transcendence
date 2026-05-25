@@ -14,13 +14,13 @@ import {
   loginParent,
   loginWithGoogle,
   registerParent,
-  parseApiError,
   type InvitationDetails,
 } from '../api/auth'
 import {
   isAccountNotFound,
   isEmailNotVerified,
   isInvitationAlreadyAccepted,
+  parseApiError,
 } from '../api/errors'
 import {
   acceptInvitePath,

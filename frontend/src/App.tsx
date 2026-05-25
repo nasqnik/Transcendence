@@ -2,7 +2,7 @@ import { useEffect, useLayoutEffect, useRef } from 'react'
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import useAuthStore from './store/authStore'
-import { verifyToken } from './api/auth'
+import { verifyAccessToken, decodeJWT } from './api/auth'
 
 import ProtectedRoute from './components/ProtectedRoute'
 import GuestRoute from './components/GuestRoute'
@@ -26,11 +26,16 @@ export default function App() {
   // Read token once on startup without subscribing App to the store.
   // Route guards (ProtectedRoute, GuestRoute) handle auth state reactivity themselves.
   const startupTokenRef = useRef(useAuthStore.getState().token)
+  const startupRoleRef = useRef((() => {
+    const state = useAuthStore.getState()
+    return state.currentUser?.role
+      ?? (decodeJWT(state.token ?? '').role === 'kid' ? 'kid' : 'parent')
+  })() as 'parent' | 'kid')
 
   useEffect(() => {
     const startupToken = startupTokenRef.current
     if (startupToken) {
-      verifyToken(startupToken).then(valid => {
+      verifyAccessToken(startupToken, startupRoleRef.current).then(valid => {
         if (!valid) useAuthStore.getState().logout()
       })
     }
