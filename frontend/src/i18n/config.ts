@@ -5,6 +5,11 @@ import en from './locales/en.json'
 import ru from './locales/ru.json'
 import ar from './locales/ar.json'
 
+export const LANGUAGES = [
+  { code: 'en', label: 'EN' },
+  { code: 'ru', label: 'RU' },
+  { code: 'ar', label: 'AR' },
+] as const
 
 i18n.use(initReactI18next).init({
   resources: {
@@ -17,6 +22,12 @@ i18n.use(initReactI18next).init({
   interpolation: {
     escapeValue: false,
   },
+})
+
+// Persist the chosen language so it survives page refresh.
+// Any call to i18n.changeLanguage() anywhere in the app is covered.
+i18n.on('languageChanged', (lng) => {
+  localStorage.setItem('language', lng)
 })
 
 export default i18n

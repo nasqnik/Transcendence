@@ -1,10 +1,5 @@
 import { useTranslation } from 'react-i18next'
-
-const LANGUAGES = [
-  { code: 'en', label: 'EN' },
-  { code: 'ru', label: 'RU' },
-  { code: 'ar', label: 'AR' },
-]
+import { LANGUAGES } from '../i18n/config'
 
 export default function LanguageSwitcher() {
   const { t, i18n } = useTranslation()
@@ -22,10 +17,7 @@ export default function LanguageSwitcher() {
           <button
             key={lang.code}
             type="button"
-            onClick={() => {
-              i18n.changeLanguage(lang.code)
-              localStorage.setItem('language', lang.code)
-            }}
+            onClick={() => i18n.changeLanguage(lang.code)}
             aria-label={t('a11y.switchLanguage', { language: lang.label })}
             aria-pressed={isActive}
             className={`font-body text-sm font-semibold px-3 py-1 rounded-lg focus-ring ${
