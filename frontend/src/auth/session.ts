@@ -13,7 +13,7 @@ export interface TokenPair {
   refresh: string
 }
 
-type NavigateFn = (path: string) => void
+export type NavigateFn = (path: string) => void
 
 export function parentUserFromAccessToken(access: string): User {
   const payload = decodeJWT(access)
@@ -30,7 +30,7 @@ export function kidUserFromAccessToken(access: string): User {
   return {
     id: payload.kid_id as string,
     username: payload.username as string,
-    email: (payload.email as string) ?? undefined,
+    email: payload.email as string | undefined,
     role: 'kid',
   }
 }
