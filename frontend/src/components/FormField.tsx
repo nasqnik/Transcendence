@@ -1,23 +1,17 @@
-import Input from './Input'
+import type { ChangeEvent } from 'react'
+import Input, { type InputProps } from './Input'
 
-interface FormFieldProps {
-  id: string
+/** All Input props except `describedBy` (managed internally), plus a required label.
+ *  `onChange` is narrowed to required — FormField always controls a value. */
+type FormFieldProps = Omit<InputProps, 'describedBy'> & {
   label: string
-  error?: string
-  type?: 'email' | 'password' | 'text'
-  value: string
-  placeholder?: string
-  required?: boolean
-  autoComplete?: string
-  dir?: 'ltr' | 'rtl'
-  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void
+  onChange: (e: ChangeEvent<HTMLInputElement>) => void
 }
 
 export default function FormField({
   id,
   label,
   error,
-  onChange,
   ...inputProps
 }: FormFieldProps) {
   const errorId = `${id}-error`
@@ -31,7 +25,6 @@ export default function FormField({
         id={id}
         error={error}
         describedBy={error ? errorId : undefined}
-        onChange={onChange}
         {...inputProps}
       />
       {error && (
