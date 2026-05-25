@@ -4,18 +4,20 @@ import { useTranslation } from 'react-i18next'
 import AuthMessageLayout from '../components/AuthMessageLayout'
 import Button from '../components/Button'
 import { verifyParentEmail } from '../api/auth'
-import { getApiErrorKey, parseApiError } from '../api/errors'
+import { getApiErrorKey } from '../api/errors'
 import { acceptInvitePath, getPendingInviteToken } from '../utils/inviteToken'
+import { usePageTitle } from '../hooks/usePageTitle'
 
 type PageState = 'loading' | 'success' | 'error'
 
 export default function VerifyEmail() {
   const { t } = useTranslation()
   const navigate = useNavigate()
+  usePageTitle(`${t('verify.title')} — ${t('app.name')}`)
   const [searchParams] = useSearchParams()
   const token = searchParams.get('token')
   const [state, setState] = useState<PageState>(() => token ? 'loading' : 'error')
-  const [errorMessage, setErrorMessage] = useState(() => token ? '' : t('verify.invalidLink'))
+  const [t(errorMessageKey)Key, setErrorMessageKey] = useState(() => token ? '' : 'verify.invalidLink')
   const [linkAlreadyUsed, setLinkAlreadyUsed] = useState(false)
 
   useEffect(() => {
@@ -36,12 +38,12 @@ export default function VerifyEmail() {
         }
         if (key === 'errors.api.invalidVerificationToken') {
           setLinkAlreadyUsed(true)
-          setErrorMessage(t('verify.linkAlreadyUsed'))
+          setErrorMessageKey('verify.linkAlreadyUsed')
           setState('error')
           return
         }
         setLinkAlreadyUsed(false)
-        setErrorMessage(parseApiError(err))
+        setErrorMessageKey(getApiErrorKey(err))
         setState('error')
       })
 
@@ -98,8 +100,8 @@ export default function VerifyEmail() {
       headingId="verify-heading"
       icon={linkAlreadyUsed ? '✅' : '❌'}
       title={linkAlreadyUsed ? t('verify.successTitle') : t('verify.errorTitle')}
-      alertMessage={linkAlreadyUsed ? undefined : errorMessage}
-      statusMessage={errorMessage}
+      alertMessage={linkAlreadyUsed ? undefined : t(errorMessageKey)}
+      statusMessage={t(errorMessageKey)}
       titleSize="md"
     >
       {linkAlreadyUsed && (
