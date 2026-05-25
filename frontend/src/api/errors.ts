@@ -1,3 +1,12 @@
+/**
+ * Error utilities for axios/DRF responses.
+ *
+ * - getApiErrorKey + t(key)  = components that store the key and translate later (Login)
+ * - parseApiError            = ready-to-show translated string (Signup, invites)
+ * - is*                      = boolean helpers for branching, not display
+ */
+
+import axios from 'axios'
 import i18n from '../i18n/config'
 
 /** Exact backend message → i18n key under `errors.api.*` */
@@ -44,6 +53,39 @@ const PASSWORD_ERROR_PREFIXES: Array<{ prefix: string; key: string }> = [
   { prefix: 'The password is too similar', key: 'errors.passwordTooSimilar' },
 ]
 
+// ─── Sets for multi-value detail checks ─────────────────────────────────────
+
+const EMAIL_NOT_VERIFIED_DETAILS = new Set([
+  'Email not verified.',
+  'Verify your email first.',
+  'Please verify your email before logging in.',
+])
+
+const ACCOUNT_NOT_FOUND_DETAILS = new Set([
+  'No active account found with the given credentials.',
+  'No active account found with the given credentials',
+])
+
+const INVITATION_ACCEPTED_DETAIL = 'Invitation is not pending (status: accepted).'
+
+// ─── Private helpers ─────────────────────────────────────────────────────────
+
+/** Safely extract the response body from an axios (or axios-shaped) error. */
+function getErrorPayload(error: unknown): Record<string, unknown> | null {
+  if (!error || typeof error !== 'object') return null
+  const data =
+    (axios.isAxiosError(error) ? error.response?.data : null) ??
+    (error as { response?: { data?: unknown } }).response?.data
+  if (!data || typeof data !== 'object') return null
+  return data as Record<string, unknown>
+}
+
+/** Extract and trim the `detail` string from an axios error, or return ''. */
+function getDetail(error: unknown): string {
+  const obj = getErrorPayload(error)
+  return typeof obj?.detail === 'string' ? obj.detail.trim() : ''
+}
+
 function translateServerMessage(message: string): string {
   const trimmed = message.trim()
   const key = API_ERROR_KEYS[trimmed]
@@ -69,39 +111,16 @@ function genericError(): string {
   return i18n.t('errors.generic')
 }
 
-/**
- * Returns true if the kid account exists but is waiting for parent to accept the invite.
- */
-function getErrorPayload(error: unknown): Record<string, unknown> | null {
-  if (!error || typeof error !== 'object') return null
-  const err = error as { response?: { data?: unknown } }
-  const data = err.response?.data
-  if (!data || typeof data !== 'object') return null
-  return data as Record<string, unknown>
-}
+// ─── Boolean helpers (for branching, not display) ────────────────────────────
 
+/** Returns true if the kid account exists but is waiting for parent to accept the invite. */
 export function isKidNotActiveYet(error: unknown): boolean {
-  const obj = getErrorPayload(error)
-  if (!obj) return false
-  const detail = typeof obj.detail === 'string' ? obj.detail.trim() : ''
-  return detail === 'Kid account is not active yet.'
+  return getDetail(error) === 'Kid account is not active yet.'
 }
 
-/**
- * Returns true if the error means the account exists but email isn't verified yet.
- */
+/** Returns true if the error means the account exists but email isn't verified yet. */
 export function isEmailNotVerified(error: unknown): boolean {
-  if (!error || typeof error !== 'object') return false
-  const err = error as { response?: { data?: unknown } }
-  const data = err.response?.data
-  if (!data || typeof data !== 'object') return false
-  const obj = data as Record<string, unknown>
-  const detail = typeof obj.detail === 'string' ? obj.detail.trim() : ''
-  return (
-    detail === 'Email not verified.' ||
-    detail === 'Verify your email first.' ||
-    detail === 'Please verify your email before logging in.'
-  )
+  return EMAIL_NOT_VERIFIED_DETAILS.has(getDetail(error))
 }
 
 /**
@@ -109,47 +128,37 @@ export function isEmailNotVerified(error: unknown): boolean {
  * Used on the accept-invite page to auto-switch to signup.
  */
 export function isAccountNotFound(error: unknown): boolean {
-  if (!error || typeof error !== 'object') return false
-  const err = error as { response?: { data?: unknown } }
-  const data = err.response?.data
-  if (!data || typeof data !== 'object') return false
-  const obj = data as Record<string, unknown>
-  const detail = typeof obj.detail === 'string' ? obj.detail.trim() : ''
-  return (
-    detail === 'No active account found with the given credentials.' ||
-    detail === 'No active account found with the given credentials'
-  )
+  return ACCOUNT_NOT_FOUND_DETAILS.has(getDetail(error))
 }
 
-/** Kid login failed: wrong username/email or password (not “waiting for parent”). */
-/** Accept invite called after the invitation was already accepted. */
+/** Returns true if the invitation was already accepted (backend: "Invitation is not pending (status: accepted).") */
 export function isInvitationAlreadyAccepted(error: unknown): boolean {
   const obj = getErrorPayload(error)
   if (!obj) return false
-  const detail = typeof obj.detail === 'string' ? obj.detail.trim() : ''
-  if (detail.includes('accepted')) return true
+  const detail = getDetail(error)
+  if (detail === INVITATION_ACCEPTED_DETAIL) return true
   for (const value of Object.values(obj)) {
-    if (Array.isArray(value) && typeof value[0] === 'string' && value[0].includes('accepted')) {
-      return true
+    if (Array.isArray(value) && typeof value[0] === 'string') {
+      if (value[0].trim() === INVITATION_ACCEPTED_DETAIL) return true
     }
-    if (typeof value === 'string' && value.includes('accepted')) return true
+    if (typeof value === 'string' && value.trim() === INVITATION_ACCEPTED_DETAIL) return true
   }
   return false
 }
 
+/** Returns true if kid login failed due to wrong username/email or password (not "waiting for parent"). */
 export function isInvalidKidCredentials(error: unknown): boolean {
-  const obj = getErrorPayload(error)
-  if (!obj) return false
-  const detail = typeof obj.detail === 'string' ? obj.detail.trim() : ''
-  return detail === 'No active kid account found with the given credentials.'
+  return getDetail(error) === 'No active kid account found with the given credentials.'
 }
+
+// ─── Key / string resolution ─────────────────────────────────────────────────
 
 /** Map a backend/axios error to an `errors.*` i18n key (translate in React with `t(key)`). */
 export function getApiErrorKey(error: unknown): string {
   const obj = getErrorPayload(error)
   if (!obj) return 'errors.apiUnknown'
 
-  const detail = typeof obj.detail === 'string' ? obj.detail.trim() : ''
+  const detail = getDetail(error)
   if (detail) {
     const key = API_ERROR_KEYS[detail]
     if (key) return key
@@ -177,7 +186,7 @@ export function getApiErrorKey(error: unknown): string {
 
 /**
  * i18n key for the login page when parent then kid both failed.
- * Avoids “invalidKidCredentials” after a failed parent attempt (e.g. wrong parent password).
+ * Avoids "invalidKidCredentials" after a failed parent attempt (e.g. wrong parent password).
  */
 export function dualLoginErrorKey(parentErr: unknown, kidErr: unknown): string {
   if (isEmailNotVerified(kidErr)) {
@@ -197,14 +206,8 @@ export function dualLoginErrorKey(parentErr: unknown, kidErr: unknown): string {
  * Known backend messages are mapped to `errors.api.*`; others use `errors.apiUnknown`.
  */
 export function parseApiError(error: unknown): string {
-  if (!error || typeof error !== 'object') return genericError()
-
-  const err = error as { response?: { data?: unknown } }
-  const data = err.response?.data
-
-  if (!data || typeof data !== 'object') return genericError()
-
-  const obj = data as Record<string, unknown>
+  const obj = getErrorPayload(error)
+  if (!obj) return genericError()
 
   if (typeof obj.detail === 'string') return translateServerMessage(obj.detail)
 

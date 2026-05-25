@@ -13,9 +13,9 @@ import {
   loginWithGoogle,
   signupKid,
   signupKidWithGoogle,
-  parseApiError,
   type KidSignupResponse,
 } from '../api/auth'
+import { parseApiError } from '../api/errors'
 import { useFormErrors } from '../hooks/useFormErrors'
 import { usePageTitle } from '../hooks/usePageTitle'
 import { isEmpty, isValidEmail, validatePasswordField } from '../utils/validation'
