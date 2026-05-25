@@ -7,7 +7,6 @@ interface AuthMessageLayoutProps {
   icon?: string
   titleSize?: 'lg' | 'md'
   children?: ReactNode
-  footer?: ReactNode
   /** Announced when the view updates (e.g. loading → success). */
   statusMessage?: string
   /** Error or detail text; rendered with role="alert", not as the page heading. */
@@ -20,7 +19,6 @@ export default function AuthMessageLayout({
   icon,
   titleSize = 'lg',
   children,
-  footer,
   statusMessage,
   alertMessage,
 }: AuthMessageLayoutProps) {
@@ -57,7 +55,6 @@ export default function AuthMessageLayout({
           {children}
         </div>
       )}
-      {footer}
       <LanguageSwitcher />
     </main>
   )
