@@ -15,7 +15,7 @@ import {
   signupKidWithGoogle,
   type KidSignupResponse,
 } from '../api/auth'
-import { getApiErrorKey } from '../api/errors'
+import { getApiErrorKey, getFieldErrors } from '../api/errors'
 import { useFormErrors } from '../hooks/useFormErrors'
 import { usePageTitle } from '../hooks/usePageTitle'
 import { isEmpty, isValidEmail, validatePasswordField } from '../utils/validation'
@@ -99,7 +99,7 @@ export default function Signup() {
   }
 
   // ── Password signup submit ────────────────────────────────────────────────
-  async function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.SubmitEvent) {
     e.preventDefault()
     if (!role) return
     setErrorKey(null)
@@ -119,6 +119,8 @@ export default function Signup() {
         setKidPending(result)
       }
     } catch (err) {
+      const fields = getFieldErrors(err)
+      if (Object.keys(fields).length > 0) { setFieldErrors(fields); return }
       setErrorKey(getApiErrorKey(err))
     } finally {
       setIsLoading(false)
@@ -126,7 +128,7 @@ export default function Signup() {
   }
 
   // ── Kid Google profile submit ─────────────────────────────────────────────
-  async function handleGoogleKidSubmit(e: React.FormEvent) {
+  async function handleGoogleKidSubmit(e: React.SubmitEvent) {
     e.preventDefault()
     if (!kidGoogleToken) return
     setErrorKey(null)
@@ -141,6 +143,8 @@ export default function Signup() {
       setKidParentEmail(parentEmail)
       setKidPending(result)
     } catch (err) {
+      const fields = getFieldErrors(err)
+      if (Object.keys(fields).length > 0) { setFieldErrors(fields); return }
       setErrorKey(getApiErrorKey(err))
     } finally {
       setIsLoading(false)
@@ -423,15 +427,19 @@ export default function Signup() {
 
           {/* Google sign-in — both parent and kid */}
           <GoogleSignInSection
+            disabled={isLoading}
             onSuccess={async credential => {
               setErrorKey(null)
               resetFieldErrors()
               if (role === 'parent') {
+                setIsLoading(true)
                 try {
                   const tokens = await loginWithGoogle(credential)
                   establishParentSession(tokens, navigate)
                 } catch (err) {
                   setErrorKey(getApiErrorKey(err))
+                } finally {
+                  setIsLoading(false)
                 }
               } else {
                 setKidGoogleToken(credential)
