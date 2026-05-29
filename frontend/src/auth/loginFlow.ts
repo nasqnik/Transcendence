@@ -10,7 +10,7 @@ import {
   isEmailNotVerified,
   isKidNotActiveYet,
 } from '../api/errors'
-import { establishKidSession, establishParentSession } from './session'
+import { establishKidSession, establishParentSession, type NavigateFn } from './session'
 
 export type LoginCredentials =
   | { type: 'password'; identifier: string; password: string }
@@ -20,8 +20,6 @@ export type DualLoginResult =
   | { status: 'success' }
   | { status: 'waiting_for_parent' }
   | { status: 'error'; errorKey: string }
-
-type NavigateFn = (path: string) => void
 
 /** Try parent login, then kid — shared by password and Google on the login page. */
 export async function attemptDualRoleLogin(

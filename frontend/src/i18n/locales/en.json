@@ -110,6 +110,7 @@
     "sendAnother": "Send another invitation"
   },
   "verify": {
+    "title": "Email verification",
     "loading": "Verifying your email...",
     "invalidLink": "This verification link is invalid or has expired.",
     "linkAlreadyUsed": "This link was already used. If you verified your email, continue with the next step below.",

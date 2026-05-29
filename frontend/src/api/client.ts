@@ -64,7 +64,7 @@ client.interceptors.response.use(
 
     const { refreshToken, currentUser, login, logout } = useAuthStore.getState()
 
-    if (!refreshToken) {
+    if (!refreshToken || !currentUser) {
       return Promise.reject(error)
     }
 
@@ -91,7 +91,7 @@ client.interceptors.response.use(
       const { access: newAccessToken, refresh: newRefreshToken } = await refreshPromise
 
       // Save the new tokens — keep everything else the same
-      login(currentUser!, newAccessToken, newRefreshToken)
+      login(currentUser, newAccessToken, newRefreshToken)
 
       // Retry the original request with the new access token
       originalRequest.headers.Authorization = `Bearer ${newAccessToken}`
