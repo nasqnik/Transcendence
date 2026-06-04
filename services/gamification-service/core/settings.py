@@ -20,6 +20,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'rest_framework_simplejwt',
     'drf_spectacular',
+    'gamification',
     'common',
 ]
 
@@ -80,3 +81,13 @@ SIMPLE_JWT = {
     'UPDATE_LAST_LOGIN': False,
     'AUTH_HEADER_TYPES': ('Bearer',),
 }
+
+
+STAT_XP_PER_LEVEL = 100
+OVERALL_XP_PER_STAT_LEVEL = 50
+MAIN_XP_PER_LEVEL = 200
+COINS_PER_MAIN_LEVEL = 25
+
+INTERNAL_SERVICE_TOKEN = os.getenv('INTERNAL_SERVICE_TOKEN')
+if not INTERNAL_SERVICE_TOKEN:
+    raise ImproperlyConfigured("INTERNAL_SERVICE_TOKEN environment variable is required.")

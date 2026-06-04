@@ -78,6 +78,8 @@ services:
       DB_HOST: ${DB_HOST}
       DB_PORT: ${DB_PORT}
       APP_NAME: ${APP_NAME:-KiddoPath}
+      INTERNAL_SERVICE_TOKEN: ${INTERNAL_SERVICE_TOKEN}
+      GAMIFICATION_INTERNAL_URL: ${GAMIFICATION_INTERNAL_URL:-http://gamification-service:8000}
     command: python manage.py runserver 0.0.0.0:8000
 
   gamification-service:
@@ -105,6 +107,7 @@ services:
       DB_HOST: ${DB_HOST}
       DB_PORT: ${DB_PORT}
       APP_NAME: ${APP_NAME:-KiddoPath}
+      INTERNAL_SERVICE_TOKEN: ${INTERNAL_SERVICE_TOKEN}
     command: python manage.py runserver 0.0.0.0:8000
 
   frontend:
@@ -130,6 +133,7 @@ services:
     depends_on:
       - auth-service
       - task-service
+      - gamification-service
       - frontend
     ports:
       - "80:80"
