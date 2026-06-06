@@ -18,6 +18,7 @@ from .serializers import (
     TaskCompletionSerializer,
     TaskCreateSerializer,
     TaskSerializer,
+    TaskUpdateSerializer,
 )
 
 
@@ -87,11 +88,26 @@ class TaskListCreateView(generics.ListCreateAPIView):
         description="Kid retrieves a single one of their own tasks by id.",
         responses=TaskSerializer,
     ),
+    patch=extend_schema(
+        summary='Edit a task',
+        description=(
+            "Kid edits one of their own tasks. Changing the title or "
+            "description re-runs the AI classification (category points / XP); "
+            "editing only the due_date does not."
+        ),
+        request=TaskUpdateSerializer,
+        responses=TaskSerializer,
+    ),
 )
-class TaskDetailView(generics.RetrieveAPIView):
-    serializer_class = TaskSerializer
+class TaskDetailView(generics.RetrieveUpdateAPIView):
     permission_classes = [IsKid]
     lookup_url_kwarg = 'task_id'
+    http_method_names = ['get', 'patch']
+
+    def get_serializer_class(self):
+        if self.request.method == 'PATCH':
+            return TaskUpdateSerializer
+        return TaskSerializer
 
     def get_queryset(self):
         user = self.request.user
@@ -102,6 +118,17 @@ class TaskDetailView(generics.RetrieveAPIView):
                 .prefetch_related('category_rewards')
             )
         return Task.objects.none()
+
+    def update(self, request, *args, **kwargs):
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        self.perform_update(serializer)
+
+        # Re-fetch so the response reflects regenerated category_rewards
+        # (the prefetch cache from get_object() is stale after reclassify).
+        fresh = self.get_queryset().get(pk=instance.pk)
+        return Response(TaskSerializer(fresh).data)
 
 
 @extend_schema_view(
