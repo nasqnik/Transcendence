@@ -26,6 +26,7 @@ services:
     depends_on:
       db:
         condition: service_healthy
+    # remove later
     ports:
       - "8001:8000"
     volumes:
@@ -64,6 +65,7 @@ services:
     depends_on:
       db:
         condition: service_healthy
+    # remove later
     ports:
       - "8002:8000"
     volumes:
@@ -93,6 +95,7 @@ services:
     depends_on:
       db:
         condition: service_healthy
+    # remove later
     ports:
       - "8003:8000"
     volumes:
@@ -119,6 +122,7 @@ services:
     environment:
       VITE_API_URL: /api
       VITE_GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+    # remove later
     ports:
       - "5173:5173"
     volumes:

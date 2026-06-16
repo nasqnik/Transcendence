@@ -67,6 +67,7 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 APP_NAME = os.getenv('APP_NAME', 'KiddoPath')
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
+# in every request, we need to authenticate the user
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'common.authentication.KidJWTAuthentication',

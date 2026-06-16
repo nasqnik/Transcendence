@@ -20,7 +20,7 @@ urlpatterns = [
 #
 # tasks/
 #   GET  -> list tasks
-#   POST -> create task (parent)
+#   POST -> create task
 #
 # tasks/<task_id>/
 #   GET -> get one task
