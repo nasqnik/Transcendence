@@ -113,6 +113,36 @@ services:
       INTERNAL_SERVICE_TOKEN: ${INTERNAL_SERVICE_TOKEN}
     command: python manage.py runserver 0.0.0.0:8000
 
+  analytics-service:
+    build:
+      context: ./services/analytics-service
+      dockerfile: Dockerfile
+      args:
+        DOCKER_UID: ${DOCKER_UID}
+        DOCKER_GID: ${DOCKER_GID}
+    container_name: analytics_service
+    depends_on:
+      db:
+        condition: service_healthy
+    # remove later
+    ports:
+      - "8004:8000"
+    volumes:
+      - ./services/analytics-service:/app
+    env_file:
+      - .env
+    environment:
+      DB_ENGINE: ${DB_ENGINE}
+      DB_NAME: ${ANALYTICS_DB_NAME:-analytics_db}
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_HOST: ${DB_HOST}
+      DB_PORT: ${DB_PORT}
+      APP_NAME: ${APP_NAME:-KiddoPath}
+      INTERNAL_SERVICE_TOKEN: ${INTERNAL_SERVICE_TOKEN}
+      GAMIFICATION_INTERNAL_URL: ${GAMIFICATION_INTERNAL_URL:-http://gamification-service:8000}
+    command: python manage.py runserver 0.0.0.0:8000
+
   frontend:
     build:
       context: ./frontend
@@ -138,6 +168,7 @@ services:
       - auth-service
       - task-service
       - gamification-service
+      - analytics-service
       - frontend
     ports:
       - "80:80"

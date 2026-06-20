@@ -21,6 +21,7 @@ INSTALLED_APPS = [
     'rest_framework_simplejwt',
     'drf_spectacular',
     'common',
+    'analytics',
 ]
 
 MIDDLEWARE = [
@@ -80,3 +81,11 @@ SIMPLE_JWT = {
     'UPDATE_LAST_LOGIN': False,
     'AUTH_HEADER_TYPES': ('Bearer',),
 }
+
+GAMIFICATION_INTERNAL_URL = os.getenv('GAMIFICATION_INTERNAL_URL')
+if not GAMIFICATION_INTERNAL_URL:
+    raise ImproperlyConfigured("GAMIFICATION_INTERNAL_URL environment variable is required.")
+
+INTERNAL_SERVICE_TOKEN = os.getenv('INTERNAL_SERVICE_TOKEN')
+if not INTERNAL_SERVICE_TOKEN:
+    raise ImproperlyConfigured("INTERNAL_SERVICE_TOKEN environment variable is required.")
