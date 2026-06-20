@@ -111,6 +111,7 @@ services:
       DB_PORT: ${DB_PORT}
       APP_NAME: ${APP_NAME:-KiddoPath}
       INTERNAL_SERVICE_TOKEN: ${INTERNAL_SERVICE_TOKEN}
+      ANALYTICS_INTERNAL_URL: ${ANALYTICS_INTERNAL_URL:-http://analytics-service:8000}
     command: python manage.py runserver 0.0.0.0:8000
 
   analytics-service:
