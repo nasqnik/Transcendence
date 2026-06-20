@@ -142,6 +142,7 @@ services:
       APP_NAME: ${APP_NAME:-KiddoPath}
       INTERNAL_SERVICE_TOKEN: ${INTERNAL_SERVICE_TOKEN}
       GAMIFICATION_INTERNAL_URL: ${GAMIFICATION_INTERNAL_URL:-http://gamification-service:8000}
+      TASK_SERVICE_URL: ${TASK_SERVICE_URL:-http://task-service:8000}
     command: python manage.py runserver 0.0.0.0:8000
 
   frontend:

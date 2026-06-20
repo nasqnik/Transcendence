@@ -89,3 +89,7 @@ if not GAMIFICATION_INTERNAL_URL:
 INTERNAL_SERVICE_TOKEN = os.getenv('INTERNAL_SERVICE_TOKEN')
 if not INTERNAL_SERVICE_TOKEN:
     raise ImproperlyConfigured("INTERNAL_SERVICE_TOKEN environment variable is required.")
+
+TASK_SERVICE_URL = os.getenv('TASK_SERVICE_URL')
+if not TASK_SERVICE_URL:
+    raise ImproperlyConfigured("TASK_SERVICE_URL environment variable is required.")

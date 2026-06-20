@@ -35,8 +35,10 @@ class KidDashboardView(APIView):
                 status=status.HTTP_404_NOT_FOUND,
             )
         events = ActivityEvent.objects.filter(kid_id=kid_id)
+        token = request.auth.token.decode('utf-8')
+        completion_rates = services.fetch_completion_rates(kid_id, token)
         return Response({
             'category_breakdown': services.build_category_breakdown(events),
             'daily_trend': services.build_daily_trend(events),
+            'completion_rates': completion_rates,
         })
-    
