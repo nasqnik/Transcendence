@@ -67,11 +67,20 @@ cp -a "$TEMPLATE" "$service_dir"
 
 find "$service_dir" -type f \( -name '*.py' -o -name '*.md' -o -name '*.txt' \) -print0 \
   | while IFS= read -r -d '' file; do
-      sed -i \
+      # old version - breaks on macos (BSD sed's -i needs a backup suffix arg)
+      #sed -i \
+      #  -e "s/__SERVICE_SLUG__/${slug}/g" \
+      #  -e "s/__SERVICE_TITLE__/${service_title}/g" \
+      #  -e "s/__DB_NAME__/${db_name}/g" \
+      #  "$file"
+
+      # new version - works on both GNU and BSD sed
+      tmp="${file}.tmp"
+      sed \
         -e "s/__SERVICE_SLUG__/${slug}/g" \
         -e "s/__SERVICE_TITLE__/${service_title}/g" \
         -e "s/__DB_NAME__/${db_name}/g" \
-        "$file"
+        "$file" > "$tmp" && mv "$tmp" "$file"
     done
 
 cat <<EOF
