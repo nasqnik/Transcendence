@@ -1,4 +1,7 @@
 from collections import defaultdict
+import requests
+from django.conf import settings
+from collections import defaultdict
 
 def build_category_breakdown(events):
     totals = defaultdict(int)
@@ -20,3 +23,29 @@ def build_daily_trend(events):
         {'date': day, 'points': points}
         for day, points in sorted(daily_totals.items())
     ]
+
+def fetch_completion_rates(kid_id, token):
+    try:
+        response = requests.get(
+            f"{settings.TASK_SERVICE_URL}/api/task/completions/",
+            params={'kid_id': str(kid_id)},
+            headers={'Authorization': f'Bearer {token}'},
+            timeout=5,
+        )
+        response.raise_for_status()
+    except requests.RequestException:
+        return None
+    completions = response.json()
+    total = len(completions)
+    if total == 0:
+        return {'total': 0, 'confirmed': 0, 'rejected': 0, 'pending': 0, 'rate': 0}
+    confirmed = sum(1 for c in completions if c['status'] == 'confirmed')
+    rejected = sum(1 for c in completions if c['status'] == 'rejected')
+    pending = sum(1 for c in completions if c['status'] == 'pending')
+    return {
+        'total': total,
+        'confirmed': confirmed,
+        'rejected': rejected,
+        'pending': pending,
+        'rate': round((confirmed / total) * 100, 1),
+    }
