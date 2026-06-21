@@ -115,3 +115,7 @@ COINS_PER_MAIN_LEVEL = 25
 INTERNAL_SERVICE_TOKEN = os.getenv('INTERNAL_SERVICE_TOKEN')
 if not INTERNAL_SERVICE_TOKEN:
     raise ImproperlyConfigured("INTERNAL_SERVICE_TOKEN environment variable is required.")
+
+ANALYTICS_INTERNAL_URL = os.getenv('ANALYTICS_INTERNAL_URL')
+if not ANALYTICS_INTERNAL_URL:
+    raise ImproperlyConfigured("ANALYTICS_INTERNAL_URL environment variable is required.")
