@@ -1,3 +1,5 @@
+import requests
+
 from .models import KidProfile, KidStat, CompletionEvent
 from django.db import transaction
 from django.conf import settings
@@ -38,6 +40,20 @@ def apply_completion(kid_id, completion_id, category_points):
             kid_profile.main_level += 1
             kid_profile.coins += settings.COINS_PER_MAIN_LEVEL
         kid_profile.save()
+
+    try:
+        requests.post(
+            f"{settings.ANALYTICS_INTERNAL_URL}/api/analytics/internal/activity/",
+            json={
+                'completion_id': str(completion_id),
+                'kid_id': str(kid_id),
+                'payload': category_points,
+            },
+            headers={'X-Internal-Token': settings.INTERNAL_SERVICE_TOKEN},
+            timeout=3,
+        )
+    except requests.RequestException:
+        pass
 
     return kid_profile, completion_event
 
