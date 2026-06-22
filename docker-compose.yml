@@ -145,6 +145,35 @@ services:
       TASK_SERVICE_URL: ${TASK_SERVICE_URL:-http://task-service:8000}
     command: python manage.py runserver 0.0.0.0:8000
 
+  notification-service:
+    build:
+      context: ./services/notification-service
+      dockerfile: Dockerfile
+      args:
+        DOCKER_UID: ${DOCKER_UID}
+        DOCKER_GID: ${DOCKER_GID}
+    container_name: notification_service
+    depends_on:
+      db:
+        condition: service_healthy
+    # remove later
+    ports:
+      - "8005:8000"
+    volumes:
+      - ./services/notification-service:/app
+    env_file:
+      - .env
+    environment:
+      DB_ENGINE: ${DB_ENGINE}
+      DB_NAME: ${NOTIFICATION_DB_NAME:-notification_db}
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_HOST: ${DB_HOST}
+      DB_PORT: ${DB_PORT}
+      APP_NAME: ${APP_NAME:-KiddoPath}
+      INTERNAL_SERVICE_TOKEN: ${INTERNAL_SERVICE_TOKEN}
+    command: python manage.py runserver 0.0.0.0:8000
+
   frontend:
     build:
       context: ./frontend
@@ -171,6 +200,7 @@ services:
       - task-service
       - gamification-service
       - analytics-service
+      - notification-service
       - frontend
     ports:
       - "80:80"
