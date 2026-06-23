@@ -5,7 +5,7 @@ from rest_framework.exceptions import APIException
 from .ai_evaluation import apply_classification, classify_task
 from .ai_evaluation.apply import CATEGORIES
 from .models import Task, TaskCategoryReward, TaskCompletion, KidCategoryVisibility
-from .notifications import push_completion_confirmed
+from .notifications import notify_task_submitted, push_completion_confirmed
 
 
 # Review modes returned to the client so the UI knows how to handle submission.
@@ -181,6 +181,8 @@ class TaskCompletionCreateSerializer(serializers.ModelSerializer):
         # Auto-confirmed completions skip parent review, so push here too.
         if new_status == TaskCompletion.Status.CONFIRMED:
             push_completion_confirmed(completion)
+        elif new_status == TaskCompletion.Status.PENDING:
+            notify_task_submitted(completion)
 
         return completion
 

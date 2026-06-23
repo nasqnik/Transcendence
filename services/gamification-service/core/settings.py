@@ -119,3 +119,7 @@ if not INTERNAL_SERVICE_TOKEN:
 ANALYTICS_INTERNAL_URL = os.getenv('ANALYTICS_INTERNAL_URL')
 if not ANALYTICS_INTERNAL_URL:
     raise ImproperlyConfigured("ANALYTICS_INTERNAL_URL environment variable is required.")
+
+NOTIFICATION_INTERNAL_URL = os.getenv('NOTIFICATION_INTERNAL_URL')
+if not NOTIFICATION_INTERNAL_URL:
+    raise ImproperlyConfigured("NOTIFICATION_INTERNAL_URL environment variable is required.")
