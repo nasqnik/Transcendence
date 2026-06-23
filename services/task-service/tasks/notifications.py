@@ -54,3 +54,74 @@ def push_completion_confirmed(completion):
             completion.id,
             exc,
         )
+
+
+def notify_task_confirmed(completion):
+    _push_notification(
+        recipient_id=completion.kid_id,
+        notification_type='task_confirmed',
+        message=f'Your task "{completion.task.title}" was confirmed. Great job.',
+    )
+
+
+def notify_task_rejected(completion):
+    _push_notification(
+        recipient_id=completion.kid_id,
+        notification_type='task_rejected',
+        message=f'Your task "{completion.task.title}" was rejected.',
+    )
+
+
+def notify_task_submitted(completion):
+    try:
+        resp = requests.get(
+            f"{settings.AUTH_INTERNAL_URL}/api/auth/internal/kids/{completion.kid_id}/parent/",
+            headers={'X-Internal-Token': settings.INTERNAL_SERVICE_TOKEN},
+            timeout=PUSH_TIMEOUT_SECONDS,
+        )
+        resp.raise_for_status()
+        parent_id = resp.json()['parent_id']
+        requests.post(
+            f"{settings.NOTIFICATION_INTERNAL_URL}/api/notification/internal/notify/",
+            json={
+                'recipient_id': parent_id,
+                'notification_type': 'task_submitted',
+                'message': 'Your kid submitted a task for review.',
+            },
+            headers={'X-Internal-Token': settings.INTERNAL_SERVICE_TOKEN},
+            timeout=PUSH_TIMEOUT_SECONDS,
+        ).raise_for_status()
+    except requests.RequestException as exc:
+        logger.warning(
+            "Failed to notify parent of submission for kid %s: %s",
+            completion.kid_id,
+            exc,
+        )
+
+
+def _push_notification(recipient_id, notification_type, message):
+    url = f"{settings.NOTIFICATION_INTERNAL_URL}/api/notification/internal/notify/"
+    payload = {
+        'recipient_id': str(recipient_id),
+        'notification_type': notification_type,
+        'message': message,
+    }
+    headers = {
+        'X-Internal-Token': settings.INTERNAL_SERVICE_TOKEN,
+    }
+
+    try:
+        response = requests.post(
+            url,
+            json=payload,
+            headers=headers,
+            timeout=PUSH_TIMEOUT_SECONDS,
+        )
+        response.raise_for_status()
+    except requests.RequestException as exc:
+        logger.warning(
+            "Failed to push %s notification to %s: %s",
+            notification_type,
+            recipient_id,
+            exc,
+        )
