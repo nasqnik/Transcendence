@@ -10,7 +10,11 @@ from common.actors import KidActor, ParentActor
 from common.permissions import IsKid, IsParent
 
 from .models import Task, KidCategoryVisibility, TaskCompletion
-from .notifications import push_completion_confirmed
+from .notifications import (
+    notify_task_confirmed,
+    notify_task_rejected,
+    push_completion_confirmed,
+)
 from .serializers import (
     KidCategoryVisibilitySerializer,
     TaskCompletionCreateSerializer,
@@ -205,6 +209,10 @@ class TaskCompletionReviewView(APIView):
             new_status == TaskCompletion.Status.CONFIRMED
             and completion.status != TaskCompletion.Status.CONFIRMED
         )
+        became_rejected = (
+            new_status == TaskCompletion.Status.REJECTED
+            and completion.status != TaskCompletion.Status.REJECTED
+        )
 
         completion.status = new_status
         completion.review_note = serializer.validated_data['review_note']
@@ -216,6 +224,9 @@ class TaskCompletionReviewView(APIView):
 
         if became_confirmed:
             push_completion_confirmed(completion)
+            notify_task_confirmed(completion)
+        elif became_rejected:
+            notify_task_rejected(completion)
 
         return Response(TaskCompletionSerializer(completion).data)
 
