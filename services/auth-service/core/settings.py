@@ -199,3 +199,7 @@ SIMPLE_JWT = {
     'AUTH_HEADER_TYPES': ('Bearer',),
     'TOKEN_OBTAIN_SERIALIZER': 'users.serializers.CustomTokenObtainPairSerializer',
 }
+
+INTERNAL_SERVICE_TOKEN = os.getenv('INTERNAL_SERVICE_TOKEN')
+if not INTERNAL_SERVICE_TOKEN:
+    raise ImproperlyConfigured("INTERNAL_SERVICE_TOKEN environment variable is required.")
