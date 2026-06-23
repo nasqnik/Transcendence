@@ -4,7 +4,27 @@ from rest_framework import status
 from common.permissions import IsInternalService, IsParent
 from .models import ActivityEvent
 from . import services
+from drf_spectacular.utils import OpenApiParameter, extend_schema
 
+@extend_schema(
+    summary='Ingest a completion event (internal)',
+    description=(
+        'Service-to-service endpoint called by gamification-service after '
+        'a completion is processed. Authenticated by X-Internal-Token. '
+        'Idempotent on completion_id.'
+    ),
+    parameters=[
+        OpenApiParameter(
+            name='X-Internal-Token',
+            type=str,
+            location=OpenApiParameter.HEADER,
+            required=True,
+            description='Shared internal-service secret.',
+        ),
+    ],
+    responses={204: None},
+    auth=[],
+)
 class InternalActivityEventView(APIView):
     authentication_classes = []
     permission_classes = [IsInternalService]
@@ -25,6 +45,14 @@ class InternalActivityEventView(APIView):
         )
         return Response(status=status.HTTP_204_NO_CONTENT)
     
+@extend_schema(
+    summary='Get parent dashboard for a kid',
+    description=(
+        'Parent-only. Returns category breakdown, daily points trend, '
+        'and task completion rates for a guarded kid.'
+    ),
+    responses={200: None},
+)
 class KidDashboardView(APIView):
     permission_classes = [IsParent]
 
