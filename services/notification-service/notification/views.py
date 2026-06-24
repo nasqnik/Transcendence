@@ -5,7 +5,13 @@ from common.permissions import IsInternalService, IsKid, IsParent
 from common.actors import KidActor
 from .models import Notification
 from drf_spectacular.utils import OpenApiParameter, extend_schema
-from .serializers import NotificationCreateSerializer, NotificationSerializer
+from .serializers import (
+    NotificationCreateSerializer,
+    NotificationSerializer,
+    NotificationMarkReadSerializer,
+    UnreadCountSerializer,
+)
+
 
 @extend_schema(
     summary='Create a notification (internal)',
@@ -23,8 +29,12 @@ from .serializers import NotificationCreateSerializer, NotificationSerializer
             description='Shared internal-service secret.',
         ),
     ],
-    responses={204: None},
+    responses={
+        204: None,
+        400: None,
+    },
     auth=[],
+    tags=['Internal'],
 )
 class InternalNotifyView(APIView):
     authentication_classes = []
@@ -40,10 +50,13 @@ class InternalNotifyView(APIView):
         )
         return Response(status=status.HTTP_204_NO_CONTENT)
 
+
 @extend_schema(
     summary='List unread notifications',
     description='Returns all unread notifications for the logged-in kid or parent.',
-     responses=NotificationSerializer(many=True),
+    responses={200: NotificationSerializer(many=True)},
+    auth=[{'BearerAuth': []}],
+    tags=['Notifications'],
 )
 class NotificationListView(APIView):
     permission_classes = [IsKid | IsParent]
@@ -63,7 +76,21 @@ class NotificationListView(APIView):
 @extend_schema(
     summary='Mark a notification as read',
     description='Marks a specific notification as read. Only the recipient can mark their own notifications.',
-    responses={200: None},
+    parameters=[
+        OpenApiParameter(
+            name='notification_id',
+            type=str,
+            location=OpenApiParameter.PATH,
+            required=True,
+            description='UUID of the notification to mark as read.',
+        ),
+    ],
+    responses={
+        200: NotificationMarkReadSerializer,
+        404: None,
+    },
+    auth=[{'BearerAuth': []}],
+    tags=['Notifications'],
 )
 class NotificationMarkReadView(APIView):
     permission_classes = [IsKid | IsParent]
@@ -91,7 +118,9 @@ class NotificationMarkReadView(APIView):
 @extend_schema(
     summary='Get unread notification count',
     description='Returns the count of unread notifications for the logged-in kid or parent. Used for badge display.',
-    responses={200: None},
+    responses={200: UnreadCountSerializer},
+    auth=[{'BearerAuth': []}],
+    tags=['Notifications'],
 )
 class NotificationUnreadCountView(APIView):
     permission_classes = [IsKid | IsParent]
