@@ -20,6 +20,8 @@ class ShopListView(APIView):
         summary='List all active shop items',
         description='Kid views all available avatar items in the shop.',
         responses=AvatarItemSerializer(many=True),
+        auth=[{'BearerAuth': []}],
+        tags=['Shop'],
     )
     def get(self, request):
         items = AvatarItem.objects.filter(is_active=True)
@@ -34,6 +36,8 @@ class PurchaseView(APIView):
         description='Kid spends coins to unlock an avatar item. Coins are deducted from gamification-service.',
         request=PurchaseSerializer,
         responses={200: None},
+        auth=[{'BearerAuth': []}],
+        tags=['Shop'],
     )
     def post(self, request):
         serializer = PurchaseSerializer(data=request.data)
@@ -102,6 +106,8 @@ class AvatarView(APIView):
         summary='Get kid avatar',
         description='Kid views their current avatar state including owned and equipped items.',
         responses=KidAvatarSerializer,
+        auth=[{'BearerAuth': []}],
+        tags=['Avatar'],
     )
     def get(self, request):
         avatar, _ = KidAvatar.objects.get_or_create(kid_id=request.user.kid_id)
@@ -115,6 +121,8 @@ class EquipItemView(APIView):
         description='Kid equips an owned avatar item to correct slot.',
         request=PurchaseSerializer,
         responses=KidAvatarSerializer,
+        auth=[{'BearerAuth': []}],
+        tags=['Avatar'],
     )
     def patch(self, request):
         serializer = PurchaseSerializer(data=request.data)
