@@ -76,3 +76,13 @@ def apply_completion(kid_id, completion_id, category_points):
 
     return kid_profile, completion_event
 
+
+def deduct_coins(kid_id, amount):
+    with transaction.atomic():
+        profile, _ = KidProfile.objects.select_for_update().get_or_create(kid_id=kid_id)
+        if profile.coins < amount:
+            return False, profile.coins
+        profile.coins -= amount
+        profile.save(update_fields=['coins', 'updated_at'])
+        return True, profile.coins
+
