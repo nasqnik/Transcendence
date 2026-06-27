@@ -178,6 +178,36 @@ services:
       INTERNAL_SERVICE_TOKEN: ${INTERNAL_SERVICE_TOKEN}
     command: python manage.py runserver 0.0.0.0:8000
 
+  catalog-service:
+    build:
+      context: ./services/catalog-service
+      dockerfile: Dockerfile
+      args:
+        DOCKER_UID: ${DOCKER_UID}
+        DOCKER_GID: ${DOCKER_GID}
+    container_name: catalog_service
+    depends_on:
+      db:
+        condition: service_healthy
+    # remove later
+    ports:
+      - "8006:8000"
+    volumes:
+      - ./services/catalog-service:/app
+    env_file:
+      - .env
+    environment:
+      DB_ENGINE: ${DB_ENGINE}
+      DB_NAME: ${CATALOG_DB_NAME:-catalog_db}
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_HOST: ${DB_HOST}
+      DB_PORT: ${DB_PORT}
+      APP_NAME: ${APP_NAME:-KiddoPath}
+      INTERNAL_SERVICE_TOKEN: ${INTERNAL_SERVICE_TOKEN}
+      GAMIFICATION_INTERNAL_URL: ${GAMIFICATION_INTERNAL_URL:-http://gamification-service:8000}
+    command: python manage.py runserver 0.0.0.0:8000
+
   frontend:
     build:
       context: ./frontend
@@ -205,6 +235,7 @@ services:
       - gamification-service
       - analytics-service
       - notification-service
+      - catalog-service
       - frontend
     ports:
       - "80:80"
