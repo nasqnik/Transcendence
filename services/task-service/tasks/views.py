@@ -26,6 +26,7 @@ from .serializers import (
     TaskSerializer,
     TaskUpdateSerializer,
 )
+from .throttles import KidAIClassifyThrottle
 
 
 @extend_schema_view(
@@ -47,6 +48,7 @@ from .serializers import (
     ),
 )
 class TaskListCreateView(generics.ListCreateAPIView):
+    throttle_classes = [KidAIClassifyThrottle]
     def get_queryset(self):
         user = self.request.user
         if isinstance(user, KidActor):
@@ -123,6 +125,15 @@ class TaskDetailView(generics.RetrieveUpdateAPIView):
     permission_classes = [IsKid]
     lookup_url_kwarg = 'task_id'
     http_method_names = ['get', 'patch']
+
+    def get_throttles(self):
+        if self.request.method != 'PATCH':
+            return []
+        instance = self.get_object()
+        serializer = TaskUpdateSerializer(instance, data=self.request.data, partial=True)
+        if serializer.is_valid() and task_fields_text_changed(instance, serializer.validated_data):
+            return [KidAIClassifyThrottle()]
+        return []
 
     def get_serializer_class(self):
         if self.request.method == 'PATCH':
