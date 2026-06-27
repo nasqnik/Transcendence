@@ -14,7 +14,7 @@ SERVICES := $(AUTH_SERVICE) $(TASK_SERVICE) $(GAMIFICATION_SERVICE) $(ANALYTICS_
 
 .PHONY: all up down build build-all restart logs ps shell clean fclean ssl ssl-if-missing migrate init-dbs seed-dev \
         up-front build-front restart-front logs-front shell-front \
-        logs-auth shell-auth logs-task shell-task restart-task
+        logs-auth shell-auth logs-task shell-task restart-task seed-catalog
 
 all: ssl-if-missing
 	docker compose up -d --build
@@ -56,6 +56,10 @@ migrate:
 seed-dev:
 	@echo "==> seed dev parent + kid (auth-service)"
 	@docker compose exec $(AUTH_SERVICE) python manage.py seed_dev_users
+
+seed-catalog:
+	@echo "==> seed catalog items (catalog-service)"
+	@docker compose exec $(CATALOG_SERVICE) python manage.py seed_catalog
 
 ssl-if-missing:
 	@test -f $(SSL_CERT) && test -f $(SSL_KEY) || $(MAKE) ssl
