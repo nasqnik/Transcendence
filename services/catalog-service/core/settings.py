@@ -12,7 +12,7 @@ if not SECRET_KEY:
 
 DEBUG = True
 
-ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'analytics-service']
+ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'catalog-service']
 
 INSTALLED_APPS = [
     'django.contrib.contenttypes',
@@ -21,7 +21,7 @@ INSTALLED_APPS = [
     'rest_framework_simplejwt',
     'drf_spectacular',
     'common',
-    'analytics',
+    'catalog',
 ]
 
 MIDDLEWARE = [
@@ -49,7 +49,7 @@ WSGI_APPLICATION = 'core.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': os.getenv('DB_ENGINE', 'django.db.backends.postgresql'),
-        'NAME': os.getenv('DB_NAME', 'analytics_db'),
+        'NAME': os.getenv('DB_NAME', 'catalog_db'),
         'USER': os.getenv('DB_USER', 'transcendence'),
         'PASSWORD': os.getenv('DB_PASSWORD', 'transcendence'),
         'HOST': os.getenv('DB_HOST', 'db'),
@@ -80,8 +80,8 @@ REST_FRAMEWORK = {
 }
 
 SPECTACULAR_SETTINGS = {
-    'TITLE': f'{APP_NAME} Analytics API',
-    'DESCRIPTION': 'Analytics service for KiddoPath.',
+    'TITLE': f'{APP_NAME} Catalog API',
+    'DESCRIPTION': 'Catalog service for KiddoPath.',
     'VERSION': '1.0.0',
     'SERVE_INCLUDE_SCHEMA': False,
     'SWAGGER_UI_SETTINGS': {
@@ -114,7 +114,3 @@ if not GAMIFICATION_INTERNAL_URL:
 INTERNAL_SERVICE_TOKEN = os.getenv('INTERNAL_SERVICE_TOKEN')
 if not INTERNAL_SERVICE_TOKEN:
     raise ImproperlyConfigured("INTERNAL_SERVICE_TOKEN environment variable is required.")
-
-TASK_SERVICE_URL = os.getenv('TASK_SERVICE_URL')
-if not TASK_SERVICE_URL:
-    raise ImproperlyConfigured("TASK_SERVICE_URL environment variable is required.")
