@@ -69,7 +69,7 @@ class PurchaseView(APIView):
                 'amount': item.coin_cost,
                 'reason': 'avatar_purchase'
                 },
-                headers={'X-Internal-Secret': settings.INTERNAL_SERVICE_TOKEN},
+                headers={'X-Internal-Token': settings.INTERNAL_SERVICE_TOKEN},
                 timeout=5
             )
             resp.raise_for_status()

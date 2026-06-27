@@ -6,11 +6,12 @@ from rest_framework import status
 from common.permissions import IsInternalService, IsKid, IsParent
 from .models import KidStat, KidProfile
 from .serializers import (
+    CoinDeductSerializer,
     CompletionIngestSerializer,
     KidStatSerializer,
     KidProfileSerializer,
 )
-from .engine import apply_completion
+from .engine import apply_completion, deduct_coins
 
 
 @extend_schema(
@@ -48,6 +49,48 @@ class InternalCompletionView(APIView):
             category_points=data['category_points'],
         )
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+@extend_schema(
+    summary='Deduct coins from a kid profile (internal)',
+    description=(
+        'Service-to-service endpoint called by catalog-service when a kid '
+        'purchases an avatar item. Uses row locking to prevent double-spend.'
+    ),
+    request=CoinDeductSerializer,
+    parameters=[
+        OpenApiParameter(
+            name='X-Internal-Token',
+            type=str,
+            location=OpenApiParameter.HEADER,
+            required=True,
+            description='Shared internal-service secret.',
+        ),
+    ],
+    auth=[],
+)
+class InternalCoinDeductView(APIView):
+    authentication_classes = []
+    permission_classes = [IsInternalService]
+
+    def post(self, request):
+        serializer = CoinDeductSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        data = serializer.validated_data
+
+        success, remaining_coins = deduct_coins(
+            kid_id=data['kid_id'],
+            amount=data['amount'],
+        )
+        if success:
+            return Response({
+                'success': True,
+                'remaining_coins': remaining_coins,
+            })
+        return Response({
+            'success': False,
+            'reason': 'insufficient_coins',
+        })
 
 
 @extend_schema(
