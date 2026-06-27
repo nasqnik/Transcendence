@@ -1,3 +1,4 @@
+from django.http import StreamingHttpResponse
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from drf_spectacular.utils import extend_schema, extend_schema_view
@@ -9,6 +10,7 @@ from common.actors import KidActor, ParentActor
 # permissions in settings.py
 from common.permissions import IsKid, IsParent
 
+from .ai_evaluation.streaming import stream_task_create_events, stream_task_update_events, task_fields_text_changed
 from .models import Task, KidCategoryVisibility, TaskCompletion
 from .notifications import (
     notify_task_confirmed,
@@ -33,13 +35,15 @@ from .serializers import (
         responses=TaskSerializer(many=True),
     ),
     post=extend_schema(
-        summary='Create a task',
+        summary='Create a task (streaming AI)',
         description=(
-            'Kid creates a task. The AI scores each category, writes a '
-            'summary, and sets xp_reward as the sum of the category points.'
+            'Kid creates a task. OpenRouter tokens stream as SSE (`token` events), '
+            'then a `done` event saves the same classification to the database and '
+            'returns the created task. On failure, an `error` event is sent and '
+            'nothing is saved.'
         ),
         request=TaskCreateSerializer,
-        responses=TaskSerializer,
+        responses={200: {'description': 'text/event-stream'}},
     ),
 )
 class TaskListCreateView(generics.ListCreateAPIView):
@@ -74,16 +78,23 @@ class TaskListCreateView(generics.ListCreateAPIView):
             return [IsKid()]
         return super().get_permissions()
 
-    def perform_create(self, serializer):
-        kid_id = self.request.user.kid_id
-        serializer.save(kid_id=kid_id, created_by=kid_id)
-
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        self.perform_create(serializer)
-        out = TaskSerializer(serializer.instance)
-        return Response(out.data, status=status.HTTP_201_CREATED)
+        data = serializer.validated_data
+
+        response = StreamingHttpResponse(
+            stream_task_create_events(
+                request.user.kid_id,
+                title=data['title'],
+                description=data.get('description', ''),
+                due_date=data.get('due_date'),
+            ),
+            content_type='text/event-stream; charset=utf-8',
+        )
+        response['Cache-Control'] = 'no-cache'
+        response['X-Accel-Buffering'] = 'no'
+        return response
 
 
 @extend_schema_view(
@@ -95,12 +106,17 @@ class TaskListCreateView(generics.ListCreateAPIView):
     patch=extend_schema(
         summary='Edit a task',
         description=(
-            "Kid edits one of their own tasks. Changing the title or "
-            "description re-runs the AI classification (category points / XP); "
-            "editing only the due_date does not."
+            'Kid edits one of their own tasks. Changing title or description '
+            'streams AI re-classification as SSE (same events as create), then '
+            'saves the result. Editing only due_date returns normal JSON immediately.'
         ),
         request=TaskUpdateSerializer,
-        responses=TaskSerializer,
+        responses={
+            200: {
+                'description': 'text/event-stream when title/description change; '
+                'Task JSON when only due_date changes',
+            },
+        },
     ),
 )
 class TaskDetailView(generics.RetrieveUpdateAPIView):
@@ -127,10 +143,21 @@ class TaskDetailView(generics.RetrieveUpdateAPIView):
         instance = self.get_object()
         serializer = self.get_serializer(instance, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
-        self.perform_update(serializer)
+        data = serializer.validated_data
 
-        # Re-fetch so the response reflects regenerated category_rewards
-        # (the prefetch cache from get_object() is stale after reclassify).
+        if task_fields_text_changed(instance, data):
+            response = StreamingHttpResponse(
+                stream_task_update_events(instance.pk, data),
+                content_type='text/event-stream; charset=utf-8',
+            )
+            response['Cache-Control'] = 'no-cache'
+            response['X-Accel-Buffering'] = 'no'
+            return response
+
+        for attr, value in data.items():
+            setattr(instance, attr, value)
+        instance.save()
+
         fresh = self.get_queryset().get(pk=instance.pk)
         return Response(TaskSerializer(fresh).data)
 
