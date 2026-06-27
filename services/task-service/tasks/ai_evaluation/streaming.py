@@ -4,6 +4,7 @@ from django.conf import settings
 from django.db import transaction
 from openai import (
     APIConnectionError,
+    APIStatusError,
     APITimeoutError,
     AuthenticationError,
     OpenAI,
@@ -13,6 +14,14 @@ from openai import (
 from ..models import Task
 from .ai_evaluation import CLASSIFY_TASK_SYSTEM_PROMPT
 from .apply import apply_classification, compute_xp_reward
+from .errors import (
+    AIAuthenticationError,
+    AIError,
+    AIInvalidResponse,
+    AIRateLimited,
+    AIServiceUnavailable,
+)
+from .validation import validate_classification
 
 
 def _get_client():
@@ -37,6 +46,22 @@ def task_fields_text_changed(instance, validated_data):
     )
 
 
+def _raise_ai_error(exc):
+    if isinstance(exc, RateLimitError):
+        raise AIRateLimited('OpenRouter rate limit reached. Try again later.') from exc
+    if isinstance(exc, AuthenticationError):
+        raise AIAuthenticationError('OpenRouter authentication failed.') from exc
+    if isinstance(exc, (APIConnectionError, APITimeoutError)):
+        raise AIServiceUnavailable(
+            'Could not reach OpenRouter. Check your connection and try again.'
+        ) from exc
+    if isinstance(exc, APIStatusError) and exc.status_code >= 500:
+        raise AIServiceUnavailable('OpenRouter is temporarily unavailable.') from exc
+    if isinstance(exc, APIStatusError):
+        raise AIServiceUnavailable(f'OpenRouter request failed ({exc.status_code}).') from exc
+    raise exc
+
+
 def iter_classification_tokens(
     task_description,
     *,
@@ -57,21 +82,16 @@ def iter_classification_tokens(
             ],
             stream=True,
         )
-    except RateLimitError as exc:
-        raise RuntimeError('OpenRouter rate limit reached. Try again later.') from exc
-    except AuthenticationError as exc:
-        raise RuntimeError('OpenRouter authentication failed.') from exc
-    except (APIConnectionError, APITimeoutError) as exc:
-        raise RuntimeError(
-            'Could not reach OpenRouter. Check your connection and try again.'
-        ) from exc
-
-    for chunk in stream:
-        if not chunk.choices:
-            continue
-        delta = chunk.choices[0].delta.content
-        if delta:
-            yield delta
+        for chunk in stream:
+            if not chunk.choices:
+                continue
+            delta = chunk.choices[0].delta.content
+            if delta:
+                yield delta
+    except AIError:
+        raise
+    except Exception as exc:
+        _raise_ai_error(exc)
 
 
 def sse_event(event, data):
@@ -79,12 +99,29 @@ def sse_event(event, data):
     return f'event: {event}\ndata: {payload}\n\n'
 
 
+def sse_error(*, code, message, **extra):
+    return sse_event('error', {'code': code, 'message': message, **extra})
+
+
 def _parse_classification_buffer(buffer):
     content = ''.join(buffer).strip()
+    if not content:
+        return None, {
+            'code': AIInvalidResponse.code,
+            'message': 'Model returned an empty response.',
+        }
     try:
-        return json.loads(content), None
+        parsed = json.loads(content)
     except json.JSONDecodeError:
-        return None, {'message': 'Model returned invalid JSON.', 'raw': content}
+        return None, {
+            'code': AIInvalidResponse.code,
+            'message': 'Model returned invalid JSON.',
+            'raw': content,
+        }
+    try:
+        return validate_classification(parsed), None
+    except AIInvalidResponse as exc:
+        return None, {'code': exc.code, 'message': exc.message, 'raw': content}
 
 
 def _yield_token_events(text, buffer):
@@ -129,8 +166,13 @@ def stream_task_create_events(kid_id, *, title, description, due_date):
         task = Task.objects.prefetch_related('category_rewards').get(pk=task.pk)
         yield sse_event('done', _done_payload(task, parsed))
 
-    except RuntimeError as exc:
-        yield sse_event('error', {'message': str(exc)})
+    except AIError as exc:
+        yield sse_error(code=exc.code, message=exc.message)
+    except Exception:
+        yield sse_error(
+            code='ai_error',
+            message='Unexpected error during AI classification.',
+        )
 
 
 def stream_task_update_events(task_id, validated_data):
@@ -138,7 +180,12 @@ def stream_task_update_events(task_id, validated_data):
     buffer = []
 
     try:
-        task = Task.objects.get(pk=task_id)
+        try:
+            task = Task.objects.get(pk=task_id)
+        except Task.DoesNotExist:
+            yield sse_error(code='not_found', message='Task not found.')
+            return
+
         new_title = validated_data.get('title', task.title)
         new_description = validated_data.get('description', task.description)
         text = task_classification_text(new_title, new_description)
@@ -165,7 +212,10 @@ def stream_task_update_events(task_id, validated_data):
         task = Task.objects.prefetch_related('category_rewards').get(pk=task_id)
         yield sse_event('done', _done_payload(task, parsed))
 
-    except Task.DoesNotExist:
-        yield sse_event('error', {'message': 'Task not found.'})
-    except RuntimeError as exc:
-        yield sse_event('error', {'message': str(exc)})
+    except AIError as exc:
+        yield sse_error(code=exc.code, message=exc.message)
+    except Exception:
+        yield sse_error(
+            code='ai_error',
+            message='Unexpected error during AI classification.',
+        )
