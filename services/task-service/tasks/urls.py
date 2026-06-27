@@ -20,10 +20,11 @@ urlpatterns = [
 #
 # tasks/
 #   GET  -> list tasks
-#   POST -> create task
+#   POST -> create task (SSE stream, then save)
 #
 # tasks/<task_id>/
-#   GET -> get one task
+#   GET   -> get one task
+#   PATCH -> edit task (SSE if title/description change; JSON if due_date only)
 #
 # completions/
 #   GET  -> list completions

@@ -66,6 +66,9 @@ OPENROUTER_API_KEY = os.getenv('OPENROUTER_API_KEY')
 if not OPENROUTER_API_KEY:
     raise ImproperlyConfigured("OPENROUTER_API_KEY environment variable is required.")
 
+OPENROUTER_MODEL = os.getenv('OPENROUTER_MODEL', 'openai/gpt-4o-mini')
+OPENROUTER_TIMEOUT = float(os.getenv('OPENROUTER_TIMEOUT', '60'))
+
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 APP_NAME = os.getenv('APP_NAME', 'KiddoPath')
