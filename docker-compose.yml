@@ -15,6 +15,13 @@ services:
       timeout: 5s
       retries: 10
 
+  redis:
+    image: redis:7-alpine
+    container_name: redis_broker
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+
   auth-service:
     build:
       context: ./services/auth-service
@@ -160,6 +167,8 @@ services:
     depends_on:
       db:
         condition: service_healthy
+      redis:
+        condition: service_started
     # remove later
     ports:
       - "8005:8000"
@@ -176,7 +185,8 @@ services:
       DB_PORT: ${DB_PORT}
       APP_NAME: ${APP_NAME:-KiddoPath}
       INTERNAL_SERVICE_TOKEN: ${INTERNAL_SERVICE_TOKEN}
-    command: python manage.py runserver 0.0.0.0:8000
+      REDIS_URL: redis://redis:6379
+    command: daphne -b 0.0.0.0 -p 8000 core.asgi:application
 
   catalog-service:
     build:
