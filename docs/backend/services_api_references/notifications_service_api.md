@@ -71,6 +71,43 @@ Returns `404` if the notification does not belong to the authenticated user.
 - `recipient_id` is the user ID of the kid or parent to notify.
 - `notification_type` must be one of the values listed above.
 
+## WebSocket (Real-time Notifications)
+
+Connect via Websocket to receive notifications in real-time without polling.
+
+**URL:**
+
+ws://<host>/ws/notifications/?token=<JWT_ACCESS_TOKEN>
+
+**Auth:** Pass the JWT access token as a query parameter `token=` -WebSocket connections cannot send HTTP headers, so the token goes in the URL.
+
+**Connection example (browser):**
+```javascript
+const token = "<KID_OR_PARENT_ACCESS_TOKEN>";
+const ws = new WebSocket(`ws://localhost:8005/ws/notifications/?token=${token}`);
+
+ws.onopen = () => console.log("Connected");
+ws.onmessage = (e) => console.log("Notification:", JSON.parse(e.data));
+ws.onclose = (e) => console.log("Disconnected:", e.code);
+```
+
+**Message shape (received from server):**
+```json
+{
+  "id": "<uuid>",
+  "notification_type": "task_confirmed",
+  "message": "Your task was confirmed. Great job.",
+  "is_read": false,
+  "created_at": "2026-06-28T07:26:39.386603+00:00"
+}
+```
+
+**Behaviour:**
+- Server sends a message instantly when a new notification is created for the connected user
+- Connection stays open until the client disconnects or the token expires
+- Disconnection is handled gracefully — reconnect by opening a new WebSocket connection
+- Both kids and parents can connect — each user only receives their own notifications
+
 ## Misc
 
 | Method | Path | Purpose |
