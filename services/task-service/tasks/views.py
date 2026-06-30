@@ -70,7 +70,6 @@ class TaskListCreateView(generics.ListCreateAPIView):
         return context
 
     def get_serializer_class(self):
-        # TODO: POST -> TaskCreateSerializer, GET -> TaskSerializer
         if self.request.method == 'POST':
             return TaskCreateSerializer
         return TaskSerializer
@@ -120,11 +119,19 @@ class TaskListCreateView(generics.ListCreateAPIView):
             },
         },
     ),
+    delete=extend_schema(
+        summary='Delete a task',
+        description=(
+            "Kid soft-deletes one of their own tasks (sets is_active=false). "
+            "The task disappears from list/get; completion history is kept."
+        ),
+        responses={204: None},
+    ),
 )
-class TaskDetailView(generics.RetrieveUpdateAPIView):
+class TaskDetailView(generics.RetrieveUpdateDestroyAPIView):
     permission_classes = [IsKid]
     lookup_url_kwarg = 'task_id'
-    http_method_names = ['get', 'patch']
+    http_method_names = ['get', 'patch', 'delete']
 
     def get_throttles(self):
         if self.request.method != 'PATCH':
@@ -171,6 +178,10 @@ class TaskDetailView(generics.RetrieveUpdateAPIView):
 
         fresh = self.get_queryset().get(pk=instance.pk)
         return Response(TaskSerializer(fresh).data)
+
+    def perform_destroy(self, instance):
+        instance.is_active = False
+        instance.save(update_fields=['is_active'])
 
 
 @extend_schema_view(
