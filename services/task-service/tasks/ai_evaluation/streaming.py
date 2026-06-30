@@ -126,9 +126,9 @@ def _parse_classification_buffer(buffer):
 
 def _yield_token_events(text, buffer):
     for token in iter_classification_tokens(text):
+        # buffer is the whole massage that we are saving
         buffer.append(token)
         yield sse_event('token', {'text': token})
-
 
 def _done_payload(task, parsed):
     from ..serializers import TaskSerializer
@@ -145,12 +145,21 @@ def stream_task_create_events(kid_id, *, title, description, due_date):
     buffer = []
 
     try:
+        # yield dont work as return, it like returning multiple values
+        # so every time we are reseving a chunk, we are yielding it to the client
+        # we call the chunck SSE event which is 
         yield from _yield_token_events(text, buffer)
+        # load the buffer and parse it
         parsed, error = _parse_classification_buffer(buffer)
         if error:
             yield sse_event('error', error)
             return
 
+        # transaction.atomic() — why we use `with` here:
+        # - `with` runs a block and always runs cleanup when it ends (success or error).
+        # - `transaction.atomic()` wraps DB writes in one transaction:
+        #     • all steps succeed → COMMIT (task + categories + xp saved together)
+        #     • any step fails   → ROLLBACK (nothing partial left in the DB)
         with transaction.atomic():
             task = Task.objects.create(
                 kid_id=kid_id,
@@ -163,6 +172,7 @@ def stream_task_create_events(kid_id, *, title, description, due_date):
             task.xp_reward = compute_xp_reward(parsed)
             task.save(update_fields=['xp_reward'])
 
+        # category_rewards live in another table, linked to the task + so will load it from there to be added to the responce
         task = Task.objects.prefetch_related('category_rewards').get(pk=task.pk)
         yield sse_event('done', _done_payload(task, parsed))
 
