@@ -23,8 +23,9 @@ urlpatterns = [
 #   POST -> create task (SSE stream, then save)
 #
 # tasks/<task_id>/
-#   GET   -> get one task
-#   PATCH -> edit task (SSE if title/description change; JSON if due_date only)
+#   GET    -> get one task
+#   PATCH  -> edit task (SSE if title/description change; JSON if due_date only)
+#   DELETE -> soft-delete task (is_active=false)
 #
 # completions/
 #   GET  -> list completions
