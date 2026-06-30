@@ -77,17 +77,18 @@ Connect via Websocket to receive notifications in real-time without polling.
 
 **URL:**
 
-ws://<host>/ws/notifications/?token=<JWT_ACCESS_TOKEN>
+wss://<localhost>/ws/notifications/?token=<JWT_ACCESS_TOKEN>
 
 **Auth:** Pass the JWT access token as a query parameter `token=` -WebSocket connections cannot send HTTP headers, so the token goes in the URL.
 
 **Connection example (browser):**
 ```javascript
 const token = "<KID_OR_PARENT_ACCESS_TOKEN>";
-const ws = new WebSocket(`ws://localhost:8005/ws/notifications/?token=${token}`);
+const ws = new WebSocket(`wss://localhost/ws/notifications/?token=${token}`);
 
 ws.onopen = () => console.log("Connected");
 ws.onmessage = (e) => console.log("Notification:", JSON.parse(e.data));
+ws.onerror = (e) => console.log("❌ Error:", e);
 ws.onclose = (e) => console.log("Disconnected:", e.code);
 ```
 
