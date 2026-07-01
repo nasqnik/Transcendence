@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { createTask, type CreateTaskInput } from '../../api/tasks'
 import { type Task } from '../../constants/categories'
+import { useFocusTrap } from '../../hooks/useFocusTrap'
 
 interface Props {
   onClose: () => void
@@ -27,6 +28,8 @@ export default function AddTaskModal({ onClose }: Props) {
     document.addEventListener('mousedown', handleClickOutside)
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [onClose])
+
+  useFocusTrap(cardRef, onClose)
 
   const { mutate, isPending, isError } = useMutation({
     mutationFn: createTask,
@@ -80,17 +83,24 @@ export default function AddTaskModal({ onClose }: Props) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-      <div ref={cardRef} className="bg-white rounded-2xl w-full max-w-md mx-4">
+      <div
+        ref={cardRef}
+        tabIndex={-1}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="add-task-heading"
+        className="bg-white rounded-2xl w-full max-w-md mx-4"
+      >
 
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
-          <h2 className="font-heading text-xl font-bold text-gray-900">
+          <h2 id="add-task-heading" className="font-heading text-xl font-bold text-gray-900">
             {t('tasks.createTask')}
           </h2>
           <button
             type="button"
             onClick={onClose}
-            aria-label="Close"
+            aria-label={t('common.close')}
             className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 focus-ring transition-colors text-gray-400 hover:text-gray-600"
           >
             ✕
@@ -112,7 +122,7 @@ export default function AddTaskModal({ onClose }: Props) {
               onChange={e => setTitle(e.target.value)}
               required
               autoFocus
-              className="w-full px-4 py-2.5 rounded-xl border border-gray-200 font-body text-sm text-gray-900 placeholder-gray-400 focus-ring outline-none"
+              className="w-full px-4 py-2.5 rounded-xl border border-gray-300 font-body text-sm text-gray-900 placeholder-gray-400 focus-ring outline-none"
               placeholder={t('tasks.title')}
             />
           </div>
@@ -127,7 +137,7 @@ export default function AddTaskModal({ onClose }: Props) {
               value={description}
               onChange={e => setDescription(e.target.value)}
               rows={3}
-              className="w-full px-4 py-2.5 rounded-xl border border-gray-200 font-body text-sm text-gray-900 placeholder-gray-400 focus-ring outline-none resize-none"
+              className="w-full px-4 py-2.5 rounded-xl border border-gray-300 font-body text-sm text-gray-900 placeholder-gray-400 focus-ring outline-none resize-none"
               placeholder={t('tasks.description')}
             />
           </div>
@@ -143,18 +153,18 @@ export default function AddTaskModal({ onClose }: Props) {
               value={dueDate}
               min={today}
               onChange={e => setDueDate(e.target.value)}
-              className="w-full px-4 py-2.5 rounded-xl border border-gray-200 font-body text-sm text-gray-900 focus-ring outline-none"
+              className="w-full px-4 py-2.5 rounded-xl border border-gray-300 font-body text-sm text-gray-900 focus-ring outline-none"
             />
           </div>
 
           {/* AI hint */}
           <p className="font-body text-xs text-gray-400">
-            ✨ {t('tasks.aiHint')}
+            <span aria-hidden="true">✨</span> {t('tasks.aiHint')}
           </p>
 
           {/* Error */}
           {isError && (
-            <p role="alert" className="font-body text-sm text-danger-500">
+            <p role="alert" className="font-body text-sm text-danger-700">
               {t('errors.generic')}
             </p>
           )}
@@ -163,7 +173,7 @@ export default function AddTaskModal({ onClose }: Props) {
           <button
             type="submit"
             disabled={!title.trim() || isPending}
-            className="w-full py-3 rounded-xl bg-primary-500 text-white font-body font-semibold text-sm hover:bg-primary-600 active:bg-primary-700 focus-ring transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full py-3 rounded-xl bg-primary-600 text-white font-body font-semibold text-sm hover:bg-primary-700 active:bg-primary-700 focus-ring transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isPending ? t('tasks.creating') : t('tasks.createTaskSubmit')}
           </button>

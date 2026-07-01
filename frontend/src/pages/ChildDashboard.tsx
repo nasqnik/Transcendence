@@ -9,9 +9,11 @@ export default function ChildDashboard() {
 
   return (
     <main
+      id="main-content"
       aria-labelledby="dashboard-heading"
       className="flex-1 p-6 grid grid-cols-3 gap-6 overflow-auto"
     >
+      <h1 id="dashboard-heading" className="sr-only">{t('kidDash.dashboardMain')}</h1>
       <div className="col-span-2">
         <TodaysTasks />
       </div>

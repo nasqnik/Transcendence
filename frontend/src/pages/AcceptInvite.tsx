@@ -27,6 +27,8 @@ import {
   acceptInvitePath,
   clearPendingInviteToken,
   savePendingInviteToken,
+  markPendingInviteRegistered,
+  wasPendingInviteRegistered,
 } from '../utils/inviteToken'
 import { useAuthHydrated } from '../hooks/useAuthHydrated'
 import { useFormErrors } from '../hooks/useFormErrors'
@@ -187,6 +189,7 @@ export default function AcceptInvite() {
         // No account yet — register, then ask them to verify email before coming back
         try {
           await registerParent(invitation.invite_email, username, password)
+          markPendingInviteRegistered()
           setState({
             status: 'verify_email',
             email: invitation.invite_email,
@@ -346,7 +349,9 @@ export default function AcceptInvite() {
           />
 
           <Button variant="primary" type="submit" disabled={isSubmitting}>
-            {isSubmitting ? t('invite.accepting') : t('invite.accept')}
+            {isSubmitting
+              ? t('invite.accepting')
+              : wasPendingInviteRegistered() ? t('invite.loginToAccept') : t('invite.accept')}
           </Button>
         </form>
 

@@ -34,7 +34,7 @@ export default function Input({
       aria-describedby={describedBy}
       className={[
         'font-body w-full px-4 py-3 rounded-xl border-2 focus-ring focus-visible:border-primary-500',
-        hasError ? 'border-danger-500' : 'border-gray-200',
+        hasError ? 'border-danger-500' : 'border-gray-300',
         className,
       ]
         .filter(Boolean)

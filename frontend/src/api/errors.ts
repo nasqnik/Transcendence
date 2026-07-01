@@ -86,25 +86,26 @@ function getDetail(error: unknown): string {
   return typeof obj?.detail === 'string' ? obj.detail.trim() : ''
 }
 
-function translateServerMessage(message: string): string {
+/**
+ * Map a single server message string to an `errors.*` i18n key.
+ * Returns null when the message isn't recognised (caller decides the fallback).
+ */
+function resolveMessageKey(message: string): string | null {
   const trimmed = message.trim()
   const key = API_ERROR_KEYS[trimmed]
-  if (key) return i18n.t(key)
-
-  if (trimmed.startsWith('Invitation is not pending')) {
-    return i18n.t('errors.api.invitationNotPending')
-  }
-
+  if (key) return key
+  if (trimmed.startsWith('Invitation is not pending')) return 'errors.api.invitationNotPending'
   for (const { prefix, key } of PASSWORD_ERROR_PREFIXES) {
-    if (trimmed.startsWith(prefix)) {
-      return key === 'errors.passwordMinLength'
-        ? i18n.t(key, { min: 8 })
-        : i18n.t(key)
-    }
+    if (trimmed.startsWith(prefix)) return key
   }
+  return null
+}
 
-  // Unknown server text — avoid mixing English into AR/RU UI
-  return i18n.t('errors.apiUnknown')
+function translateServerMessage(message: string): string {
+  const key = resolveMessageKey(message)
+  if (!key) return i18n.t('errors.apiUnknown')
+  // passwordMinLength requires an interpolation value
+  return key === 'errors.passwordMinLength' ? i18n.t(key, { min: 8 }) : i18n.t(key)
 }
 
 function genericError(): string {
@@ -193,23 +194,16 @@ export function getApiErrorKey(error: unknown): string {
 
   const detail = getDetail(error)
   if (detail) {
-    const key = API_ERROR_KEYS[detail]
+    const key = resolveMessageKey(detail)
     if (key) return key
-    if (detail.startsWith('Invitation is not pending')) {
-      return 'errors.api.invitationNotPending'
-    }
-    for (const { prefix, key } of PASSWORD_ERROR_PREFIXES) {
-      if (detail.startsWith(prefix)) return key
-    }
   }
 
   for (const value of Object.values(obj)) {
-    if (Array.isArray(value) && typeof value[0] === 'string') {
-      const key = API_ERROR_KEYS[value[0].trim()]
-      if (key) return key
-    }
-    if (typeof value === 'string') {
-      const key = API_ERROR_KEYS[value.trim()]
+    const msg =
+      Array.isArray(value) && typeof value[0] === 'string' ? value[0] :
+      typeof value === 'string' ? value : null
+    if (msg) {
+      const key = resolveMessageKey(msg)
       if (key) return key
     }
   }

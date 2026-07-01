@@ -12,12 +12,13 @@ export default function KidStats() {
   const [logOpen, setLogOpen] = useState(false)
   const [levelUp, setLevelUp] = useState<{ category: TaskCategory; level: number } | null>(null)
 
-  const { stats } = useKidLevel()
+  const { stats, pendingXpByCategory, isLoading } = useKidLevel()
 
   // Detect level-ups by comparing category levels before and after each refetch
   const prevLevelsRef = useRef<Record<TaskCategory, number> | null>(null)
 
   useEffect(() => {
+    if (isLoading) return
     const currentLevels = Object.fromEntries(
       CATEGORIES.map(cat => [cat, stats[cat].level])
     ) as Record<TaskCategory, number>
@@ -32,7 +33,7 @@ export default function KidStats() {
     }
 
     prevLevelsRef.current = currentLevels
-  }, [stats])
+  }, [stats, isLoading])
 
   return (
     <>
@@ -43,7 +44,7 @@ export default function KidStats() {
           </h2>
           <button
             type="button"
-            className="font-body text-xs font-semibold text-primary-500 hover:text-primary-700 focus-ring rounded"
+            className="font-body text-xs font-semibold text-primary-600 hover:text-primary-700 focus-ring rounded"
             onClick={() => setLogOpen(true)}
           >
             {t('kidDash.details')}
@@ -54,6 +55,8 @@ export default function KidStats() {
           {CATEGORIES.map(category => {
             const style      = CATEGORY_STYLE[category]
             const { level, xp_percent } = stats[category]
+            const pending = pendingXpByCategory[category] ?? 0
+            const pendingWidth = Math.min(pending, 100 - xp_percent)
 
             return (
               <div key={category}>
@@ -68,7 +71,10 @@ export default function KidStats() {
                     <span className={`w-14 text-center py-0.5 rounded-full ${style.bg} ${style.text} font-body font-bold text-xs`}>
                       {t('kidDash.level', { level })}
                     </span>
-                    <span className="font-body text-xs text-gray-400">{xp_percent} / 100 XP</span>
+                    <span className="font-body text-xs text-gray-400">
+                      {xp_percent} / 100 XP
+                      {pending > 0 && <span className="text-amber-700 ml-1">+{pending} ⏳</span>}
+                    </span>
                   </div>
                 </div>
                 <div
@@ -77,12 +83,18 @@ export default function KidStats() {
                   aria-valuenow={xp_percent}
                   aria-valuemin={0}
                   aria-valuemax={100}
-                  className="h-2 bg-gray-100 rounded-full overflow-hidden"
+                  className="relative h-2 bg-gray-100 rounded-full overflow-hidden"
                 >
                   <div
-                    className={`h-full ${style.bar} rounded-full transition-all duration-500`}
+                    className={`absolute inset-y-0 left-0 ${style.bar} transition-all duration-500`}
                     style={{ width: `${xp_percent}%` }}
                   />
+                  {pendingWidth > 0 && (
+                    <div
+                      className={`absolute inset-y-0 ${style.bar} opacity-35 transition-all duration-500`}
+                      style={{ left: `${xp_percent}%`, width: `${pendingWidth}%` }}
+                    />
+                  )}
                 </div>
               </div>
             )

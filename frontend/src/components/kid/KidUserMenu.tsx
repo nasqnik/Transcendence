@@ -10,14 +10,27 @@ export default function KidUserMenu() {
 
   const [menuOpen, setMenuOpen] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
+  const triggerRef = useRef<HTMLButtonElement>(null)
+
+  function closeMenu() {
+    setMenuOpen(false)
+    triggerRef.current?.focus()
+  }
 
   useEffect(() => {
     if (!menuOpen) return
     function handleClickOutside(e: MouseEvent) {
       if (!menuRef.current?.contains(e.target as Node)) setMenuOpen(false)
     }
+    function handleEscape(e: KeyboardEvent) {
+      if (e.key === 'Escape') closeMenu()
+    }
     document.addEventListener('mousedown', handleClickOutside)
-    return () => document.removeEventListener('mousedown', handleClickOutside)
+    document.addEventListener('keydown', handleEscape)
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+      document.removeEventListener('keydown', handleEscape)
+    }
   }, [menuOpen])
 
   return (
@@ -25,6 +38,7 @@ export default function KidUserMenu() {
 
       {/* Avatar button */}
       <button
+        ref={triggerRef}
         type="button"
         onClick={() => setMenuOpen(v => !v)}
         aria-label={currentUser?.username ?? 'Menu'}
@@ -37,14 +51,15 @@ export default function KidUserMenu() {
 
       {/* Dropdown */}
       {menuOpen && (
-        <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-2xl shadow-lg border border-gray-200 z-50 overflow-hidden">
+        <div role="menu" className="absolute right-0 top-full mt-2 w-48 bg-white rounded-2xl shadow-lg border border-gray-200 z-50 overflow-hidden">
           <div className="px-4 py-3 border-b border-gray-100">
             <p className="font-body font-semibold text-sm text-gray-900">{currentUser?.username}</p>
           </div>
           <button
             type="button"
-            onClick={() => { logout(); navigate('/') }}
-            className="w-full px-4 py-3 flex items-center gap-3 font-body text-sm text-danger-500 hover:bg-danger-50 focus-ring transition-colors text-left"
+            role="menuitem"
+            onClick={() => { closeMenu(); logout(); navigate('/') }}
+            className="w-full px-4 py-3 flex items-center gap-3 font-body text-sm text-danger-700 hover:bg-danger-50 focus-ring transition-colors text-left"
           >
             <span aria-hidden="true">🚪</span>
             {t('nav.logout')}

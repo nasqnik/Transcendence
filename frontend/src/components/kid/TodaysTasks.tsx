@@ -1,99 +1,10 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { type Task, type TaskCategory, CATEGORY_STYLE, primaryCategory } from '../../constants/categories'
-import { getTasks, getCompletions, postCompletion } from '../../api/tasks'
+import { getTasks, getCompletions, postCompletion, type CompletionInfo } from '../../api/tasks'
+import TaskRow from './TaskRow'
 import TasksAll from './TasksAll'
 import AddTaskModal from './AddTaskModal'
-
-// ─── Types ────────────────────────────────────────────────────────────────────
-
-export interface CompletionInfo {
-  status: 'pending' | 'confirmed' | 'rejected'
-  review_note: string
-}
-
-// ─── Sub-components ───────────────────────────────────────────────────────────
-
-interface TaskRowProps {
-  task: Task
-  completionInfo?: CompletionInfo
-  onComplete: (id: string) => void
-}
-
-function TaskRow({ task, completionInfo, onComplete }: TaskRowProps) {
-  const { t } = useTranslation()
-  const category = primaryCategory(task.category_rewards)
-  const style = CATEGORY_STYLE[category]
-  const isDone     = completionInfo?.status === 'confirmed' || completionInfo?.status === 'pending'
-  const isRejected = completionInfo?.status === 'rejected'
-
-  return (
-    <li className="flex flex-col gap-1 px-3 py-3 rounded-xl hover:bg-gray-50 transition-colors">
-      <div className="flex items-center gap-4">
-
-        {/* Category icon */}
-        <div
-          className={`w-10 h-10 rounded-xl ${style.bg} flex items-center justify-center text-lg shrink-0`}
-          aria-hidden="true"
-        >
-          {style.icon}
-        </div>
-
-        {/* Title + category */}
-        <div className="flex-1 min-w-0">
-          <p className={`font-body font-semibold text-sm ${isDone ? 'line-through text-gray-400' : 'text-gray-900'}`}>
-            {task.title}
-          </p>
-          <p className={`font-body text-xs font-semibold mt-0.5 ${style.text}`}>
-            {t(`kidDash.categories.${category}` as `kidDash.categories.${TaskCategory}`)}
-          </p>
-        </div>
-
-        {/* Points */}
-        <div className="flex items-center gap-1 shrink-0">
-          <span className="font-body font-bold text-sm text-gray-700">+{task.xp_reward}</span>
-          <span aria-hidden="true">⭐</span>
-        </div>
-
-        {/* Checkbox / status */}
-        <button
-          type="button"
-          role="checkbox"
-          aria-checked={isDone}
-          aria-label={task.title}
-          onClick={() => !isDone && !isRejected && onComplete(task.id)}
-          disabled={isDone}
-          className={`w-7 h-7 rounded-full border-2 shrink-0 flex items-center justify-center focus-ring transition-colors ${
-            isDone
-              ? 'bg-teal-500 border-teal-500'
-              : 'border-gray-300 hover:border-primary-500'
-          }`}
-        >
-          {isDone && (
-            <svg viewBox="0 0 10 8" className="w-3 h-3" fill="none" aria-hidden="true">
-              <path d="M1 4l3 3 5-6" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-          )}
-        </button>
-      </div>
-
-      {/* Rejection note */}
-      {isRejected && (
-        <div className="ms-14 flex flex-col gap-0.5">
-          <p className="font-body text-xs font-semibold text-danger-500">
-            ✗ {t('kidDash.taskRejected')}
-          </p>
-          {completionInfo?.review_note && (
-            <p className="font-body text-xs text-gray-500 italic">
-              "{completionInfo.review_note}"
-            </p>
-          )}
-        </div>
-      )}
-    </li>
-  )
-}
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
@@ -110,7 +21,11 @@ export default function TodaysTasks() {
 
   const { mutate: complete } = useMutation({
     mutationFn: postCompletion,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['completions'] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['completions'] })
+      queryClient.invalidateQueries({ queryKey: ['gamificationStats'] })
+      queryClient.invalidateQueries({ queryKey: ['gamificationProfile'] })
+    },
   })
 
   const isLoading = tasksLoading || completionsLoading
@@ -146,8 +61,10 @@ export default function TodaysTasks() {
             </h2>
             {!isLoading && (
               <span
-                className="bg-primary-500 text-white font-body font-bold text-xs w-6 h-6 rounded-full flex items-center justify-center"
-                aria-label={`${pendingTasks.length} tasks remaining`}
+                role="status"
+                aria-live="polite"
+                className="bg-primary-600 text-white font-body font-bold text-xs w-6 h-6 rounded-full flex items-center justify-center"
+                aria-label={t('kidDash.tasksRemaining', { count: pendingTasks.length })}
               >
                 {pendingTasks.length}
               </span>
@@ -156,7 +73,7 @@ export default function TodaysTasks() {
           {todaysTasks.length > 0 && (
             <button
               type="button"
-              className="font-body text-sm font-semibold text-primary-500 hover:text-primary-700 focus-ring rounded"
+              className="font-body text-sm font-semibold text-primary-600 hover:text-primary-700 focus-ring rounded"
               onClick={() => setViewAllOpen(true)}
             >
               {t('kidDash.viewAll')}
@@ -188,6 +105,7 @@ export default function TodaysTasks() {
                 task={task}
                 completionInfo={completionInfo.get(task.id)}
                 onComplete={complete}
+                className="rounded-xl hover:bg-gray-50 transition-colors"
               />
             ))}
           </ul>
@@ -196,7 +114,7 @@ export default function TodaysTasks() {
         <button
           type="button"
           onClick={() => setAddOpen(true)}
-          className="mt-4 w-full py-3 rounded-xl bg-primary-500 text-white font-body font-semibold text-sm hover:bg-primary-600 active:bg-primary-700 focus-ring transition-colors"
+          className="mt-4 w-full py-3 rounded-xl bg-primary-600 text-white font-body font-semibold text-sm hover:bg-primary-700 active:bg-primary-700 focus-ring transition-colors"
         >
           {t('kidDash.addTask')}
         </button>

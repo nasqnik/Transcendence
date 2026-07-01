@@ -17,13 +17,13 @@ export default function ParentDashboard() {
 
   return (
     <main
-      aria-labelledby="dashboard-heading"
+      aria-labelledby="parent-dashboard-heading"
       className="flex flex-col items-center justify-center min-h-screen bg-primary-50 gap-6"
     >
-      <h1 id="dashboard-heading" className="font-heading text-3xl font-bold text-primary-700">
+      <h1 id="parent-dashboard-heading" className="font-heading text-3xl font-bold text-primary-700">
         {t('dashboard.greeting', { name: currentUser?.username })}
       </h1>
-      <p className="font-body text-sm text-gray-500">Parent dashboard — coming soon</p>
+      <p className="font-body text-sm text-gray-500">{t('dashboard.parentComingSoon')}</p>
       <Button variant="secondary" onClick={handleLogout}>
         {t('nav.logout')}
       </Button>

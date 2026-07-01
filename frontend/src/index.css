@@ -26,8 +26,19 @@
 
   --color-gray-50: #F1EFE8;
   --color-gray-200: #D3D1C7;
-  --color-gray-400: #B4B2A9;
-  --color-gray-500: #888780;
+  /* gray-300: dedicated form-control border shade — gray-200 (1.53:1 vs
+     white) fails WCAG 1.4.11's 3:1 non-text contrast minimum for UI
+     component boundaries. gray-200 stays unchanged for decorative section
+     dividers (sidebar/topbar/dropdown borders), which aren't form controls
+     and aren't subject to this rule. */
+  --color-gray-300: #8B897F;
+  /* gray-400/500 darkened to #6D6C66 — the lightest warm-gray that still
+     clears WCAG AA's 4.5:1 text contrast minimum against every light
+     background used in the app (white, gray-50, and all the category-tint
+     "-50" cards). Both tokens are text-color-only in this codebase (never
+     bg/border), so this is safe to change once at the source. */
+  --color-gray-400: #6D6C66;
+  --color-gray-500: #6D6C66;
   --color-gray-700: #5F5E5A;
   --color-gray-900: #444441;
 
@@ -60,7 +71,9 @@
   }
 
   .alert-error {
-    @apply text-danger-500 bg-danger-50;
+    /* danger-500 text fails 4.5:1 against danger-50 (3.41:1) — danger-700
+       passes comfortably (6.13:1) while keeping the same tint background. */
+    @apply text-danger-700 bg-danger-50;
   }
 
   .field-error {
