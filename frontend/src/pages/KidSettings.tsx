@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { type TaskCategory, CATEGORY_STYLE } from '../constants/categories'
@@ -125,6 +126,7 @@ export default function KidSettings() {
 
   return (
     <main
+      id="main-content"
       aria-labelledby="settings-heading"
       className="flex-1 p-6 max-w-lg overflow-auto"
     >
@@ -142,9 +144,13 @@ export default function KidSettings() {
           <h2 className="font-heading text-base font-bold text-gray-900">
             {t('kidDash.categoryVisibility')}
           </h2>
-          <span className="font-body text-xs text-gray-400 h-4">
+          <span className="font-body text-xs text-gray-400 h-4" role="status">
             {isPending    && t('tasks.creating').replace('...', '…')}
-            {savedRecently && !isPending && '✓'}
+            {savedRecently && !isPending && (
+              <>
+                <span aria-hidden="true">✓</span> {t('kidDash.settingsSaved')}
+              </>
+            )}
           </span>
         </div>
         <p className="font-body text-sm text-gray-400 mb-5">
@@ -181,7 +187,7 @@ export default function KidSettings() {
 
         {/* Error */}
         {isError && (
-          <p role="alert" className="font-body text-sm text-danger-500 mt-4">
+          <p role="alert" className="font-body text-sm text-danger-700 mt-4">
             {t('errors.generic')}
           </p>
         )}
@@ -244,6 +250,22 @@ export default function KidSettings() {
           </form>
         )}
       </section>
+
+      {/* Legal */}
+      <nav aria-label={t('a11y.legalNav')} className="mt-4 flex gap-6 px-1">
+        <Link
+          to="/privacy"
+          className="font-body text-xs text-gray-400 underline hover:text-primary-600 focus-ring rounded-sm"
+        >
+          {t('legal.privacy')}
+        </Link>
+        <Link
+          to="/terms"
+          className="font-body text-xs text-gray-400 underline hover:text-primary-600 focus-ring rounded-sm"
+        >
+          {t('legal.terms')}
+        </Link>
+      </nav>
 
     </main>
   )

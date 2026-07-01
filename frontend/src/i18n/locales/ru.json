@@ -50,12 +50,14 @@
     "backToHome": "На главную",
     "tryLoginAgain": "Попробовать войти снова",
     "completeProfile": "Заполните профиль",
-    "back": "Назад"
+    "back": "Назад",
+    "agreeToTermsPrefix": "Я принимаю"
   },
   "dashboard": {
     "greeting": "Привет, {{name}}!",
     "tasks": "Мои задачи",
-    "rewards": "Награды"
+    "rewards": "Награды",
+    "parentComingSoon": "Панель родителя — скоро будет доступна"
   },
   "tasks": {
     "myTasks": "Мои задачи",
@@ -100,16 +102,21 @@
     "signupFormReady": "Форма регистрации готова",
     "loginFormReady": "Форма входа готова",
     "loadingSession": "Загрузка сессии...",
-    "mainNav": "Основная навигация"
+    "skipToContent": "Перейти к основному содержимому",
+    "mainNav": "Основная навигация",
+    "legalNav": "Юридические документы"
   },
   "kidDash": {
     "readyToLevel": "Готов подняться на новый уровень?",
     "streak": "Дней подряд",
+    "coins": "Монеты",
     "points": "Очки",
     "level": "Уровень {{level}}",
     "motivationHint": "Ты молодец! Так держать!",
     "todaysTasks": "Задачи на сегодня",
+    "dashboardMain": "Панель",
     "viewAll": "Все",
+    "tasksRemaining": "Осталось задач: {{count}}",
     "addTask": "+ Добавить задачу",
     "noTasks": "Задач на сегодня нет",
     "noTasksHint": "Ты или твой родитель ещё не добавили задачи.",
@@ -119,6 +126,8 @@
     "details": "Подробнее",
     "pointsLog": "История очков",
     "noPointsLog": "Пока нет выполненных задач.",
+    "statusConfirmed": "Подтверждено",
+    "statusPendingReview": "Ожидает проверки",
     "levelUp": "Новый уровень!",
     "levelUpHint": "Ты достиг уровня {{level}} в категории {{category}}!",
     "letsGo": "Вперёд!",
@@ -136,14 +145,10 @@
     "settings": "Настройки",
     "categoryVisibility": "Видимость категорий",
     "categoryVisibilityHint": "Выбери, какие категории может видеть твой родитель. Скрытые категории подтверждаются автоматически.",
+    "settingsSaved": "Сохранено",
     "nav": {
       "home": "Главная",
-      "settings": "Настройки",
-      "tasks": "Задачи",
-      "journey": "Путешествие",
-      "rewards": "Награды",
-      "friends": "Друзья",
-      "progress": "Прогресс"
+      "settings": "Настройки"
     }
   },
   "inviteParent": {
@@ -193,8 +198,18 @@
     "wrongAccount": "Вы вошли как {{email}}, но приглашение было отправлено на {{inviteEmail}}. Выйдите и попробуйте с правильного аккаунта.",
     "googleEmailHint": "Используйте аккаунт Google для {{email}}"
   },
+  "common": {
+    "close": "Закрыть",
+    "and": "и"
+  },
+  "legal": {
+    "privacy": "Политика конфиденциальности",
+    "terms": "Условия использования",
+    "lastUpdated": "Последнее обновление: {{date}}"
+  },
   "errors": {
     "required": "Это поле обязательно",
+    "mustAgreeToTerms": "Необходимо принять Условия использования и Политику конфиденциальности, чтобы продолжить.",
     "invalidEmail": "Неверный адрес эл. почты",
     "passwordMinLength": "Пароль должен содержать не менее {{min}} символов.",
     "passwordEntirelyNumeric": "Пароль не может состоять только из цифр.",

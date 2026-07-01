@@ -143,6 +143,20 @@ export default function Login() {
           {t('nav.signup')}
         </Link>
       </p>
+      <nav aria-label={t('a11y.legalNav')} className="flex gap-4">
+        <Link
+          to="/privacy"
+          className="font-body text-xs text-gray-500 underline hover:text-primary-600 focus-ring rounded-sm"
+        >
+          {t('legal.privacy')}
+        </Link>
+        <Link
+          to="/terms"
+          className="font-body text-xs text-gray-500 underline hover:text-primary-600 focus-ring rounded-sm"
+        >
+          {t('legal.terms')}
+        </Link>
+      </nav>
       <LanguageSwitcher />
     </main>
   )
