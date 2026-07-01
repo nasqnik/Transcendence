@@ -6,13 +6,13 @@ import KidUserMenu from './KidUserMenu'
 export default function KidTopbar() {
   const { t } = useTranslation()
   const { currentUser } = useAuthStore()
-  const { level, progress, streak } = useKidLevel()
+  const { level, progress, streak, coins } = useKidLevel()
 
   return (
     <header className="bg-white border-b border-gray-200 px-8 py-4 flex items-center justify-between">
       <div>
-        <h1 id="dashboard-heading" className="font-heading text-3xl font-bold text-gray-900">
-          {t('dashboard.greeting', { name: currentUser?.username })} 👋
+        <h1 className="font-heading text-3xl font-bold text-gray-900">
+          {t('dashboard.greeting', { name: currentUser?.username })} <span aria-hidden="true">👋</span>
         </h1>
         <p className="font-body text-sm text-gray-400">{t('kidDash.readyToLevel')}</p>
       </div>
@@ -21,17 +21,32 @@ export default function KidTopbar() {
         {/* Streak */}
         {streak > 0 && (
           <div className="flex flex-col items-center gap-0.5">
-            <span className="font-heading font-bold text-lg leading-none">🔥 {streak}</span>
+            <span className="font-heading font-bold text-lg leading-none"><span aria-hidden="true">🔥</span> {streak}</span>
             <span className="font-body text-xs text-gray-400">{t('kidDash.streak')}</span>
+          </div>
+        )}
+
+        {/* Coins */}
+        {coins > 0 && (
+          <div className="flex flex-col items-center gap-0.5">
+            <span className="font-heading font-bold text-lg leading-none"><span aria-hidden="true">🪙</span> {coins}</span>
+            <span className="font-body text-xs text-gray-400">{t('kidDash.coins')}</span>
           </div>
         )}
 
         {/* Overall level badge */}
         <div className="flex flex-col items-end gap-1">
           <span className="font-body font-bold text-sm text-gray-700">
-            ⭐ {t('kidDash.level', { level })}
+            <span aria-hidden="true">⭐</span> {t('kidDash.level', { level })}
           </span>
-          <div className="w-24 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+          <div
+            role="progressbar"
+            aria-label={t('kidDash.level', { level })}
+            aria-valuenow={progress}
+            aria-valuemin={0}
+            aria-valuemax={100}
+            className="w-24 h-1.5 bg-gray-100 rounded-full overflow-hidden"
+          >
             <div
               className="h-full bg-primary-500 rounded-full transition-all duration-500"
               style={{ width: `${progress}%` }}

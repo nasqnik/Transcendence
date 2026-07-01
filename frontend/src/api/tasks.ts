@@ -1,6 +1,11 @@
 import client from './client'
 import { type Task, type Completion } from '../constants/categories'
 
+export interface CompletionInfo {
+  status: 'pending' | 'confirmed' | 'rejected'
+  review_note: string
+}
+
 export async function getTasks(): Promise<Task[]> {
   const res = await client.get('/task/tasks/')
   return res.data

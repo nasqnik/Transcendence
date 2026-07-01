@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { useQuery } from '@tanstack/react-query'
 import { type TaskCategory, CATEGORY_STYLE } from '../../constants/categories'
 import { getTasks, getCompletions } from '../../api/tasks'
+import { useFocusTrap } from '../../hooks/useFocusTrap'
 
 interface Props {
   onClose: () => void
@@ -24,6 +25,8 @@ export default function StatsLog({ onClose }: Props) {
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [onClose])
 
+  useFocusTrap(cardRef, onClose)
+
   const taskMap = new Map(tasks.map(task => [task.id, task]))
 
   const log = completions
@@ -32,17 +35,24 @@ export default function StatsLog({ onClose }: Props) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-      <div ref={cardRef} className="bg-white rounded-2xl w-full max-w-md mx-4 max-h-[80vh] flex flex-col">
+      <div
+        ref={cardRef}
+        tabIndex={-1}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="points-log-heading"
+        className="bg-white rounded-2xl w-full max-w-md mx-4 max-h-[80vh] flex flex-col"
+      >
 
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
-          <h2 className="font-heading text-xl font-bold text-gray-900">
+          <h2 id="points-log-heading" className="font-heading text-xl font-bold text-gray-900">
             {t('kidDash.pointsLog')}
           </h2>
           <button
             type="button"
             onClick={onClose}
-            aria-label="Close"
+            aria-label={t('common.close')}
             className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 focus-ring transition-colors text-gray-400 hover:text-gray-600"
           >
             ✕
@@ -91,9 +101,9 @@ export default function StatsLog({ onClose }: Props) {
 
                   {/* Status */}
                   {completion.status === 'confirmed' ? (
-                    <span className="text-teal-500 text-base shrink-0" aria-label="Confirmed">✓</span>
+                    <span className="text-teal-700 text-base shrink-0" aria-label={t('kidDash.statusConfirmed')}>✓</span>
                   ) : (
-                    <span className="text-amber-400 text-base shrink-0" aria-label="Pending review">⏳</span>
+                    <span className="text-amber-700 text-base shrink-0" aria-label={t('kidDash.statusPendingReview')}>⏳</span>
                   )}
 
                 </li>
