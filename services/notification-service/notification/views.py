@@ -4,6 +4,8 @@ from rest_framework import status
 from common.permissions import IsInternalService, IsKid, IsParent
 from common.actors import KidActor
 from .models import Notification
+from channels.layers import get_channel_layer
+from asgiref.sync import async_to_sync
 from drf_spectacular.utils import OpenApiParameter, extend_schema
 from .serializers import (
     NotificationCreateSerializer,
@@ -11,8 +13,6 @@ from .serializers import (
     NotificationMarkReadSerializer,
     UnreadCountSerializer,
 )
-
-
 @extend_schema(
     summary='Create a notification (internal)',
     description=(
@@ -43,10 +43,24 @@ class InternalNotifyView(APIView):
     def post(self, request):
         serializer = NotificationCreateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        Notification.objects.create(
+        notification = Notification.objects.create(
             recipient_id=serializer.validated_data['recipient_id'],
             notification_type=serializer.validated_data['notification_type'],
             message=serializer.validated_data['message'],
+        )
+        channel_layer = get_channel_layer()
+        async_to_sync(channel_layer.group_send)(
+            f'notifications_{str(serializer.validated_data["recipient_id"])}',
+            {
+                'type': 'send_notification', 
+                'data': {
+                    'id': str(notification.id),
+                    'notification_type': notification.notification_type,
+                    'message': notification.message,
+                    'is_read': notification.is_read,
+                    'created_at': notification.created_at.isoformat(),
+
+                }}
         )
         return Response(status=status.HTTP_204_NO_CONTENT)
 

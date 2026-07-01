@@ -15,6 +15,8 @@ DEBUG = True
 ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'notification-service']
 
 INSTALLED_APPS = [
+    'daphne',
+    'channels',
     'django.contrib.contenttypes',
     'django.contrib.auth',
     'rest_framework',
@@ -110,3 +112,15 @@ SIMPLE_JWT = {
 INTERNAL_SERVICE_TOKEN = os.getenv('INTERNAL_SERVICE_TOKEN')
 if not INTERNAL_SERVICE_TOKEN:
     raise ImproperlyConfigured("INTERNAL_SERVICE_TOKEN environment variable is required.")
+
+#Django Channels for WebSocket support
+ASGI_APPLICATION = 'core.asgi.application'
+
+CHANNEL_LAYERS = {
+    'default': {
+        'BACKEND': 'channels_redis.core.RedisChannelLayer',
+        'CONFIG': {
+            'hosts': [('redis://redis:6379/0')],
+        },
+    },
+}
