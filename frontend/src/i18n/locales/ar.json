@@ -50,12 +50,14 @@
     "backToHome": "الذهاب إلى الرئيسية",
     "tryLoginAgain": "حاول تسجيل الدخول مرة أخرى",
     "completeProfile": "أكمل ملفك الشخصي",
-    "back": "رجوع"
+    "back": "رجوع",
+    "agreeToTermsPrefix": "أوافق على"
   },
   "dashboard": {
     "greeting": "مرحباً، {{name}}!",
     "tasks": "مهامي",
-    "rewards": "المكافآت"
+    "rewards": "المكافآت",
+    "parentComingSoon": "لوحة الوالد — قريباً"
   },
   "tasks": {
     "myTasks": "مهامي",
@@ -100,16 +102,21 @@
     "signupFormReady": "نموذج التسجيل جاهز",
     "loginFormReady": "نموذج تسجيل الدخول جاهز",
     "loadingSession": "جاري تحميل جلستك...",
-    "mainNav": "التنقل الرئيسي"
+    "skipToContent": "تخطَّ إلى المحتوى الرئيسي",
+    "mainNav": "التنقل الرئيسي",
+    "legalNav": "الوثائق القانونية"
   },
   "kidDash": {
     "readyToLevel": "هل أنت مستعد للارتقاء بمستواك اليوم؟",
     "streak": "أيام متتالية",
+    "coins": "العملات",
     "points": "النقاط",
     "level": "المستوى {{level}}",
     "motivationHint": "أنت رائع! استمر هكذا!",
     "todaysTasks": "مهام اليوم",
+    "dashboardMain": "لوحة التحكم",
     "viewAll": "عرض الكل",
+    "tasksRemaining": "{{count}} مهام متبقية",
     "addTask": "+ إضافة مهمة جديدة",
     "noTasks": "لا توجد مهام اليوم",
     "noTasksHint": "لم تُضف أنت أو ولي أمرك أي مهام بعد.",
@@ -119,6 +126,8 @@
     "details": "التفاصيل",
     "pointsLog": "سجل النقاط",
     "noPointsLog": "لا توجد مهام مكتملة بعد.",
+    "statusConfirmed": "مؤكَّد",
+    "statusPendingReview": "قيد المراجعة",
     "levelUp": "ارتقيت بمستواك!",
     "levelUpHint": "وصلت إلى المستوى {{level}} في فئة {{category}}!",
     "letsGo": "هيا بنا!",
@@ -136,14 +145,10 @@
     "settings": "الإعدادات",
     "categoryVisibility": "ظهور الفئات",
     "categoryVisibilityHint": "اختر الفئات التي يمكن لوالدك مراجعتها. الفئات المخفية تُؤكَّد تلقائياً.",
+    "settingsSaved": "تم الحفظ",
     "nav": {
       "home": "الرئيسية",
-      "settings": "الإعدادات",
-      "tasks": "المهام",
-      "journey": "الرحلة",
-      "rewards": "المكافآت",
-      "friends": "الأصدقاء",
-      "progress": "التقدم"
+      "settings": "الإعدادات"
     }
   },
   "inviteParent": {
@@ -193,8 +198,18 @@
     "wrongAccount": "أنت مسجّل دخولك بـ {{email}}، لكن الدعوة أُرسلت إلى {{inviteEmail}}. يرجى تسجيل الخروج والمحاولة بالحساب الصحيح.",
     "googleEmailHint": "استخدم حساب Google الخاص بـ {{email}}"
   },
+  "common": {
+    "close": "إغلاق",
+    "and": "و"
+  },
+  "legal": {
+    "privacy": "سياسة الخصوصية",
+    "terms": "شروط الخدمة",
+    "lastUpdated": "آخر تحديث: {{date}}"
+  },
   "errors": {
     "required": "هذا الحقل مطلوب",
+    "mustAgreeToTerms": "يجب الموافقة على شروط الخدمة وسياسة الخصوصية للمتابعة.",
     "invalidEmail": "البريد الإلكتروني غير صالح",
     "passwordMinLength": "يجب أن تتكون كلمة المرور من {{min}} أحرف على الأقل.",
     "passwordEntirelyNumeric": "لا يمكن أن تكون كلمة المرور أرقاماً فقط.",

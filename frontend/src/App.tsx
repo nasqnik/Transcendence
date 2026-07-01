@@ -20,6 +20,8 @@ import ParentDashboard from './pages/ParentDashboard'
 import CharacterCreation from './pages/CharacterCreation'
 import Profile from './pages/Profile'
 import ParentProfile from './pages/ParentProfile'
+import PrivacyPolicy from './pages/PrivacyPolicy'
+import TermsOfService from './pages/TermsOfService'
 
 export default function App() {
   const { i18n } = useTranslation()
@@ -57,6 +59,8 @@ export default function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
         </Route>
+        <Route path="/privacy" element={<PrivacyPolicy />} />
+        <Route path="/terms" element={<TermsOfService />} />
         <Route path="/accept-invite" element={<AcceptInvite />} />
         <Route path="/verify-email" element={<VerifyEmail />} />
         <Route path="/kid/verify-email" element={<VerifyKidEmail />} />

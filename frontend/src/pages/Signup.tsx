@@ -33,6 +33,7 @@ export default function Signup() {
   const [parentEmail, setParentEmail] = useState('')
   const [errorKey, setErrorKey] = useState<string | null>(null)
   const { fieldErrors, setFieldErrors, clearFieldError, resetFieldErrors } = useFormErrors()
+  const [agreedToTerms, setAgreedToTerms] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
 
   // After parent signup: show "check your email" screen
@@ -61,6 +62,7 @@ export default function Signup() {
     setKidEmail('')
     setPassword('')
     setParentEmail('')
+    setAgreedToTerms(false)
   }
 
   // ── Password signup validation ────────────────────────────────────────────
@@ -85,6 +87,7 @@ export default function Signup() {
       if (isEmpty(parentEmail)) errs.parentEmail = t('errors.required')
       else if (!isValidEmail(parentEmail)) errs.parentEmail = t('errors.invalidEmail')
     }
+    if (!agreedToTerms) errs.agreedToTerms = t('errors.mustAgreeToTerms')
     return errs
   }
 
@@ -95,6 +98,7 @@ export default function Signup() {
     if (isEmpty(username)) errs.username = t('errors.required')
     if (isEmpty(parentEmail)) errs.parentEmail = t('errors.required')
     else if (!isValidEmail(parentEmail)) errs.parentEmail = t('errors.invalidEmail')
+    if (!agreedToTerms) errs.agreedToTerms = t('errors.mustAgreeToTerms')
     return errs
   }
 
@@ -261,6 +265,34 @@ export default function Signup() {
             onChange={e => { setParentEmail(e.target.value); clearFieldError('parentEmail') }}
           />
 
+          <div className="flex flex-col gap-1">
+            <label className="flex items-start gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={agreedToTerms}
+                onChange={e => { setAgreedToTerms(e.target.checked); clearFieldError('agreedToTerms') }}
+                disabled={isLoading}
+                aria-describedby={fieldErrors.agreedToTerms ? 'terms-error-google' : undefined}
+                className="mt-0.5 accent-primary-600"
+              />
+              <span className="font-body text-sm text-gray-700">
+                {t('auth.agreeToTermsPrefix')}{' '}
+                <Link to="/terms" target="_blank" rel="noopener" className="text-primary-600 underline hover:text-primary-700 focus-ring rounded-sm">
+                  {t('legal.terms')}
+                </Link>{' '}
+                {t('common.and')}{' '}
+                <Link to="/privacy" target="_blank" rel="noopener" className="text-primary-600 underline hover:text-primary-700 focus-ring rounded-sm">
+                  {t('legal.privacy')}
+                </Link>
+              </span>
+            </label>
+            {fieldErrors.agreedToTerms && (
+              <p id="terms-error-google" className="font-body text-sm text-danger-700" role="alert">
+                {fieldErrors.agreedToTerms}
+              </p>
+            )}
+          </div>
+
           <Button variant="primary" type="submit" disabled={isLoading}>
             {isLoading ? t('auth.signingUp') : t('auth.signup')}
           </Button>
@@ -288,8 +320,8 @@ export default function Signup() {
           <label
             className={`font-body font-semibold px-6 py-3 rounded-xl focus-ring cursor-pointer ${
               role === 'parent'
-                ? 'bg-primary-500 text-white'
-                : 'border-2 border-primary-500 text-primary-500'
+                ? 'bg-primary-600 text-white'
+                : 'border-2 border-primary-500 text-primary-600'
             }`}
           >
             <input
@@ -305,8 +337,8 @@ export default function Signup() {
           <label
             className={`font-body font-semibold px-6 py-3 rounded-xl focus-ring cursor-pointer ${
               role === 'kid'
-                ? 'bg-primary-500 text-white'
-                : 'border-2 border-primary-500 text-primary-500'
+                ? 'bg-primary-600 text-white'
+                : 'border-2 border-primary-500 text-primary-600'
             }`}
           >
             <input
@@ -420,6 +452,34 @@ export default function Signup() {
               />
             )}
 
+            <div className="flex flex-col gap-1">
+              <label className="flex items-start gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={agreedToTerms}
+                  onChange={e => { setAgreedToTerms(e.target.checked); clearFieldError('agreedToTerms') }}
+                  disabled={isLoading}
+                  aria-describedby={fieldErrors.agreedToTerms ? 'terms-error' : undefined}
+                  className="mt-0.5 accent-primary-600"
+                />
+                <span className="font-body text-sm text-gray-700">
+                  {t('auth.agreeToTermsPrefix')}{' '}
+                  <Link to="/terms" target="_blank" rel="noopener" className="text-primary-600 underline hover:text-primary-700 focus-ring rounded-sm">
+                    {t('legal.terms')}
+                  </Link>{' '}
+                  {t('common.and')}{' '}
+                  <Link to="/privacy" target="_blank" rel="noopener" className="text-primary-600 underline hover:text-primary-700 focus-ring rounded-sm">
+                    {t('legal.privacy')}
+                  </Link>
+                </span>
+              </label>
+              {fieldErrors.agreedToTerms && (
+                <p id="terms-error" className="font-body text-sm text-danger-700" role="alert">
+                  {fieldErrors.agreedToTerms}
+                </p>
+              )}
+            </div>
+
             <Button variant="primary" type="submit" disabled={isLoading}>
               {isLoading ? t('auth.signingUp') : t('auth.signup')}
             </Button>
@@ -460,6 +520,20 @@ export default function Signup() {
           {t('nav.login')}
         </Link>
       </p>
+      <nav aria-label={t('a11y.legalNav')} className="flex gap-4">
+        <Link
+          to="/privacy"
+          className="font-body text-xs text-gray-500 underline hover:text-primary-600 focus-ring rounded-sm"
+        >
+          {t('legal.privacy')}
+        </Link>
+        <Link
+          to="/terms"
+          className="font-body text-xs text-gray-500 underline hover:text-primary-600 focus-ring rounded-sm"
+        >
+          {t('legal.terms')}
+        </Link>
+      </nav>
       <LanguageSwitcher />
     </main>
   )
