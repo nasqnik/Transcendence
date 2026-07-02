@@ -1,0 +1,25 @@
+from rest_framework import serializers
+from .models import AvatarItem, KidAvatar, RewardPurchase
+
+class AvatarItemSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = AvatarItem
+        fields = ['id', 'name', 'type', 'image_url', 'coin_cost', 'is_active']
+
+class KidAvatarSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = KidAvatar
+        fields = [
+            'id', 'kid_id', 'base_character', 'unlocked_items',
+            'equipped_hat', 'equipped_outfit',
+            'equipped_accessory', 'equipped_background',
+            'updated_at',
+        ]
+
+class RewardPurchaseSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = RewardPurchase
+        fields = ['id', 'kid_id', 'item', 'coins_spent', 'purchased_at']
+
+class PurchaseSerializer(serializers.Serializer):
+    item_id = serializers.UUIDField()
