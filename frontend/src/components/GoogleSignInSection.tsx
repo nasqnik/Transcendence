@@ -20,7 +20,7 @@ export default function GoogleSignInSection({
     <div className="flex flex-col items-center gap-3 w-80 max-w-full">
       <div className="flex items-center gap-3 w-full">
         <hr className="flex-1 border-gray-300" />
-        <span className="font-body text-xs text-gray-400">{t('auth.orContinueWith')}</span>
+        <span className="font-body text-xs text-gray-500">{t('auth.orContinueWith')}</span>
         <hr className="flex-1 border-gray-300" />
       </div>
       <div

@@ -64,6 +64,12 @@ export default function AcceptInvite() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const autoAcceptTokenRef = useRef<string | null>(null)
 
+  // Move focus to the heading on every state transition so screen readers
+  // announce the new content without requiring the user to navigate manually.
+  useEffect(() => {
+    document.getElementById('invite-heading')?.focus()
+  }, [state.status])
+
   useEffect(() => {
     autoAcceptTokenRef.current = null
   }, [inviteToken])
@@ -166,7 +172,7 @@ export default function AcceptInvite() {
 
     setFormErrorKey(null)
     const errs: Record<string, string> = {}
-    if (isEmpty(username)) errs.username = t('errors.required')
+    if (!wasPendingInviteRegistered() && isEmpty(username)) errs.username = t('errors.required')
     const passwordError = validatePasswordField(password, t, {
       username,
       email: state.invitation.invite_email,
@@ -323,18 +329,20 @@ export default function AcceptInvite() {
         >
           {formErrorKey && <FormAlert message={t(formErrorKey)} />}
 
-          <FormField
-            id="username"
-            label={t('auth.username')}
-            type="text"
-            dir="ltr"
-            value={username}
-            required
-            autoComplete="username"
-            disabled={isSubmitting}
-            error={fieldErrors.username}
-            onChange={e => { setUsername(e.target.value); clearFieldError('username') }}
-          />
+          {!wasPendingInviteRegistered() && (
+            <FormField
+              id="username"
+              label={t('auth.username')}
+              type="text"
+              dir="ltr"
+              value={username}
+              required
+              autoComplete="username"
+              disabled={isSubmitting}
+              error={fieldErrors.username}
+              onChange={e => { setUsername(e.target.value); clearFieldError('username') }}
+            />
+          )}
 
           <FormField
             id="password"
@@ -342,7 +350,7 @@ export default function AcceptInvite() {
             type="password"
             value={password}
             required
-            autoComplete="new-password"
+            autoComplete={wasPendingInviteRegistered() ? 'current-password' : 'new-password'}
             disabled={isSubmitting}
             error={fieldErrors.password}
             onChange={e => { setPassword(e.target.value); clearFieldError('password') }}
@@ -402,7 +410,11 @@ export default function AcceptInvite() {
         headingId="invite-heading"
         title={t('invite.accepting')}
         statusMessage={t('invite.accepting')}
-      />
+      >
+        <Button variant="secondary" onClick={() => navigate('/')}>
+          {t('auth.backToHome')}
+        </Button>
+      </AuthMessageLayout>
     )
   }
 

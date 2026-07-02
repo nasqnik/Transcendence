@@ -109,6 +109,8 @@
   "kidDash": {
     "readyToLevel": "هل أنت مستعد للارتقاء بمستواك اليوم؟",
     "streak": "أيام متتالية",
+    "streakLabel": "سلسلة {{count}} أيام",
+    "xpProgressLabel": "تقدم XP نحو المستوى {{next}}",
     "coins": "العملات",
     "points": "النقاط",
     "level": "المستوى {{level}}",
@@ -143,9 +145,19 @@
       "creativity": "الإبداع"
     },
     "settings": "الإعدادات",
+    "settingsHint": "خصّص تطبيقك",
+    "missedTasks": "{{count}} فائتة",
+    "upcoming": "قادمة",
+    "tomorrow": "غداً",
+    "xpEarned": "حصلت على +{{xp}} XP",
+    "welcomeTitle": "أنت مستعد!",
+    "welcomeHint": "اطلب من ولي أمرك إضافة مهام لك. أنجزها لتحصل على XP وترتقي بمستواك!",
     "categoryVisibility": "ظهور الفئات",
-    "categoryVisibilityHint": "اختر الفئات التي يمكن لوالدك مراجعتها. الفئات المخفية تُؤكَّد تلقائياً.",
+    "categoryVisibilityHint": "أوقف فئة لتُوافَق مهامها تلقائياً — دون الحاجة لمراجعة ولي الأمر.",
+    "anytime": "في أي وقت",
     "settingsSaved": "تم الحفظ",
+    "settingsSaving": "جارٍ الحفظ…",
+    "appSettings": "إعدادات التطبيق",
     "nav": {
       "home": "الرئيسية",
       "settings": "الإعدادات"
@@ -205,6 +217,7 @@
   "legal": {
     "privacy": "سياسة الخصوصية",
     "terms": "شروط الخدمة",
+    "sectionTitle": "الوثائق القانونية",
     "lastUpdated": "آخر تحديث: {{date}}"
   },
   "errors": {

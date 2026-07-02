@@ -14,9 +14,9 @@ export default function LevelUpModal({ category, level, onClose }: Props) {
   const style = CATEGORY_STYLE[category]
   const cardRef = useRef<HTMLDivElement>(null)
 
-  // Auto-close after 3 seconds
+  // Auto-close after 5 seconds
   useEffect(() => {
-    const timer = setTimeout(onClose, 3000)
+    const timer = setTimeout(onClose, 5000)
     return () => clearTimeout(timer)
   }, [onClose])
 

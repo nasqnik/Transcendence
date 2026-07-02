@@ -17,6 +17,10 @@ export interface KidLevelData {
   level: number
   /** Progress within current main level as 0-100 percentage */
   progress: number
+  /** Raw XP earned within the current level (0 to xpMax-1) */
+  xpCurrent: number
+  /** XP needed to complete one level */
+  xpMax: number
   /** Coins earned */
   coins: number
   /** Consecutive days (ending today, local time) with ≥1 confirmed completion */
@@ -96,11 +100,13 @@ export function useKidLevel(): KidLevelData {
     }
   }
 
-  const level    = profile?.main_level ?? 0
+  const level      = profile?.main_level ?? 0
   // overall_xp is 0-(MAIN_XP_PER_LEVEL-1) within the current level
-  const progress = profile ? Math.round((profile.overall_xp / MAIN_XP_PER_LEVEL) * 100) : 0
-  const coins    = profile?.coins ?? 0
-  const streak   = computeStreak(completions)
+  const xpCurrent = profile?.overall_xp ?? 0
+  const xpMax     = MAIN_XP_PER_LEVEL
+  const progress  = profile ? Math.round((xpCurrent / xpMax) * 100) : 0
+  const coins     = profile?.coins ?? 0
+  const streak    = computeStreak(completions)
 
-  return { stats, pendingXpByCategory, level, progress, coins, streak, isLoading: statsLoading || profileLoading }
+  return { stats, pendingXpByCategory, level, progress, xpCurrent, xpMax, coins, streak, isLoading: statsLoading || profileLoading }
 }

@@ -6,53 +6,41 @@ import KidUserMenu from './KidUserMenu'
 export default function KidTopbar() {
   const { t } = useTranslation()
   const { currentUser } = useAuthStore()
-  const { level, progress, streak, coins } = useKidLevel()
+  const { streak, coins } = useKidLevel()
 
   return (
-    <header className="bg-white border-b border-gray-200 px-8 py-4 flex items-center justify-between">
-      <div>
-        <h1 className="font-heading text-3xl font-bold text-gray-900">
-          {t('dashboard.greeting', { name: currentUser?.username })} <span aria-hidden="true">👋</span>
-        </h1>
-        <p className="font-body text-sm text-gray-400">{t('kidDash.readyToLevel')}</p>
+    <header className="bg-white border-b border-gray-200 px-4 sm:px-8 py-3 sm:py-4 flex items-center justify-between gap-3">
+      <div className="min-w-0">
+        <p className="font-heading text-xl sm:text-2xl font-bold text-gray-900 truncate">
+          {t('dashboard.greeting', { name: currentUser?.username })}{' '}
+          <span aria-hidden="true">👋</span>
+        </p>
+        <p className="hidden sm:block font-body text-sm text-gray-400">{t('kidDash.readyToLevel')}</p>
       </div>
 
-      <div className="flex items-center gap-4">
-        {/* Streak */}
+      <div className="flex items-center gap-2 sm:gap-3 shrink-0">
         {streak > 0 && (
-          <div className="flex flex-col items-center gap-0.5">
-            <span className="font-heading font-bold text-lg leading-none"><span aria-hidden="true">🔥</span> {streak}</span>
-            <span className="font-body text-xs text-gray-400">{t('kidDash.streak')}</span>
-          </div>
-        )}
-
-        {/* Coins */}
-        {coins > 0 && (
-          <div className="flex flex-col items-center gap-0.5">
-            <span className="font-heading font-bold text-lg leading-none"><span aria-hidden="true">🪙</span> {coins}</span>
-            <span className="font-body text-xs text-gray-400">{t('kidDash.coins')}</span>
-          </div>
-        )}
-
-        {/* Overall level badge */}
-        <div className="flex flex-col items-end gap-1">
-          <span className="font-body font-bold text-sm text-gray-700">
-            <span aria-hidden="true">⭐</span> {t('kidDash.level', { level })}
-          </span>
           <div
-            role="progressbar"
-            aria-label={t('kidDash.level', { level })}
-            aria-valuenow={progress}
-            aria-valuemin={0}
-            aria-valuemax={100}
-            className="w-24 h-1.5 bg-gray-100 rounded-full overflow-hidden"
+            aria-label={t('kidDash.streakLabel', { count: streak })}
+            className="flex items-center gap-1.5 sm:gap-2.5 bg-amber-50 rounded-2xl px-3 sm:px-4 py-2 sm:py-2.5"
           >
-            <div
-              className="h-full bg-primary-500 rounded-full transition-all duration-500"
-              style={{ width: `${progress}%` }}
-            />
+            <span className="text-lg sm:text-xl" aria-hidden="true">🔥</span>
+            <div aria-hidden="true">
+              <p className="font-heading font-bold text-gray-900 text-sm sm:text-base leading-none">{streak}</p>
+              <p className="hidden sm:block font-body text-xs text-gray-400 leading-none mt-0.5">{t('kidDash.streak')}</p>
+            </div>
           </div>
-        </div>
+        )}
+
+        {coins > 0 && (
+          <div className="hidden sm:flex items-center gap-2.5 bg-amber-50 rounded-2xl px-4 py-2.5">
+            <span className="text-xl" aria-hidden="true">🪙</span>
+            <div>
+              <p className="font-heading font-bold text-gray-900 text-base leading-none">{coins}</p>
+              <p className="font-body text-xs text-gray-400 leading-none mt-0.5">{t('kidDash.coins')}</p>
+            </div>
+          </div>
+        )}
 
         <KidUserMenu />
       </div>

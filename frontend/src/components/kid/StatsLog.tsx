@@ -94,16 +94,17 @@ export default function StatsLog({ onClose }: Props) {
                         key={reward.category}
                         className={`font-body text-xs font-bold ${CATEGORY_STYLE[reward.category as TaskCategory]?.text ?? 'text-gray-500'}`}
                       >
-                        +{reward.points_value} {CATEGORY_STYLE[reward.category as TaskCategory]?.icon}
+                        +{reward.points_value}
+                        <span aria-hidden="true"> {CATEGORY_STYLE[reward.category as TaskCategory]?.icon}</span>
                       </span>
                     ))}
                   </div>
 
                   {/* Status */}
                   {completion.status === 'confirmed' ? (
-                    <span className="text-teal-700 text-base shrink-0" aria-label={t('kidDash.statusConfirmed')}>✓</span>
+                    <span role="img" aria-label={t('kidDash.statusConfirmed')} className="text-teal-700 text-base shrink-0">✓</span>
                   ) : (
-                    <span className="text-amber-700 text-base shrink-0" aria-label={t('kidDash.statusPendingReview')}>⏳</span>
+                    <span role="img" aria-label={t('kidDash.statusPendingReview')} className="text-amber-700 text-base shrink-0">⏳</span>
                   )}
 
                 </li>

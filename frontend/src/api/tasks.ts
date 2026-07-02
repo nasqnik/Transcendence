@@ -1,5 +1,6 @@
 import client from './client'
 import { type Task, type Completion } from '../constants/categories'
+export type { Completion }
 
 export interface CompletionInfo {
   status: 'pending' | 'confirmed' | 'rejected'
