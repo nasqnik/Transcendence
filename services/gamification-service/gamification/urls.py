@@ -1,10 +1,17 @@
 from django.urls import path
 
-from .views import InternalCompletionView, KidStatListView, KidProfileView, KidStatListViewParent
+from .views import (
+    InternalCoinDeductView,
+    InternalCompletionView,
+    KidStatListView,
+    KidProfileView,
+    KidStatListViewParent,
+)
                 
 
 urlpatterns = [
     path('internal/completions/', InternalCompletionView.as_view(), name='internal-completions'),
+    path('internal/coins/deduct/', InternalCoinDeductView.as_view(), name='internal-coins-deduct'),
 
     # read endpoints
     path('stats/', KidStatListView.as_view(), name='kid-stat-list'),
