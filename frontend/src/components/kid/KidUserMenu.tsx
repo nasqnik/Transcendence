@@ -43,7 +43,7 @@ export default function KidUserMenu() {
         onClick={() => setMenuOpen(v => !v)}
         aria-label={currentUser?.username ?? 'Menu'}
         aria-expanded={menuOpen}
-        aria-haspopup="true"
+        aria-haspopup="menu"
         className="w-10 h-10 rounded-full bg-primary-100 flex items-center justify-center font-heading font-bold text-primary-700 hover:bg-primary-200 focus-ring transition-colors"
       >
         {currentUser?.username?.[0]?.toUpperCase() ?? '?'}
@@ -58,6 +58,7 @@ export default function KidUserMenu() {
           <button
             type="button"
             role="menuitem"
+            autoFocus
             onClick={() => { closeMenu(); logout(); navigate('/') }}
             className="w-full px-4 py-3 flex items-center gap-3 font-body text-sm text-danger-700 hover:bg-danger-50 focus-ring transition-colors text-left"
           >

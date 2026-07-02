@@ -21,6 +21,10 @@ export default function VerifyEmail() {
   const [linkAlreadyUsed, setLinkAlreadyUsed] = useState(false)
 
   useEffect(() => {
+    if (state !== 'loading') document.getElementById('verify-heading')?.focus()
+  }, [state])
+
+  useEffect(() => {
     if (!token) return
 
     let cancelled = false
@@ -101,7 +105,7 @@ export default function VerifyEmail() {
       icon={linkAlreadyUsed ? '✅' : '❌'}
       title={linkAlreadyUsed ? t('verify.successTitle') : t('verify.errorTitle')}
       alertMessage={linkAlreadyUsed ? undefined : t(errorMessageKey)}
-      statusMessage={t(errorMessageKey)}
+      statusMessage={linkAlreadyUsed ? t('verify.successTitle') : t(errorMessageKey)}
       titleSize="md"
     >
       {linkAlreadyUsed && (

@@ -11,6 +11,7 @@ import { isValidEmail, isEmpty } from '../utils/validation'
 import FormField from '../components/FormField'
 import FormAlert from '../components/FormAlert'
 import Button from '../components/Button'
+import LanguageSwitcher from '../components/LanguageSwitcher'
 import { usePageTitle } from '../hooks/usePageTitle'
 
 // ─── Category → settings key map ─────────────────────────────────────────────
@@ -27,15 +28,17 @@ const ROWS: Array<{ category: TaskCategory; key: keyof CategorySettings }> = [
 interface ToggleProps {
   checked: boolean
   onChange: (value: boolean) => void
+  label: string
   disabled?: boolean
 }
 
-function Toggle({ checked, onChange, disabled }: ToggleProps) {
+function Toggle({ checked, onChange, label, disabled }: ToggleProps) {
   return (
     <button
       type="button"
       role="switch"
       aria-checked={checked}
+      aria-label={label}
       disabled={disabled}
       onClick={() => onChange(!checked)}
       className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors focus-ring disabled:opacity-50 ${
@@ -128,145 +131,199 @@ export default function KidSettings() {
     <main
       id="main-content"
       aria-labelledby="settings-heading"
-      className="flex-1 p-6 max-w-lg overflow-auto"
+      className="flex-1 p-6 max-w-lg mx-auto overflow-auto"
     >
-      <h1
-        id="settings-heading"
-        className="font-heading text-2xl font-bold text-gray-900 mb-6"
-      >
-        {t('kidDash.settings')}
-      </h1>
-
-      <section className="bg-white rounded-2xl p-6">
-
-        {/* Section header */}
-        <div className="flex items-center justify-between mb-1">
-          <h2 className="font-heading text-base font-bold text-gray-900">
-            {t('kidDash.categoryVisibility')}
-          </h2>
-          <span className="font-body text-xs text-gray-400 h-4" role="status">
-            {isPending    && t('tasks.creating').replace('...', '…')}
-            {savedRecently && !isPending && (
-              <>
-                <span aria-hidden="true">✓</span> {t('kidDash.settingsSaved')}
-              </>
-            )}
-          </span>
+      {/* Hero header */}
+      <div className="relative overflow-hidden bg-gradient-to-br from-primary-600 to-primary-500 rounded-2xl p-5 mb-6">
+        <div className="absolute -top-8 -right-8 w-28 h-28 rounded-full bg-white/10 pointer-events-none" aria-hidden="true" />
+        <div className="absolute -bottom-6 left-1/4 w-20 h-20 rounded-full bg-white/5 pointer-events-none" aria-hidden="true" />
+        <div className="relative flex items-center gap-4">
+          <span className="text-4xl shrink-0" aria-hidden="true">⚙️</span>
+          <div>
+            <h1 id="settings-heading" className="font-heading text-xl font-bold text-white">
+              {t('kidDash.settings')}
+            </h1>
+            <p className="font-body text-sm text-white">{t('kidDash.settingsHint')}</p>
+          </div>
         </div>
-        <p className="font-body text-sm text-gray-400 mb-5">
-          {t('kidDash.categoryVisibilityHint')}
-        </p>
+      </div>
 
-        {/* Toggle rows */}
-        {!displaySettings ? (
-          <p className="font-body text-sm text-gray-400">{t('tasks.loading')}</p>
-        ) : (
-          <div className="flex flex-col gap-4">
-            {ROWS.map(({ category, key }) => {
-              const style = CATEGORY_STYLE[category]
-              return (
-                <div key={category} className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className={`w-9 h-9 rounded-xl ${style.bg} flex items-center justify-center text-base shrink-0`} aria-hidden="true">
-                      {style.icon}
-                    </div>
-                    <span className="font-body text-sm font-semibold text-gray-700">
-                      {t(`kidDash.categories.${category}` as `kidDash.categories.${TaskCategory}`)}
-                    </span>
-                  </div>
-                  <Toggle
-                    checked={displaySettings[key]}
-                    onChange={value => handleToggle(key, value)}
-                    disabled={isPending}
-                  />
-                </div>
-              )
-            })}
+      {/* ── App settings ──────────────────────────────────────────────────────── */}
+      <section className="bg-white rounded-2xl overflow-hidden">
+        <div className="flex items-center gap-3 px-6 pt-5 pb-4">
+          <div className="w-9 h-9 rounded-xl bg-primary-50 flex items-center justify-center text-lg shrink-0" aria-hidden="true">
+            🌍
           </div>
-        )}
+          <h2 className="font-heading text-base font-bold text-gray-900">
+            {t('kidDash.appSettings')}
+          </h2>
+        </div>
 
-        {/* Error */}
-        {isError && (
-          <p role="alert" className="font-body text-sm text-danger-700 mt-4">
-            {t('errors.generic')}
+        <div className="px-6 pb-6">
+          <span className="font-heading text-sm font-semibold text-gray-700 mb-3 block">
+            {t('a11y.languageSwitcher')}
+          </span>
+          <LanguageSwitcher />
+
+          <div className="border-t border-gray-100 my-5" />
+
+          <div className="flex items-center justify-between mb-1">
+            <span className="font-heading text-sm font-semibold text-gray-700">
+              {t('kidDash.categoryVisibility')}
+            </span>
+            <span className="font-body text-xs text-gray-400 h-4" role="status">
+              {isPending && t('kidDash.settingsSaving')}
+              {savedRecently && !isPending && (
+                <>
+                  <span aria-hidden="true">✓</span> {t('kidDash.settingsSaved')}
+                </>
+              )}
+            </span>
+          </div>
+          <p className="font-body text-sm text-gray-400 mb-4">
+            {t('kidDash.categoryVisibilityHint')}
           </p>
-        )}
 
-      </section>
+          {!displaySettings ? (
+            <p className="font-body text-sm text-gray-400">{t('tasks.loading')}</p>
+          ) : (
+            <div className="flex flex-col gap-3">
+              {ROWS.map(({ category, key }) => {
+                const style = CATEGORY_STYLE[category]
+                return (
+                  <div
+                    key={category}
+                    className="flex items-center justify-between px-4 py-3 rounded-xl bg-gray-50"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div
+                        className={`w-9 h-9 rounded-xl ${style.bg} flex items-center justify-center text-base shrink-0`}
+                        aria-hidden="true"
+                      >
+                        {style.icon}
+                      </div>
+                      <span className={`font-body text-sm font-semibold ${style.text}`}>
+                        {t(`kidDash.categories.${category}` as `kidDash.categories.${TaskCategory}`)}
+                      </span>
+                    </div>
+                    <Toggle
+                      checked={displaySettings[key]}
+                      onChange={value => handleToggle(key, value)}
+                      label={t(`kidDash.categories.${category}` as `kidDash.categories.${TaskCategory}`)}
+                      disabled={isPending}
+                    />
+                  </div>
+                )
+              })}
+            </div>
+          )}
 
-      {/* Invite a parent */}
-      <section className="bg-white rounded-2xl p-6 mt-4">
-        <h2 className="font-heading text-base font-bold text-gray-900 mb-1">
-          {t('inviteParent.title')}
-        </h2>
-        <p className="font-body text-sm text-gray-400 mb-5">
-          {t('inviteParent.hint')}
-        </p>
-
-        {sentTo ? (
-          <div className="flex flex-col items-center gap-3 py-4 text-center">
-            <div className="text-3xl" aria-hidden="true">📬</div>
-            <p className="font-body text-sm font-semibold text-primary-700">
-              {t('inviteParent.success', { email: sentTo })}
+          {isError && (
+            <p role="alert" className="font-body text-sm text-danger-700 mt-4">
+              {t('errors.generic')}
             </p>
-            <p className="font-body text-xs text-gray-500">{t('inviteParent.successHint')}</p>
-            <Button variant="secondary" onClick={() => setSentTo(null)}>
-              {t('inviteParent.sendAnother')}
-            </Button>
-          </div>
-        ) : (
-          <form
-            noValidate
-            onSubmit={handleInvite}
-            className="flex flex-col gap-3"
-            aria-label={t('inviteParent.title')}
-            aria-busy={inviteLoading}
-          >
-            {inviteErrorKey && <FormAlert message={t(inviteErrorKey)} />}
-            <FormField
-              id="invite-email"
-              label={t('inviteParent.email')}
-              type="email"
-              value={inviteEmail}
-              required
-              autoComplete="off"
-              disabled={inviteLoading}
-              error={fieldErrors.email}
-              onChange={e => { setInviteEmail(e.target.value); clearFieldError('email') }}
-            />
-            <FormField
-              id="invite-username-hint"
-              label={t('inviteParent.usernameHint')}
-              type="text"
-              dir="ltr"
-              value={usernameHint}
-              autoComplete="off"
-              disabled={inviteLoading}
-              onChange={e => setUsernameHint(e.target.value)}
-            />
-            <Button variant="primary" type="submit" disabled={inviteLoading}>
-              {inviteLoading ? t('inviteParent.sending') : t('inviteParent.submit')}
-            </Button>
-          </form>
-        )}
+          )}
+        </div>
       </section>
 
-      {/* Legal */}
-      <nav aria-label={t('a11y.legalNav')} className="mt-4 flex gap-6 px-1">
-        <Link
-          to="/privacy"
-          className="font-body text-xs text-gray-400 underline hover:text-primary-600 focus-ring rounded-sm"
-        >
-          {t('legal.privacy')}
-        </Link>
-        <Link
-          to="/terms"
-          className="font-body text-xs text-gray-400 underline hover:text-primary-600 focus-ring rounded-sm"
-        >
-          {t('legal.terms')}
-        </Link>
-      </nav>
+      {/* ── Invite a parent ───────────────────────────────────────────────────── */}
+      <section className="bg-white rounded-2xl mt-4 overflow-hidden">
+        <div className="flex items-start gap-3 px-6 pt-5 pb-4">
+          <div className="w-9 h-9 rounded-xl bg-teal-50 flex items-center justify-center text-lg shrink-0 mt-0.5" aria-hidden="true">
+            👨‍👩‍👧
+          </div>
+          <div>
+            <h2 className="font-heading text-base font-bold text-gray-900">
+              {t('inviteParent.title')}
+            </h2>
+            <p className="font-body text-sm text-gray-400 mt-0.5">
+              {t('inviteParent.hint')}
+            </p>
+          </div>
+        </div>
 
+        <div className="px-6 pb-6">
+          {sentTo ? (
+            <div className="flex flex-col items-center gap-3 py-4 text-center">
+              <div className="text-3xl" aria-hidden="true">📬</div>
+              <p className="font-body text-sm font-semibold text-primary-700">
+                {t('inviteParent.success', { email: sentTo })}
+              </p>
+              <p className="font-body text-xs text-gray-400">{t('inviteParent.successHint')}</p>
+              <Button variant="secondary" onClick={() => setSentTo(null)}>
+                {t('inviteParent.sendAnother')}
+              </Button>
+            </div>
+          ) : (
+            <form
+              noValidate
+              onSubmit={handleInvite}
+              className="flex flex-col gap-3"
+              aria-label={t('inviteParent.title')}
+              aria-busy={inviteLoading}
+            >
+              {inviteErrorKey && <FormAlert message={t(inviteErrorKey)} />}
+              <FormField
+                id="invite-email"
+                label={t('inviteParent.email')}
+                type="email"
+                value={inviteEmail}
+                required
+                autoComplete="off"
+                disabled={inviteLoading}
+                error={fieldErrors.email}
+                onChange={e => { setInviteEmail(e.target.value); clearFieldError('email') }}
+              />
+              <FormField
+                id="invite-username-hint"
+                label={t('inviteParent.usernameHint')}
+                type="text"
+                dir="ltr"
+                value={usernameHint}
+                autoComplete="off"
+                disabled={inviteLoading}
+                onChange={e => setUsernameHint(e.target.value)}
+              />
+              <Button variant="primary" type="submit" disabled={inviteLoading}>
+                {inviteLoading ? t('inviteParent.sending') : t('inviteParent.submit')}
+              </Button>
+            </form>
+          )}
+        </div>
+      </section>
+
+      {/* ── Legal ─────────────────────────────────────────────────────────────── */}
+      <section className="bg-white rounded-2xl mt-4 overflow-hidden">
+        <div className="flex items-center gap-3 px-6 pt-5 pb-4">
+          <div className="w-9 h-9 rounded-xl bg-blue-50 flex items-center justify-center text-lg shrink-0" aria-hidden="true">
+            📄
+          </div>
+          <h2 className="font-heading text-base font-bold text-gray-900">
+            {t('legal.sectionTitle')}
+          </h2>
+        </div>
+
+        <nav aria-label={t('a11y.legalNav')} className="px-4 pb-4 flex flex-col gap-1">
+          <Link
+            to="/privacy"
+            className="flex items-center justify-between px-3 py-3 rounded-xl hover:bg-gray-50 focus-ring transition-colors"
+          >
+            <span className="font-body text-sm font-semibold text-gray-700">
+              {t('legal.privacy')}
+            </span>
+            <span aria-hidden="true" className="text-gray-300 text-xl leading-none">›</span>
+          </Link>
+          <Link
+            to="/terms"
+            className="flex items-center justify-between px-3 py-3 rounded-xl hover:bg-gray-50 focus-ring transition-colors"
+          >
+            <span className="font-body text-sm font-semibold text-gray-700">
+              {t('legal.terms')}
+            </span>
+            <span aria-hidden="true" className="text-gray-300 text-xl leading-none">›</span>
+          </Link>
+        </nav>
+      </section>
     </main>
   )
 }

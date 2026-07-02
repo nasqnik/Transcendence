@@ -21,6 +21,8 @@ interface Props {
   onToggleExpand?: () => void
   /** Extra classes applied to the <li> wrapper (e.g. hover styles, padding variants). */
   className?: string
+  /** When true: shows the task's due date in danger color below the category label. */
+  overdue?: boolean
 }
 
 // ─── Shared SVG checkmark ─────────────────────────────────────────────────────
@@ -43,11 +45,21 @@ export default function TaskRow({
   expanded,
   onToggleExpand,
   className = '',
+  overdue = false,
 }: Props) {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
 
   const category = primaryCategory(task.category_rewards)
   const style     = CATEGORY_STYLE[category]
+
+  let dueDateFormatted: string | null = null
+  if (overdue && task.due_date) {
+    const [y, m, d] = task.due_date.split('-').map(Number)
+    dueDateFormatted = new Date(y, m - 1, d).toLocaleDateString(
+      i18n.language,
+      { day: 'numeric', month: 'short' }
+    )
+  }
 
   const isPending   = completionInfo?.status === 'pending'
   const isConfirmed = completionInfo?.status === 'confirmed'
@@ -78,13 +90,18 @@ export default function TaskRow({
             aria-expanded={!!expanded}
             className="flex-1 min-w-0 text-left focus-ring rounded-lg"
           >
-            <p className={`font-body font-semibold text-sm ${isDone ? 'line-through text-gray-400' : 'text-gray-900'}`}>
+            <p className={`font-body font-semibold text-sm truncate ${isDone ? 'line-through text-gray-400' : 'text-gray-900'}`}>
               {task.title}
               <span className="ms-1 text-gray-300 text-xs" aria-hidden="true">{expanded ? '▲' : '▼'}</span>
             </p>
             <p className={`font-body text-xs font-semibold mt-0.5 ${style.text}`}>
               {t(`kidDash.categories.${category}` as `kidDash.categories.${TaskCategory}`)}
             </p>
+            {dueDateFormatted && (
+              <p className="font-body text-xs font-semibold text-danger-700 mt-0.5">
+                {t('tasks.dueDate', { date: dueDateFormatted })}
+              </p>
+            )}
           </button>
         ) : (
           <div className="flex-1 min-w-0">
@@ -94,35 +111,44 @@ export default function TaskRow({
             <p className={`font-body text-xs font-semibold mt-0.5 ${style.text}`}>
               {t(`kidDash.categories.${category}` as `kidDash.categories.${TaskCategory}`)}
             </p>
+            {dueDateFormatted && (
+              <p className="font-body text-xs font-semibold text-danger-700 mt-0.5">
+                {t('tasks.dueDate', { date: dueDateFormatted })}
+              </p>
+            )}
           </div>
         )}
 
         {/* XP reward */}
-        <div className="flex items-center gap-1 shrink-0">
-          <span className="font-body font-bold text-sm text-gray-700">+{task.xp_reward}</span>
-          <span aria-hidden="true">⭐</span>
+        <div className="flex items-center gap-1 shrink-0 bg-amber-50 rounded-full px-2.5 py-1">
+          <span aria-hidden="true" className="text-xs">⭐</span>
+          <span className="font-body font-bold text-xs text-amber-700">+{task.xp_reward}</span>
         </div>
 
         {/* Status indicator */}
         {distinguishPending && isPending ? (
           <span
-            className="w-7 h-7 flex items-center justify-center shrink-0 text-amber-700"
+            role="img"
             aria-label={t('kidDash.taskPending')}
+            className="w-8 h-8 flex items-center justify-center shrink-0 text-amber-700"
           >
             ⏳
           </span>
         ) : isDone ? (
-          <span className="w-7 h-7 rounded-full bg-teal-500 border-2 border-teal-500 shrink-0 flex items-center justify-center">
+          <span className="w-8 h-8 rounded-full bg-teal-500 shrink-0 flex items-center justify-center shadow-sm">
             <Checkmark />
           </span>
         ) : (
           <button
             type="button"
-            role="checkbox"
-            aria-checked={false}
             aria-label={task.title}
-            onClick={() => !isRejected && onComplete(task.id)}
-            className="w-7 h-7 rounded-full border-2 border-gray-300 hover:border-primary-500 shrink-0 flex items-center justify-center focus-ring transition-colors"
+            disabled={isRejected}
+            onClick={() => onComplete(task.id)}
+            className={`w-8 h-8 rounded-full border-2 shrink-0 flex items-center justify-center focus-ring transition-colors ${
+              isRejected
+                ? 'border-gray-200 opacity-40 cursor-not-allowed'
+                : 'border-gray-200 hover:border-primary-500 hover:bg-primary-50'
+            }`}
           />
         )}
       </div>
