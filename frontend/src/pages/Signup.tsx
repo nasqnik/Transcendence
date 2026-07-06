@@ -1,9 +1,10 @@
 import { Link, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useEffect, useState } from 'react'
+import AuthCard from '../components/AuthCard'
 import AuthMessageLayout from '../components/AuthMessageLayout'
 import GoogleSignInSection from '../components/GoogleSignInSection'
-import LanguageSwitcher from '../components/LanguageSwitcher'
+import LegalLinks from '../components/LegalLinks'
 import Button from '../components/Button'
 import FormAlert from '../components/FormAlert'
 import FormField from '../components/FormField'
@@ -19,6 +20,51 @@ import { getApiErrorKey, getFieldErrors } from '../api/errors'
 import { useFormErrors } from '../hooks/useFormErrors'
 import { usePageTitle } from '../hooks/usePageTitle'
 import { isEmpty, isValidEmail, validatePasswordField } from '../utils/validation'
+
+// ── Terms checkbox ──────────────────────────────────────────────────────────
+// Module-level so it keeps a stable component identity across Signup renders
+// (a nested component would remount its subtree on every keystroke).
+
+interface TermsCheckboxProps {
+  checked: boolean
+  onChange: (checked: boolean) => void
+  disabled: boolean
+  error?: string
+  errorId: string
+}
+
+function TermsCheckbox({ checked, onChange, disabled, error, errorId }: TermsCheckboxProps) {
+  const { t } = useTranslation()
+  return (
+    <div className="flex flex-col gap-1">
+      <label className="flex items-start gap-2 cursor-pointer">
+        <input
+          type="checkbox"
+          checked={checked}
+          onChange={e => onChange(e.target.checked)}
+          disabled={disabled}
+          aria-describedby={error ? errorId : undefined}
+          className="mt-0.5 accent-primary-600"
+        />
+        <span className="font-body text-sm text-gray-600">
+          {t('auth.agreeToTermsPrefix')}{' '}
+          <Link to="/terms" target="_blank" rel="noopener" className="text-primary-600 hover:text-primary-700 underline focus-ring rounded-sm">
+            {t('legal.terms')}
+          </Link>{' '}
+          {t('common.and')}{' '}
+          <Link to="/privacy" target="_blank" rel="noopener" className="text-primary-600 hover:text-primary-700 underline focus-ring rounded-sm">
+            {t('legal.privacy')}
+          </Link>
+        </span>
+      </label>
+      {error && (
+        <p id={errorId} className="font-body text-sm text-danger-700" role="alert">
+          {error}
+        </p>
+      )}
+    </div>
+  )
+}
 
 export default function Signup() {
   const navigate = useNavigate()
@@ -153,40 +199,6 @@ export default function Signup() {
     }
   }
 
-  // ── Terms checkbox ────────────────────────────────────────────────────────
-
-  function TermsCheckbox({ errorId }: { errorId: string }) {
-    return (
-      <div className="flex flex-col gap-1">
-        <label className="flex items-start gap-2 cursor-pointer">
-          <input
-            type="checkbox"
-            checked={agreedToTerms}
-            onChange={e => { setAgreedToTerms(e.target.checked); clearFieldError('agreedToTerms') }}
-            disabled={isLoading}
-            aria-describedby={fieldErrors.agreedToTerms ? errorId : undefined}
-            className="mt-0.5 accent-primary-600"
-          />
-          <span className="font-body text-sm text-gray-600">
-            {t('auth.agreeToTermsPrefix')}{' '}
-            <Link to="/terms" target="_blank" rel="noopener" className="text-primary-600 hover:text-primary-700 underline focus-ring rounded-sm">
-              {t('legal.terms')}
-            </Link>{' '}
-            {t('common.and')}{' '}
-            <Link to="/privacy" target="_blank" rel="noopener" className="text-primary-600 hover:text-primary-700 underline focus-ring rounded-sm">
-              {t('legal.privacy')}
-            </Link>
-          </span>
-        </label>
-        {fieldErrors.agreedToTerms && (
-          <p id={errorId} className="font-body text-sm text-danger-700" role="alert">
-            {fieldErrors.agreedToTerms}
-          </p>
-        )}
-      </div>
-    )
-  }
-
   // ── Post-submit screens ───────────────────────────────────────────────────
 
   if (parentPendingEmail) {
@@ -259,7 +271,13 @@ export default function Signup() {
           <FormField id="name" label={t('auth.name')} type="text" value={name} required autoComplete="name" disabled={isLoading} error={fieldErrors.name} onChange={e => { setName(e.target.value); clearFieldError('name') }} />
           <FormField id="username" label={t('auth.username')} type="text" dir="ltr" value={username} required autoComplete="username" disabled={isLoading} error={fieldErrors.username} onChange={e => { setUsername(e.target.value); clearFieldError('username') }} />
           <FormField id="parentEmail" label={t('auth.parentEmail')} type="email" value={parentEmail} placeholder={t('auth.emailHint')} required autoComplete="off" disabled={isLoading} error={fieldErrors.parentEmail} onChange={e => { setParentEmail(e.target.value); clearFieldError('parentEmail') }} />
-          <TermsCheckbox errorId="terms-error-google" />
+          <TermsCheckbox
+            checked={agreedToTerms}
+            onChange={v => { setAgreedToTerms(v); clearFieldError('agreedToTerms') }}
+            disabled={isLoading}
+            error={fieldErrors.agreedToTerms}
+            errorId="terms-error-google"
+          />
           <Button variant="primary" type="submit" className="w-full" disabled={isLoading}>
             {isLoading ? t('auth.signingUp') : t('auth.signup')}
           </Button>
@@ -276,33 +294,10 @@ export default function Signup() {
   const headerIcon = role === 'parent' ? '👨‍👩‍👧' : role === 'kid' ? '🧒' : '✨'
 
   return (
-    <main
-      aria-labelledby="signup-heading"
-      className="min-h-screen bg-primary-50 flex flex-col items-center justify-center p-4 py-8 gap-4"
-    >
-      <div className="w-full max-w-sm flex flex-col gap-3">
-        <div className="bg-white rounded-2xl overflow-hidden">
+    <AuthCard headingId="signup-heading" title={t('auth.signup')} icon={headerIcon}>
 
-          {/* Gradient header */}
-          <div className="relative bg-gradient-to-br from-primary-600 to-primary-500 px-6 py-5 overflow-hidden">
-            <div className="absolute -top-6 -right-6 w-24 h-24 rounded-full bg-white/10 pointer-events-none" aria-hidden="true" />
-            <div className="absolute -bottom-5 left-1/3 w-16 h-16 rounded-full bg-white/5 pointer-events-none" aria-hidden="true" />
-            <div className="relative">
-              <div className="flex items-center gap-1.5 mb-3">
-                <span className="text-base" aria-hidden="true">⭐</span>
-                <span className="font-heading font-bold text-white/90 text-sm">{t('app.name')}</span>
-              </div>
-              <div className="text-3xl mb-1.5" aria-hidden="true">{headerIcon}</div>
-              <h1 id="signup-heading" className="font-heading text-2xl font-bold text-white">
-                {t('auth.signup')}
-              </h1>
-            </div>
-          </div>
-
-          <div className="px-6 py-6 flex flex-col gap-5">
-
-            {/* Role selector */}
-            <fieldset className="flex flex-col gap-3 border-0 p-0 m-0">
+      {/* Role selector */}
+      <fieldset className="flex flex-col gap-3 border-0 p-0 m-0">
               <legend className="font-body text-sm font-semibold text-gray-700 w-full">
                 {t('auth.roleSelector')}
               </legend>
@@ -361,7 +356,13 @@ export default function Signup() {
 
                   {role === 'kid' && <FormField id="parentEmail" label={t('auth.parentEmail')} type="email" value={parentEmail} placeholder={t('auth.emailHint')} required autoComplete="off" disabled={isLoading} error={fieldErrors.parentEmail} onChange={e => { setParentEmail(e.target.value); clearFieldError('parentEmail') }} />}
 
-                  <TermsCheckbox errorId="terms-error" />
+                  <TermsCheckbox
+                    checked={agreedToTerms}
+                    onChange={v => { setAgreedToTerms(v); clearFieldError('agreedToTerms') }}
+                    disabled={isLoading}
+                    error={fieldErrors.agreedToTerms}
+                    errorId="terms-error"
+                  />
 
                   <Button variant="primary" type="submit" className="w-full" disabled={isLoading}>
                     {isLoading ? t('auth.signingUp') : t('auth.signup')}
@@ -403,23 +404,9 @@ export default function Signup() {
                   {t('nav.login')}
                 </Link>
               </p>
-              <nav aria-label={t('a11y.legalNav')} className="flex gap-4">
-                <Link to="/privacy" className="font-body text-xs text-gray-500 hover:text-primary-600 focus-ring rounded-sm">
-                  {t('legal.privacy')}
-                </Link>
-                <Link to="/terms" className="font-body text-xs text-gray-500 hover:text-primary-600 focus-ring rounded-sm">
-                  {t('legal.terms')}
-                </Link>
-              </nav>
+              <LegalLinks />
             </div>
 
-          </div>
-        </div>
-
-        <div className="flex justify-center">
-          <LanguageSwitcher />
-        </div>
-      </div>
-    </main>
+    </AuthCard>
   )
 }

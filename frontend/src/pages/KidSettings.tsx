@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
@@ -66,14 +66,10 @@ export default function KidSettings() {
     queryFn: getCategorySettings,
   })
 
-  // Local state mirrors server — updated optimistically on each toggle
+  // Optimistic override applied on each toggle; null until the user changes
+  // something, at which point it takes over from the server copy.
   const [settings, setSettings] = useState<CategorySettings | null>(null)
   const [savedRecently, setSavedRecently] = useState(false)
-
-  // Sync local state once server data arrives
-  useEffect(() => {
-    if (serverSettings && !settings) setSettings(serverSettings)
-  }, [serverSettings, settings])
 
   // ── Invite parent ────────────────────────────────────────────────────────────
   const [inviteEmail, setInviteEmail]       = useState('')
@@ -119,8 +115,9 @@ export default function KidSettings() {
   })
 
   function handleToggle(key: keyof CategorySettings, value: boolean) {
-    if (!settings) return
-    const updated = { ...settings, [key]: value }
+    const base = settings ?? serverSettings
+    if (!base) return
+    const updated = { ...base, [key]: value }
     setSettings(updated)
     save(updated)
   }

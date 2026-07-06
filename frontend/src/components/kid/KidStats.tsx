@@ -94,13 +94,13 @@ export default function KidStats() {
                   className="relative h-3 bg-gray-100 rounded-full overflow-hidden ms-10"
                 >
                   <div
-                    className={`absolute inset-y-0 left-0 ${style.bar} rounded-full transition-all duration-500`}
+                    className={`absolute inset-y-0 start-0 ${style.bar} rounded-full transition-all duration-500`}
                     style={{ width: `${xp_percent}%` }}
                   />
                   {pendingWidth > 0 && (
                     <div
                       className={`absolute inset-y-0 ${style.bar} opacity-35 rounded-full transition-all duration-500`}
-                      style={{ left: `${xp_percent}%`, width: `${pendingWidth}%` }}
+                      style={{ insetInlineStart: `${xp_percent}%`, width: `${pendingWidth}%` }}
                     />
                   )}
                 </div>

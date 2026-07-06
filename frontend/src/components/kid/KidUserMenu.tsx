@@ -51,7 +51,7 @@ export default function KidUserMenu() {
 
       {/* Dropdown */}
       {menuOpen && (
-        <div role="menu" className="absolute right-0 top-full mt-2 w-48 bg-white rounded-2xl shadow-lg border border-gray-200 z-50 overflow-hidden">
+        <div role="menu" className="absolute end-0 top-full mt-2 w-48 bg-white rounded-2xl shadow-lg border border-gray-200 z-50 overflow-hidden">
           <div className="px-4 py-3 border-b border-gray-100">
             <p className="font-body font-semibold text-sm text-gray-900">{currentUser?.username}</p>
           </div>

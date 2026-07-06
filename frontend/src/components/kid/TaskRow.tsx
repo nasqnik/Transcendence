@@ -141,7 +141,7 @@ export default function TaskRow({
         ) : (
           <button
             type="button"
-            aria-label={task.title}
+            aria-label={t('a11y.completeTask', { title: task.title })}
             disabled={isRejected}
             onClick={() => onComplete(task.id)}
             className={`w-8 h-8 rounded-full border-2 shrink-0 flex items-center justify-center focus-ring transition-colors ${
