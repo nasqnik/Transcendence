@@ -113,6 +113,14 @@ GAMIFICATION_INTERNAL_URL = os.getenv('GAMIFICATION_INTERNAL_URL')
 if not GAMIFICATION_INTERNAL_URL:
     raise ImproperlyConfigured("GAMIFICATION_INTERNAL_URL environment variable is required.")
 
+AUTH_INTERNAL_URL = os.getenv('AUTH_INTERNAL_URL')
+if not AUTH_INTERNAL_URL:
+    raise ImproperlyConfigured("AUTH_INTERNAL_URL environment variable is required.")
+
+NOTIFICATION_INTERNAL_URL = os.getenv('NOTIFICATION_INTERNAL_URL')
+if not NOTIFICATION_INTERNAL_URL:
+    raise ImproperlyConfigured("NOTIFICATION_INTERNAL_URL environment variable is required.")
+
 INTERNAL_SERVICE_TOKEN = os.getenv('INTERNAL_SERVICE_TOKEN')
 if not INTERNAL_SERVICE_TOKEN:
     raise ImproperlyConfigured("INTERNAL_SERVICE_TOKEN environment variable is required.")

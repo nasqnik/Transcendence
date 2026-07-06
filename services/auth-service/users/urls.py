@@ -12,6 +12,7 @@ from .views import (
     InviteSecondParentView,
     KidGoogleLoginView,
     KidGoogleSignupView,
+    KidParentInternalView,
     KidSignupView,
     KidTokenObtainView,
     KidTokenRefreshView,
@@ -52,6 +53,12 @@ urlpatterns = [
         GuardianInviteDetailView.as_view(),
     ),
     path("guardian-invitations/accept/", AcceptGuardianInviteView.as_view()),
+
+    # Internal (service-to-service)
+    path(
+        "auth/internal/kids/<uuid:kid_id>/parent/",
+        KidParentInternalView.as_view(),
+    ),
 ]
 
 
