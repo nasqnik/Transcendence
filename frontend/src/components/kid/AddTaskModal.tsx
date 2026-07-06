@@ -1,9 +1,9 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { createTask, type CreateTaskInput } from '../../api/tasks'
 import { type Task } from '../../constants/categories'
-import { useFocusTrap } from '../../hooks/useFocusTrap'
+import Modal from '../Modal'
 
 interface Props {
   onClose: () => void
@@ -12,24 +12,12 @@ interface Props {
 export default function AddTaskModal({ onClose }: Props) {
   const { t } = useTranslation()
   const queryClient = useQueryClient()
-  const cardRef = useRef<HTMLDivElement>(null)
 
   const today = new Date().toISOString().slice(0, 10)
 
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
   const [dueDate, setDueDate] = useState(today)
-
-  // Close on click outside
-  useEffect(() => {
-    function handleClickOutside(e: MouseEvent) {
-      if (!cardRef.current?.contains(e.target as Node)) onClose()
-    }
-    document.addEventListener('mousedown', handleClickOutside)
-    return () => document.removeEventListener('mousedown', handleClickOutside)
-  }, [onClose])
-
-  useFocusTrap(cardRef, onClose)
 
   const { mutate, isPending, isError } = useMutation({
     mutationFn: createTask,
@@ -82,15 +70,7 @@ export default function AddTaskModal({ onClose }: Props) {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-      <div
-        ref={cardRef}
-        tabIndex={-1}
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="add-task-heading"
-        className="bg-white rounded-2xl w-full max-w-md mx-4"
-      >
+    <Modal onClose={onClose} labelledBy="add-task-heading" cardClassName="rounded-2xl w-full max-w-md mx-4">
 
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
@@ -179,7 +159,6 @@ export default function AddTaskModal({ onClose }: Props) {
           </button>
 
         </form>
-      </div>
-    </div>
+    </Modal>
   )
 }

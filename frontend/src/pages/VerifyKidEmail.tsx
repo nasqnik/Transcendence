@@ -62,7 +62,7 @@ export default function VerifyKidEmail() {
     return () => {
       cancelled = true
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps -- language changes must not re-trigger verification
+  // Deps intentionally limited to `token` — language changes must not re-trigger verification.
   }, [token])
 
   if (state === 'loading') {
@@ -136,7 +136,6 @@ export default function VerifyKidEmail() {
       title={linkAlreadyUsed ? t('verify.successTitle') : t('verify.errorTitle')}
       alertMessage={linkAlreadyUsed ? undefined : t(errorMessageKey)}
       statusMessage={linkAlreadyUsed ? t('verify.successTitle') : t(errorMessageKey)}
-      titleSize="md"
     >
       {linkAlreadyUsed && (
         parentLoggedIn ? (

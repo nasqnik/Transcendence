@@ -2,9 +2,10 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useEffect, useState } from 'react'
 import { attemptDualRoleLogin } from '../auth/loginFlow'
+import AuthCard from '../components/AuthCard'
 import AuthMessageLayout from '../components/AuthMessageLayout'
 import GoogleSignInSection from '../components/GoogleSignInSection'
-import LanguageSwitcher from '../components/LanguageSwitcher'
+import LegalLinks from '../components/LegalLinks'
 import Button from '../components/Button'
 import FormAlert from '../components/FormAlert'
 import FormField from '../components/FormField'
@@ -73,104 +74,66 @@ export default function Login() {
   }
 
   return (
-    <main
-      aria-labelledby="login-heading"
-      className="min-h-screen bg-primary-50 flex flex-col items-center justify-center p-4 py-8 gap-4"
-    >
-      <div className="w-full max-w-sm flex flex-col gap-3">
-        <div className="bg-white rounded-2xl overflow-hidden">
+    <AuthCard headingId="login-heading" title={t('auth.login')}>
+      <form
+        noValidate
+        className="flex flex-col gap-4"
+        onSubmit={handleSubmit}
+        aria-labelledby="login-heading"
+        aria-busy={isLoading}
+      >
+        {errorKey && <FormAlert message={t(errorKey)} />}
 
-          {/* Gradient header */}
-          <div className="relative bg-gradient-to-br from-primary-600 to-primary-500 px-6 py-5 overflow-hidden">
-            <div className="absolute -top-6 -right-6 w-24 h-24 rounded-full bg-white/10 pointer-events-none" aria-hidden="true" />
-            <div className="absolute -bottom-5 left-1/3 w-16 h-16 rounded-full bg-white/5 pointer-events-none" aria-hidden="true" />
-            <div className="relative">
-              <div className="flex items-center gap-1.5 mb-3">
-                <span className="text-base" aria-hidden="true">⭐</span>
-                <span className="font-heading font-bold text-white/90 text-sm">{t('app.name')}</span>
-              </div>
-              <h1 id="login-heading" className="font-heading text-2xl font-bold text-white">
-                {t('auth.login')}
-              </h1>
-            </div>
-          </div>
+        <FormField
+          id="identifier"
+          label={t('auth.emailOrUsername')}
+          type="text"
+          dir="ltr"
+          value={identifier}
+          placeholder={t('auth.emailOrUsernameHint')}
+          required
+          autoComplete="username"
+          disabled={isLoading}
+          error={fieldErrors.identifier}
+          onChange={e => { setIdentifier(e.target.value); clearFieldError('identifier') }}
+        />
 
-          {/* Form */}
-          <div className="px-6 py-6 flex flex-col gap-5">
-            <form
-              noValidate
-              className="flex flex-col gap-4"
-              onSubmit={handleSubmit}
-              aria-labelledby="login-heading"
-              aria-busy={isLoading}
-            >
-              {errorKey && <FormAlert message={t(errorKey)} />}
+        <FormField
+          id="password"
+          label={t('auth.password')}
+          type="password"
+          value={password}
+          required
+          autoComplete="current-password"
+          disabled={isLoading}
+          error={fieldErrors.password}
+          onChange={e => { setPassword(e.target.value); clearFieldError('password') }}
+        />
 
-              <FormField
-                id="identifier"
-                label={t('auth.emailOrUsername')}
-                type="text"
-                dir="ltr"
-                value={identifier}
-                placeholder={t('auth.emailOrUsernameHint')}
-                required
-                autoComplete="username"
-                disabled={isLoading}
-                error={fieldErrors.identifier}
-                onChange={e => { setIdentifier(e.target.value); clearFieldError('identifier') }}
-              />
+        <Button variant="primary" type="submit" className="w-full" disabled={isLoading}>
+          {isLoading ? t('auth.loggingIn') : t('auth.login')}
+        </Button>
+      </form>
 
-              <FormField
-                id="password"
-                label={t('auth.password')}
-                type="password"
-                value={password}
-                required
-                autoComplete="current-password"
-                disabled={isLoading}
-                error={fieldErrors.password}
-                onChange={e => { setPassword(e.target.value); clearFieldError('password') }}
-              />
+      <GoogleSignInSection
+        disabled={isLoading}
+        onSuccess={credential => runLogin({ type: 'google', credential })}
+        onError={() => { resetFieldErrors(); setErrorKey('errors.api.invalidGoogleToken') }}
+      />
 
-              <Button variant="primary" type="submit" className="w-full" disabled={isLoading}>
-                {isLoading ? t('auth.loggingIn') : t('auth.login')}
-              </Button>
-            </form>
-
-            <GoogleSignInSection
-              disabled={isLoading}
-              onSuccess={credential => runLogin({ type: 'google', credential })}
-              onError={() => { resetFieldErrors(); setErrorKey('errors.api.invalidGoogleToken') }}
-            />
-
-            <div className="flex flex-col items-center gap-3 pt-1">
-              <p className="font-body text-sm text-gray-500 text-center">
-                {t('auth.noAccount')}{' '}
-                <Link
-                  to="/signup"
-                  className="font-semibold text-primary-600 hover:text-primary-700 focus-ring rounded-sm"
-                  aria-label={t('a11y.goToSignup')}
-                >
-                  {t('nav.signup')}
-                </Link>
-              </p>
-              <nav aria-label={t('a11y.legalNav')} className="flex gap-4">
-                <Link to="/privacy" className="font-body text-xs text-gray-500 hover:text-primary-600 focus-ring rounded-sm">
-                  {t('legal.privacy')}
-                </Link>
-                <Link to="/terms" className="font-body text-xs text-gray-500 hover:text-primary-600 focus-ring rounded-sm">
-                  {t('legal.terms')}
-                </Link>
-              </nav>
-            </div>
-          </div>
-
-        </div>
-
-        <div className="flex justify-center">
-          <LanguageSwitcher />
-        </div>
+      <div className="flex flex-col items-center gap-3 pt-1">
+        <p className="font-body text-sm text-gray-500 text-center">
+          {t('auth.noAccount')}{' '}
+          <Link
+            to="/signup"
+            className="font-semibold text-primary-600 hover:text-primary-700 focus-ring rounded-sm"
+            aria-label={t('a11y.goToSignup')}
+          >
+            {t('nav.signup')}
+          </Link>
+        </p>
+        <LegalLinks />
       </div>
-    </main>
+    </AuthCard>
   )
 }

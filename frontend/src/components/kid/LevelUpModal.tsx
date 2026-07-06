@@ -1,7 +1,7 @@
-import { useEffect, useRef } from 'react'
+import { useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { type TaskCategory, CATEGORY_STYLE } from '../../constants/categories'
-import { useFocusTrap } from '../../hooks/useFocusTrap'
+import Modal from '../Modal'
 
 interface Props {
   category: TaskCategory
@@ -12,7 +12,6 @@ interface Props {
 export default function LevelUpModal({ category, level, onClose }: Props) {
   const { t } = useTranslation()
   const style = CATEGORY_STYLE[category]
-  const cardRef = useRef<HTMLDivElement>(null)
 
   // Auto-close after 5 seconds
   useEffect(() => {
@@ -20,25 +19,16 @@ export default function LevelUpModal({ category, level, onClose }: Props) {
     return () => clearTimeout(timer)
   }, [onClose])
 
-  useFocusTrap(cardRef, onClose)
-
   const categoryLabel = t(`kidDash.categories.${category}` as `kidDash.categories.${TaskCategory}`)
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
-      onClick={onClose}
+    <Modal
+      onClose={onClose}
+      labelledBy="level-up-title"
+      describedBy="level-up-hint"
+      role="alertdialog"
+      cardClassName="rounded-3xl w-full max-w-xs mx-4 p-8 flex flex-col items-center gap-4 text-center"
     >
-      <div
-        ref={cardRef}
-        tabIndex={-1}
-        role="alertdialog"
-        aria-modal="true"
-        aria-labelledby="level-up-title"
-        aria-describedby="level-up-hint"
-        className="bg-white rounded-3xl w-full max-w-xs mx-4 p-8 flex flex-col items-center gap-4 text-center"
-        onClick={e => e.stopPropagation()}
-      >
         {/* Big icon */}
         <div className={`w-20 h-20 rounded-2xl ${style.bg} flex items-center justify-center text-4xl`} aria-hidden="true">
           {style.icon}
@@ -67,7 +57,6 @@ export default function LevelUpModal({ category, level, onClose }: Props) {
         >
           <span aria-hidden="true">🚀</span> {t('kidDash.letsGo')}
         </button>
-      </div>
-    </div>
+    </Modal>
   )
 }

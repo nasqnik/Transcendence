@@ -1,6 +1,7 @@
 import Button from '../components/Button'
 import LanguageSwitcher from '../components/LanguageSwitcher'
-import { Link, useNavigate } from 'react-router-dom'
+import LegalLinks from '../components/LegalLinks'
+import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { usePageTitle } from '../hooks/usePageTitle'
 
@@ -41,14 +42,7 @@ export default function Landing() {
               </Button>
             </nav>
 
-            <nav aria-label={t('a11y.legalNav')} className="flex justify-center gap-4 pt-1">
-              <Link to="/privacy" className="font-body text-xs text-gray-500 hover:text-primary-600 focus-ring rounded-sm">
-                {t('legal.privacy')}
-              </Link>
-              <Link to="/terms" className="font-body text-xs text-gray-500 hover:text-primary-600 focus-ring rounded-sm">
-                {t('legal.terms')}
-              </Link>
-            </nav>
+            <LegalLinks className="justify-center pt-1" />
           </div>
 
         </div>

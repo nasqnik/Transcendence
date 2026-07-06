@@ -145,7 +145,7 @@ export default function AcceptInvite() {
     return () => {
       cancelled = true
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- intentionally omit `t` (language changes must not re-fetch)
+    // `t` intentionally omitted from deps — language changes must not re-fetch the invitation.
   }, [hydrated, inviteToken, isAuthenticated, currentUser?.email, currentUser?.role])
 
   // ── Accept the invitation ─────────────────────────────────────────────────
@@ -267,7 +267,6 @@ export default function AcceptInvite() {
         title={t('invite.errorTitle')}
         alertMessage={t(state.messageKey)}
         statusMessage={t(state.messageKey)}
-        titleSize="md"
       >
         {isAuthenticated && currentUser?.role === 'kid' ? (
           <Button
@@ -379,7 +378,6 @@ export default function AcceptInvite() {
         headingId="invite-heading"
         icon="⚠️"
         title={t('invite.title')}
-        titleSize="md"
       >
         <p className="font-body text-sm text-gray-700 text-center w-full">
           {t('invite.wrongAccount', {
