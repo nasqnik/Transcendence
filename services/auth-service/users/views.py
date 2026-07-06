@@ -5,7 +5,8 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from .permissions import IsAuthenticatedKid
+from .permissions import IsAuthenticatedKid, IsInternalService
+from .models import Kid
 from .serializers import (
     AcceptGuardianInviteSerializer,
     GoogleLoginSerializer,
@@ -155,6 +156,26 @@ class KidGoogleLoginView(APIView):
 class InviteSecondParentView(generics.CreateAPIView):
     permission_classes = [IsAuthenticatedKid] #logged in kid required
     serializer_class = InviteSecondParentSerializer
+
+
+class KidParentInternalView(APIView):
+    authentication_classes = []
+    permission_classes = [IsInternalService]
+
+    def get(self, request, kid_id):
+        try:
+            kid = Kid.objects.get(id=kid_id)
+        except Kid.DoesNotExist:
+            return Response(
+                {'detail': 'Not found.'},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+        if kid.parent_id is None:
+            return Response(
+                {'detail': 'Kid has no parent.'},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+        return Response({'parent_id': str(kid.parent_id)})
 
 
 # Permissions:
