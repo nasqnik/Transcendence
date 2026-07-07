@@ -16,7 +16,25 @@ That starts Docker and runs database migrations.
 
 Open **https://localhost** (accept the self-signed certificate warning).
 
-API docs (Swagger): **https://localhost/api/docs/**
+### App & admin (via nginx)
+
+| What | URL |
+|------|-----|
+| Frontend | [https://localhost/](https://localhost/) |
+| Django admin | [https://localhost/admin/](https://localhost/admin/) |
+
+### API docs — Swagger
+
+| Service | URL |
+|---------|-----|
+| Auth | [https://localhost/api/docs/](https://localhost/api/docs/) |
+| Task | [https://localhost/api/task/docs/](https://localhost/api/task/docs/) |
+| Gamification | [https://localhost/api/gamification/docs/](https://localhost/api/gamification/docs/) |
+| Analytics | [https://localhost/api/analytics/docs/](https://localhost/api/analytics/docs/) |
+| Notification | [https://localhost/api/notification/docs/](https://localhost/api/notification/docs/) |
+| Catalog | [https://localhost/api/catalog/docs/](https://localhost/api/catalog/docs/) |
+
+All traffic goes through nginx on ports **80** and **443** only.
 
 ## Useful commands
 
