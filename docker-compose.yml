@@ -1,4 +1,24 @@
+# KiddoPath — Docker Compose
+#
+# Network: default bridge (mariam_backend_default). Services reach each other
+# by name (e.g. auth-service:8000, db). Only nginx publishes host ports 80/443.
+#
+# Config: copy .env.example → .env (gitignored). Each Django service loads
+# .env and overrides DB_NAME for its own database.
+
+x-django-service: &django-service
+  depends_on:
+    db:
+      condition: service_healthy
+  env_file: .env
+  command: python manage.py runserver 0.0.0.0:8000
+
 services:
+
+  # ---------------------------------------------------------------------------
+  # Infrastructure
+  # ---------------------------------------------------------------------------
+
   db:
     image: postgres:16
     container_name: django_db
@@ -19,10 +39,13 @@ services:
     image: redis:7-alpine
     container_name: redis_broker
     restart: unless-stopped
-    ports:
-      - "6379:6379"
+
+  # ---------------------------------------------------------------------------
+  # Backend services
+  # ---------------------------------------------------------------------------
 
   auth-service:
+    <<: *django-service
     build:
       context: ./services/auth-service
       dockerfile: Dockerfile
@@ -30,39 +53,13 @@ services:
         DOCKER_UID: ${DOCKER_UID}
         DOCKER_GID: ${DOCKER_GID}
     container_name: auth_service
-    depends_on:
-      db:
-        condition: service_healthy
-    # remove later
-    ports:
-      - "8001:8000"
     volumes:
       - ./services/auth-service:/app
-    env_file:
-      - .env
     environment:
-      DB_ENGINE: ${DB_ENGINE}
       DB_NAME: ${AUTH_DB_NAME:-auth_db}
-      DB_USER: ${DB_USER}
-      DB_PASSWORD: ${DB_PASSWORD}
-      DB_HOST: ${DB_HOST}
-      DB_PORT: ${DB_PORT}
-      APP_NAME: ${APP_NAME:-KiddoPath}
-      EMAIL_BACKEND: ${EMAIL_BACKEND:-django.core.mail.backends.console.EmailBackend}
-      EMAIL_HOST: ${EMAIL_HOST:-}
-      EMAIL_PORT: ${EMAIL_PORT:-587}
-      EMAIL_HOST_USER: ${EMAIL_HOST_USER:-}
-      EMAIL_HOST_PASSWORD: ${EMAIL_HOST_PASSWORD:-}
-      EMAIL_USE_TLS: ${EMAIL_USE_TLS:-true}
-      EMAIL_USE_SSL: ${EMAIL_USE_SSL:-false}
-      EMAIL_TIMEOUT: ${EMAIL_TIMEOUT:-30}
-      DEFAULT_FROM_EMAIL: ${DEFAULT_FROM_EMAIL:-noreply@localhost}
-      FRONTEND_URL: ${FRONTEND_URL:-https://localhost}
-      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
-      INTERNAL_SERVICE_TOKEN: ${INTERNAL_SERVICE_TOKEN}
-    command: python manage.py runserver 0.0.0.0:8000
 
   task-service:
+    <<: *django-service
     build:
       context: ./services/task-service
       dockerfile: Dockerfile
@@ -70,31 +67,13 @@ services:
         DOCKER_UID: ${DOCKER_UID}
         DOCKER_GID: ${DOCKER_GID}
     container_name: task_service
-    depends_on:
-      db:
-        condition: service_healthy
-    # remove later
-    ports:
-      - "8002:8000"
     volumes:
       - ./services/task-service:/app
-    env_file:
-      - .env
     environment:
-      DB_ENGINE: ${DB_ENGINE}
       DB_NAME: ${TASK_DB_NAME:-task_db}
-      DB_USER: ${DB_USER}
-      DB_PASSWORD: ${DB_PASSWORD}
-      DB_HOST: ${DB_HOST}
-      DB_PORT: ${DB_PORT}
-      APP_NAME: ${APP_NAME:-KiddoPath}
-      INTERNAL_SERVICE_TOKEN: ${INTERNAL_SERVICE_TOKEN}
-      GAMIFICATION_INTERNAL_URL: ${GAMIFICATION_INTERNAL_URL:-http://gamification-service:8000}
-      AUTH_INTERNAL_URL: ${AUTH_INTERNAL_URL:-http://auth-service:8000}
-      NOTIFICATION_INTERNAL_URL: ${NOTIFICATION_INTERNAL_URL:-http://notification-service:8000}
-    command: python manage.py runserver 0.0.0.0:8000
 
   gamification-service:
+    <<: *django-service
     build:
       context: ./services/gamification-service
       dockerfile: Dockerfile
@@ -102,30 +81,13 @@ services:
         DOCKER_UID: ${DOCKER_UID}
         DOCKER_GID: ${DOCKER_GID}
     container_name: gamification_service
-    depends_on:
-      db:
-        condition: service_healthy
-    # remove later
-    ports:
-      - "8003:8000"
     volumes:
       - ./services/gamification-service:/app
-    env_file:
-      - .env
     environment:
-      DB_ENGINE: ${DB_ENGINE}
       DB_NAME: ${GAMIFICATION_DB_NAME:-gamification_db}
-      DB_USER: ${DB_USER}
-      DB_PASSWORD: ${DB_PASSWORD}
-      DB_HOST: ${DB_HOST}
-      DB_PORT: ${DB_PORT}
-      APP_NAME: ${APP_NAME:-KiddoPath}
-      INTERNAL_SERVICE_TOKEN: ${INTERNAL_SERVICE_TOKEN}
-      ANALYTICS_INTERNAL_URL: ${ANALYTICS_INTERNAL_URL:-http://analytics-service:8000}
-      NOTIFICATION_INTERNAL_URL: ${NOTIFICATION_INTERNAL_URL:-http://notification-service:8000}
-    command: python manage.py runserver 0.0.0.0:8000
 
   analytics-service:
+    <<: *django-service
     build:
       context: ./services/analytics-service
       dockerfile: Dockerfile
@@ -133,30 +95,13 @@ services:
         DOCKER_UID: ${DOCKER_UID}
         DOCKER_GID: ${DOCKER_GID}
     container_name: analytics_service
-    depends_on:
-      db:
-        condition: service_healthy
-    # remove later
-    ports:
-      - "8004:8000"
     volumes:
       - ./services/analytics-service:/app
-    env_file:
-      - .env
     environment:
-      DB_ENGINE: ${DB_ENGINE}
       DB_NAME: ${ANALYTICS_DB_NAME:-analytics_db}
-      DB_USER: ${DB_USER}
-      DB_PASSWORD: ${DB_PASSWORD}
-      DB_HOST: ${DB_HOST}
-      DB_PORT: ${DB_PORT}
-      APP_NAME: ${APP_NAME:-KiddoPath}
-      INTERNAL_SERVICE_TOKEN: ${INTERNAL_SERVICE_TOKEN}
-      GAMIFICATION_INTERNAL_URL: ${GAMIFICATION_INTERNAL_URL:-http://gamification-service:8000}
-      TASK_SERVICE_URL: ${TASK_SERVICE_URL:-http://task-service:8000}
-    command: python manage.py runserver 0.0.0.0:8000
 
   notification-service:
+    <<: *django-service
     build:
       context: ./services/notification-service
       dockerfile: Dockerfile
@@ -169,26 +114,15 @@ services:
         condition: service_healthy
       redis:
         condition: service_started
-    # remove later
-    ports:
-      - "8005:8000"
     volumes:
       - ./services/notification-service:/app
-    env_file:
-      - .env
     environment:
-      DB_ENGINE: ${DB_ENGINE}
       DB_NAME: ${NOTIFICATION_DB_NAME:-notification_db}
-      DB_USER: ${DB_USER}
-      DB_PASSWORD: ${DB_PASSWORD}
-      DB_HOST: ${DB_HOST}
-      DB_PORT: ${DB_PORT}
-      APP_NAME: ${APP_NAME:-KiddoPath}
-      INTERNAL_SERVICE_TOKEN: ${INTERNAL_SERVICE_TOKEN}
       REDIS_URL: redis://redis:6379
     command: daphne -b 0.0.0.0 -p 8000 core.asgi:application
 
   catalog-service:
+    <<: *django-service
     build:
       context: ./services/catalog-service
       dockerfile: Dockerfile
@@ -196,27 +130,14 @@ services:
         DOCKER_UID: ${DOCKER_UID}
         DOCKER_GID: ${DOCKER_GID}
     container_name: catalog_service
-    depends_on:
-      db:
-        condition: service_healthy
-    # remove later
-    ports:
-      - "8006:8000"
     volumes:
       - ./services/catalog-service:/app
-    env_file:
-      - .env
     environment:
-      DB_ENGINE: ${DB_ENGINE}
       DB_NAME: ${CATALOG_DB_NAME:-catalog_db}
-      DB_USER: ${DB_USER}
-      DB_PASSWORD: ${DB_PASSWORD}
-      DB_HOST: ${DB_HOST}
-      DB_PORT: ${DB_PORT}
-      APP_NAME: ${APP_NAME:-KiddoPath}
-      INTERNAL_SERVICE_TOKEN: ${INTERNAL_SERVICE_TOKEN}
-      GAMIFICATION_INTERNAL_URL: ${GAMIFICATION_INTERNAL_URL:-http://gamification-service:8000}
-    command: python manage.py runserver 0.0.0.0:8000
+
+  # ---------------------------------------------------------------------------
+  # Frontend
+  # ---------------------------------------------------------------------------
 
   frontend:
     build:
@@ -224,15 +145,17 @@ services:
       dockerfile: Dockerfile
     container_name: react_frontend
     restart: unless-stopped
+    env_file: .env
     environment:
       VITE_API_URL: /api
       VITE_GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
-    # remove later
-    ports:
-      - "5173:5173"
     volumes:
       - ./frontend:/app
       - frontend_node_modules:/app/node_modules
+
+  # ---------------------------------------------------------------------------
+  # Reverse proxy (only service exposed to the host)
+  # ---------------------------------------------------------------------------
 
   nginx:
     build:
