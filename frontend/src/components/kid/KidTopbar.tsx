@@ -2,6 +2,7 @@ import { useTranslation } from 'react-i18next'
 import useAuthStore from '../../store/authStore'
 import { useKidLevel } from '../../hooks/useKidLevel'
 import KidUserMenu from './KidUserMenu'
+import NotificationBell from '../NotificationBell'
 
 export default function KidTopbar() {
   const { t } = useTranslation()
@@ -42,6 +43,7 @@ export default function KidTopbar() {
           </div>
         )}
 
+        <NotificationBell />
         <KidUserMenu />
       </div>
     </header>

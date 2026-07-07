@@ -1,8 +1,7 @@
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
-import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { createTask, type CreateTaskInput } from '../../api/tasks'
-import { type Task } from '../../constants/categories'
+import { useQueryClient } from '@tanstack/react-query'
+import { createTaskStream } from '../../api/tasks'
 import Modal from '../Modal'
 
 interface Props {
@@ -18,76 +17,78 @@ export default function AddTaskModal({ onClose }: Props) {
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
   const [dueDate, setDueDate] = useState(today)
+  const [status, setStatus] = useState<'idle' | 'streaming' | 'error'>('idle')
+  const [streamingText, setStreamingText] = useState('')
+  const abortRef = useRef<AbortController | null>(null)
 
-  const { mutate, isPending, isError } = useMutation({
-    mutationFn: createTask,
-    onMutate: async (input: CreateTaskInput) => {
-      // Cancel in-flight task fetches so they don't overwrite our optimistic entry
-      await queryClient.cancelQueries({ queryKey: ['tasks'] })
-      const prev = queryClient.getQueryData<Task[]>(['tasks'])
+  useEffect(() => {
+    return () => { abortRef.current?.abort() }
+  }, [])
 
-      // Add a placeholder task immediately — AI categories fill in after the API responds
-      queryClient.setQueryData<Task[]>(['tasks'], old => [
-        ...(old ?? []),
-        {
-          id: `optimistic-${Date.now()}`,
-          kid_id: '',
-          title: input.title,
-          description: input.description,
-          xp_reward: 0,
-          ai_summary: '',
-          ai_evaluated: false,
-          due_date: input.due_date,
-          is_active: true,
-          created_at: new Date().toISOString(),
-          category_rewards: [],
-          review_mode: 'always',
-        },
-      ])
-      return { prev }
-    },
-    onError: (_err, _input, context) => {
-      // Roll back on failure
-      queryClient.setQueryData(['tasks'], context?.prev)
-    },
-    onSettled: () => {
-      // Always sync with server once the request resolves
-      queryClient.invalidateQueries({ queryKey: ['tasks'] })
-    },
-    onSuccess: () => {
-      onClose()
-    },
-  })
-
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    if (!title.trim()) return
-    mutate({
-      title: title.trim(),
-      description: description.trim(),
-      due_date: dueDate || null,
-    })
+    if (!title.trim() || status === 'streaming') return
+
+    const controller = new AbortController()
+    abortRef.current = controller
+    setStatus('streaming')
+    setStreamingText('')
+
+    try {
+      await createTaskStream(
+        { title: title.trim(), description: description.trim(), due_date: dueDate || null },
+        (text) => setStreamingText(prev => prev + text),
+        () => {
+          queryClient.invalidateQueries({ queryKey: ['tasks'] })
+          onClose()
+        },
+        controller.signal,
+      )
+    } catch (err: unknown) {
+      if ((err as Error)?.name === 'AbortError') return
+      setStatus('error')
+    }
   }
 
   return (
     <Modal onClose={onClose} labelledBy="add-task-heading" cardClassName="rounded-2xl w-full max-w-md mx-4">
 
-        {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
-          <h2 id="add-task-heading" className="font-heading text-xl font-bold text-gray-900">
-            {t('tasks.createTask')}
-          </h2>
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label={t('common.close')}
-            className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 focus-ring transition-colors text-gray-400 hover:text-gray-600"
-          >
-            ✕
-          </button>
-        </div>
+      {/* Header */}
+      <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+        <h2 id="add-task-heading" className="font-heading text-xl font-bold text-gray-900">
+          {t('tasks.createTask')}
+        </h2>
+        <button
+          type="button"
+          onClick={onClose}
+          aria-label={t('common.close')}
+          className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 focus-ring transition-colors text-gray-400 hover:text-gray-600"
+        >
+          ✕
+        </button>
+      </div>
 
-        {/* Form */}
+      {/* Streaming view */}
+      {status === 'streaming' ? (
+        <div className="p-6 flex flex-col gap-4">
+          <p className="font-body text-sm font-semibold text-primary-600" aria-live="polite">
+            <span aria-hidden="true">✨</span> {t('tasks.aiThinking')}
+          </p>
+          <p className="font-heading text-base font-bold text-gray-900">{title}</p>
+          <div
+            aria-live="polite"
+            aria-label={t('tasks.aiThinking')}
+            className="min-h-20 rounded-xl bg-gray-50 border border-gray-200 p-3 font-body text-sm text-gray-700 leading-relaxed"
+          >
+            {streamingText}
+            <span
+              aria-hidden="true"
+              className="inline-block w-0.5 h-[1em] bg-primary-500 animate-pulse ms-0.5 align-text-bottom"
+            />
+          </div>
+        </div>
+      ) : (
+        /* Form */
         <form onSubmit={handleSubmit} className="p-6 flex flex-col gap-4">
 
           {/* Title */}
@@ -143,7 +144,7 @@ export default function AddTaskModal({ onClose }: Props) {
           </p>
 
           {/* Error */}
-          {isError && (
+          {status === 'error' && (
             <p role="alert" className="font-body text-sm text-danger-700">
               {t('errors.generic')}
             </p>
@@ -152,13 +153,14 @@ export default function AddTaskModal({ onClose }: Props) {
           {/* Submit */}
           <button
             type="submit"
-            disabled={!title.trim() || isPending}
+            disabled={!title.trim()}
             className="w-full py-3 rounded-xl bg-primary-600 text-white font-body font-semibold text-sm hover:bg-primary-700 active:bg-primary-700 focus-ring transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {isPending ? t('tasks.creating') : t('tasks.createTaskSubmit')}
+            {t('tasks.createTaskSubmit')}
           </button>
 
         </form>
+      )}
     </Modal>
   )
 }

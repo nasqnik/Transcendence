@@ -1,7 +1,7 @@
 import { useState, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { getTasks, getCompletions, postCompletion, type CompletionInfo } from '../../api/tasks'
+import { getTasks, getCompletions, postCompletion, deleteTask, type CompletionInfo } from '../../api/tasks'
 import { CATEGORY_STYLE, primaryCategory } from '../../constants/categories'
 import TaskRow from './TaskRow'
 import TasksAll from './TasksAll'
@@ -38,6 +38,19 @@ export default function TodaysTasks() {
         setToastXp(xp)
         toastTimer.current = setTimeout(() => setToastXp(null), 2000)
       }
+    },
+    onError: () => {
+      if (toastErrorTimer.current) clearTimeout(toastErrorTimer.current)
+      setToastError(true)
+      toastErrorTimer.current = setTimeout(() => setToastError(false), 3000)
+    },
+  })
+
+  const { mutate: removeTasks } = useMutation({
+    mutationFn: (ids: string[]) => Promise.all(ids.map(deleteTask)),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['tasks'] })
+      queryClient.invalidateQueries({ queryKey: ['completions'] })
     },
     onError: () => {
       if (toastErrorTimer.current) clearTimeout(toastErrorTimer.current)
@@ -254,7 +267,7 @@ export default function TodaysTasks() {
         <div
           role="alert"
           aria-live="assertive"
-          className="fixed bottom-8 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 bg-danger-600 text-white font-body font-semibold text-sm px-5 py-3 rounded-2xl shadow-lg pointer-events-none select-none"
+          className="fixed bottom-8 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 bg-danger-700 text-white font-body font-semibold text-sm px-5 py-3 rounded-2xl shadow-lg pointer-events-none select-none"
         >
           <span aria-hidden="true">⚠️</span>
           {t('errors.generic')}
@@ -268,6 +281,7 @@ export default function TodaysTasks() {
           tasks={todaysTasks}
           completionInfo={completionInfo}
           onComplete={complete}
+          onDelete={removeTasks}
           onClose={() => setViewAllOpen(false)}
         />
       )}

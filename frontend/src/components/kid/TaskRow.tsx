@@ -23,6 +23,13 @@ interface Props {
   className?: string
   /** When true: shows the task's due date in danger color below the category label. */
   overdue?: boolean
+  /**
+   * When true (TasksAll select mode): replaces the status/complete control with a
+   * selection checkbox. Pair with `selected` + `onToggleSelect`.
+   */
+  selectMode?: boolean
+  selected?: boolean
+  onToggleSelect?: (id: string) => void
 }
 
 // ─── Shared SVG checkmark ─────────────────────────────────────────────────────
@@ -46,6 +53,9 @@ export default function TaskRow({
   onToggleExpand,
   className = '',
   overdue = false,
+  selectMode = false,
+  selected = false,
+  onToggleSelect,
 }: Props) {
   const { t, i18n } = useTranslation()
 
@@ -125,8 +135,18 @@ export default function TaskRow({
           <span className="font-body font-bold text-xs text-amber-700">+{task.xp_reward}</span>
         </div>
 
-        {/* Status indicator */}
-        {distinguishPending && isPending ? (
+        {/* Selection checkbox (select mode) or status indicator */}
+        {selectMode ? (
+          <label className="w-8 h-8 flex items-center justify-center shrink-0 cursor-pointer">
+            <span className="sr-only">{t('a11y.selectTask', { title: task.title })}</span>
+            <input
+              type="checkbox"
+              checked={selected}
+              onChange={() => onToggleSelect?.(task.id)}
+              className="w-5 h-5 rounded accent-primary-600 focus-ring cursor-pointer"
+            />
+          </label>
+        ) : distinguishPending && isPending ? (
           <span
             role="img"
             aria-label={t('kidDash.taskPending')}

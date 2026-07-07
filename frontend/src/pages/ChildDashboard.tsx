@@ -1,20 +1,28 @@
+import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { useNavigate } from 'react-router-dom'
-import { useQuery } from '@tanstack/react-query'
 import TodaysTasks from '../components/kid/TodaysTasks'
 import KidStats from '../components/kid/KidStats'
+import WelcomeModal from '../components/kid/WelcomeModal'
 import { useKidLevel } from '../hooks/useKidLevel'
 import { usePageTitle } from '../hooks/usePageTitle'
-import { getTasks } from '../api/tasks'
+import useAuthStore from '../store/authStore'
+
+const WELCOME_KEY = (userId: string) => `kp_welcome_${userId}`
 
 export default function ChildDashboard() {
   const { t } = useTranslation()
-  const navigate = useNavigate()
   const { level, progress, xpCurrent, xpMax, isLoading: levelLoading } = useKidLevel()
-  const { data: tasks = [], isLoading: tasksLoading } = useQuery({ queryKey: ['tasks'], queryFn: getTasks })
+  const userId = useAuthStore(s => s.currentUser?.id ?? '')
   usePageTitle(t('app.name'))
 
-  const showWelcome = !tasksLoading && tasks.length === 0
+  const [welcomeDismissed, setWelcomeDismissed] = useState(
+    () => !!localStorage.getItem(WELCOME_KEY(userId))
+  )
+
+  function dismissWelcome() {
+    localStorage.setItem(WELCOME_KEY(userId), '1')
+    setWelcomeDismissed(true)
+  }
 
   return (
     <main
@@ -73,41 +81,17 @@ export default function ChildDashboard() {
         </div>
       </div>
 
-      {showWelcome ? (
-        <div className="flex-1 flex items-center justify-center">
-          <div className="bg-white rounded-2xl p-8 text-center max-w-sm w-full">
-            <div className="text-6xl mb-4" aria-hidden="true">🌟</div>
-            <h2 className="font-heading text-xl font-bold text-gray-900 mb-2">
-              {t('kidDash.welcomeTitle')}
-            </h2>
-            <p className="font-body text-sm text-gray-400 mb-6 leading-relaxed">
-              {t('kidDash.welcomeHint')}
-            </p>
-            <div className="flex justify-center items-center gap-3 mb-6" aria-hidden="true">
-              <span className="text-2xl">📋</span>
-              <span className="text-gray-300 font-bold">→</span>
-              <span className="text-2xl">⭐</span>
-              <span className="text-gray-300 font-bold">→</span>
-              <span className="text-2xl">🏆</span>
-            </div>
-            <button
-              type="button"
-              onClick={() => navigate('/settings')}
-              className="w-full py-3 rounded-xl bg-primary-600 text-white font-body font-semibold text-sm hover:bg-primary-700 focus-ring transition-colors"
-            >
-              {t('kidDash.inviteNow')}
-            </button>
-          </div>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 flex-1">
+        <div className="lg:col-span-2">
+          <TodaysTasks />
         </div>
-      ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 flex-1">
-          <div className="lg:col-span-2">
-            <TodaysTasks />
-          </div>
-          <div className="lg:col-span-1">
-            <KidStats />
-          </div>
+        <div className="lg:col-span-1">
+          <KidStats />
         </div>
+      </div>
+
+      {!welcomeDismissed && (
+        <WelcomeModal onDismiss={dismissWelcome} />
       )}
     </main>
   )
