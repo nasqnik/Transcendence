@@ -12,6 +12,8 @@ Roles: **kid** and **parent** (decided by the JWT). A parent's token carries `ki
 | GET | `/tasks/` | kid | List the kid's own active tasks. |
 | POST | `/tasks/` | kid | Create a task. AI scores each category, writes a summary, and sets `xp_reward` = sum of points. |
 | GET | `/tasks/{task_id}/` | kid | Get one of the kid's own tasks. |
+| PATCH | `/tasks/{task_id}/` | kid | Edit a task (SSE when title/description change). |
+| DELETE | `/tasks/{task_id}/` | kid | Soft-delete a task (`is_active=false`). Returns `204`. |
 
 **POST `/tasks/` body**
 
