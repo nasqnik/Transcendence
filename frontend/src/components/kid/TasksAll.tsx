@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { type Task } from '../../constants/categories'
 import { type CompletionInfo } from '../../api/tasks'
 import TaskRow from './TaskRow'
+import EditTaskModal from './EditTaskModal'
 import { useFocusTrap } from '../../hooks/useFocusTrap'
 
 interface Props {
@@ -16,29 +17,21 @@ interface Props {
 export default function TasksAll({ tasks, completionInfo, onComplete, onDelete, onClose }: Props) {
   const { t } = useTranslation()
   const cardRef = useRef<HTMLDivElement>(null)
-  const [expandedIds, setExpandedIds] = useState(new Set<string>())
   const [selectMode, setSelectMode] = useState(false)
   const [selectedIds, setSelectedIds] = useState(new Set<string>())
   const [confirming, setConfirming] = useState(false)
+  const [editingTask, setEditingTask] = useState<Task | null>(null)
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
+      if (editingTask) return
       if (!cardRef.current?.contains(e.target as Node)) onClose()
     }
     document.addEventListener('mousedown', handleClickOutside)
     return () => document.removeEventListener('mousedown', handleClickOutside)
-  }, [onClose])
+  }, [onClose, editingTask])
 
-  useFocusTrap(cardRef, onClose)
-
-  function toggleExpand(id: string) {
-    setExpandedIds(prev => {
-      const next = new Set(prev)
-      if (next.has(id)) next.delete(id)
-      else next.add(id)
-      return next
-    })
-  }
+  useFocusTrap(cardRef, editingTask ? () => {} : onClose)
 
   function toggleSelect(id: string) {
     setSelectedIds(prev => {
@@ -63,6 +56,7 @@ export default function TasksAll({ tasks, completionInfo, onComplete, onDelete, 
   const selectedCount = selectedIds.size
 
   return (
+    <>
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
       <div
         ref={cardRef}
@@ -116,11 +110,11 @@ export default function TasksAll({ tasks, completionInfo, onComplete, onDelete, 
               completionInfo={completionInfo.get(task.id)}
               onComplete={onComplete}
               distinguishPending
-              expanded={expandedIds.has(task.id)}
-              onToggleExpand={() => toggleExpand(task.id)}
               selectMode={selectMode}
               selected={selectedIds.has(task.id)}
               onToggleSelect={toggleSelect}
+              onEdit={() => setEditingTask(task)}
+              showAiSummary
               className="px-1"
             />
           ))}
@@ -167,5 +161,13 @@ export default function TasksAll({ tasks, completionInfo, onComplete, onDelete, 
 
       </div>
     </div>
+
+    {editingTask && (
+      <EditTaskModal
+        task={editingTask}
+        onClose={() => setEditingTask(null)}
+      />
+    )}
+    </>
   )
 }

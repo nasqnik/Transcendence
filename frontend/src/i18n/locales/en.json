@@ -99,7 +99,13 @@
     "selectedCount": "{{count}} selected",
     "deleteSelected": "Delete selected",
     "deleteConfirmMany": "Delete {{count}} tasks?",
-    "deleteConfirmYes": "Delete"
+    "deleteConfirmYes": "Delete",
+    "editTask": "Edit task",
+    "editBtn": "Edit",
+    "saveTask": "Save",
+    "deleteTask": "Delete task",
+    "deleteConfirm": "Delete this task?",
+    "deleting": "Deleting..."
   },
   "character": {
     "create": "Create your character",
@@ -118,7 +124,8 @@
     "mainNav": "Main navigation",
     "legalNav": "Legal",
     "completeTask": "Mark \"{{title}}\" as done",
-    "selectTask": "Select \"{{title}}\""
+    "selectTask": "Select \"{{title}}\"",
+    "editTask": "Edit \"{{title}}\""
   },
   "kidDash": {
     "readyToLevel": "Ready to level up today?",
@@ -288,6 +295,7 @@
   },
   "notifications": {
     "title": "Notifications",
-    "empty": "You're all caught up!"
+    "empty": "You're all caught up!",
+    "newCount": "{{count}} new"
   }
 }

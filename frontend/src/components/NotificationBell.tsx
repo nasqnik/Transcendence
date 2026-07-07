@@ -78,7 +78,9 @@ export default function NotificationBell() {
           <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between">
             <h2 className="font-heading font-bold text-gray-900 text-sm">{t('notifications.title')}</h2>
             {unreadCount > 0 && (
-              <span className="font-body text-xs text-primary-600 font-semibold">{unreadCount} new</span>
+              <span className="font-body text-xs text-primary-600 font-semibold">
+                {t('notifications.newCount', { count: unreadCount })}
+              </span>
             )}
           </div>
 

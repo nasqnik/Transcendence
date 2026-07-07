@@ -1,33 +1,42 @@
 import { useState, useRef, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useQueryClient } from '@tanstack/react-query'
-import { createTaskStream } from '../../api/tasks'
+import { updateTaskStream, deleteTask } from '../../api/tasks'
+import { type Task } from '../../constants/categories'
 import Modal from '../Modal'
 
 interface Props {
+  task: Task
   onClose: () => void
 }
 
-export default function AddTaskModal({ onClose }: Props) {
+export default function EditTaskModal({ task, onClose }: Props) {
   const { t } = useTranslation()
   const queryClient = useQueryClient()
 
-  const today = new Date().toISOString().slice(0, 10)
-
-  const [title, setTitle] = useState('')
-  const [description, setDescription] = useState('')
-  const [dueDate, setDueDate] = useState(today)
-  const [status, setStatus] = useState<'idle' | 'streaming' | 'error'>('idle')
+  const [title, setTitle]             = useState(task.title)
+  const [description, setDescription] = useState(task.description ?? '')
+  const [dueDate, setDueDate]         = useState(task.due_date ?? '')
+  const [status, setStatus]           = useState<'idle' | 'streaming' | 'deleting' | 'error'>('idle')
   const [streamingText, setStreamingText] = useState('')
-  const abortRef = useRef<AbortController | null>(null)
+  const [confirming, setConfirming]   = useState(false)
+  const abortRef                      = useRef<AbortController | null>(null)
 
   useEffect(() => {
     return () => { abortRef.current?.abort() }
   }, [])
 
-  async function handleSubmit(e: React.FormEvent) {
+  async function handleSave(e: React.FormEvent) {
     e.preventDefault()
-    if (!title.trim() || status === 'streaming') return
+    if (!title.trim() || status === 'streaming' || status === 'deleting') return
+
+    const data: Record<string, unknown> = {}
+    if (title.trim() !== task.title) data.title = title.trim()
+    if (description.trim() !== (task.description ?? '')) data.description = description.trim()
+    const newDue = dueDate || null
+    if (newDue !== task.due_date) data.due_date = newDue
+
+    if (Object.keys(data).length === 0) { onClose(); return }
 
     const controller = new AbortController()
     abortRef.current = controller
@@ -35,8 +44,9 @@ export default function AddTaskModal({ onClose }: Props) {
     setStreamingText('')
 
     try {
-      await createTaskStream(
-        { title: title.trim(), description: description.trim(), due_date: dueDate || null },
+      await updateTaskStream(
+        task.id,
+        data,
         (text) => setStreamingText(prev => prev + text),
         () => {
           queryClient.invalidateQueries({ queryKey: ['tasks'] })
@@ -50,13 +60,26 @@ export default function AddTaskModal({ onClose }: Props) {
     }
   }
 
+  async function handleDelete() {
+    setStatus('deleting')
+    try {
+      await deleteTask(task.id)
+      queryClient.invalidateQueries({ queryKey: ['tasks'] })
+      queryClient.invalidateQueries({ queryKey: ['completions'] })
+      onClose()
+    } catch {
+      setStatus('error')
+      setConfirming(false)
+    }
+  }
+
   return (
-    <Modal onClose={onClose} labelledBy="add-task-heading" cardClassName="rounded-2xl w-full max-w-md mx-4">
+    <Modal onClose={onClose} labelledBy="edit-task-heading" cardClassName="rounded-2xl w-full max-w-md mx-4">
 
       {/* Header */}
       <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
-        <h2 id="add-task-heading" className="font-heading text-xl font-bold text-gray-900">
-          {t('tasks.createTask')}
+        <h2 id="edit-task-heading" className="font-heading text-xl font-bold text-gray-900">
+          {t('tasks.editTask')}
         </h2>
         <button
           type="button"
@@ -92,32 +115,29 @@ export default function AddTaskModal({ onClose }: Props) {
         </div>
       ) : (
         /* Form */
-        <form onSubmit={handleSubmit} className="p-6 flex flex-col gap-4">
+        <form onSubmit={handleSave} className="p-6 flex flex-col gap-4">
 
-          {/* Title */}
           <div className="flex flex-col gap-1">
-            <label htmlFor="task-title" className="font-body text-sm font-semibold text-gray-700">
+            <label htmlFor="edit-task-title" className="font-body text-sm font-semibold text-gray-700">
               {t('tasks.title')}
             </label>
             <input
-              id="task-title"
+              id="edit-task-title"
               type="text"
               value={title}
               onChange={e => setTitle(e.target.value)}
               required
               autoFocus
               className="w-full px-4 py-2.5 rounded-xl border border-gray-300 font-body text-sm text-gray-900 placeholder-gray-400 focus-ring outline-none"
-              placeholder={t('tasks.title')}
             />
           </div>
 
-          {/* Description */}
           <div className="flex flex-col gap-1">
-            <label htmlFor="task-description" className="font-body text-sm font-semibold text-gray-700">
+            <label htmlFor="edit-task-description" className="font-body text-sm font-semibold text-gray-700">
               {t('tasks.description')}
             </label>
             <textarea
-              id="task-description"
+              id="edit-task-description"
               value={description}
               onChange={e => setDescription(e.target.value)}
               rows={3}
@@ -126,41 +146,65 @@ export default function AddTaskModal({ onClose }: Props) {
             />
           </div>
 
-          {/* Due date */}
           <div className="flex flex-col gap-1">
-            <label htmlFor="task-due-date" className="font-body text-sm font-semibold text-gray-700">
+            <label htmlFor="edit-task-due-date" className="font-body text-sm font-semibold text-gray-700">
               {t('tasks.dueDateLabel')}
             </label>
             <input
-              id="task-due-date"
+              id="edit-task-due-date"
               type="date"
               value={dueDate}
-              min={today}
               onChange={e => setDueDate(e.target.value)}
               className="w-full px-4 py-2.5 rounded-xl border border-gray-300 font-body text-sm text-gray-900 focus-ring outline-none"
             />
           </div>
 
-          {/* AI hint */}
-          <p className="font-body text-xs text-gray-400">
-            <span aria-hidden="true">✨</span> {t('tasks.aiHint')}
-          </p>
-
-          {/* Error */}
           {status === 'error' && (
             <p role="alert" className="font-body text-sm text-danger-700">
               {t('errors.generic')}
             </p>
           )}
 
-          {/* Submit */}
           <button
             type="submit"
-            disabled={!title.trim()}
+            disabled={!title.trim() || status === 'deleting'}
             className="w-full py-3 rounded-xl bg-primary-600 text-white font-body font-semibold text-sm hover:bg-primary-700 active:bg-primary-700 focus-ring transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {t('tasks.createTaskSubmit')}
+            {t('tasks.saveTask')}
           </button>
+
+          {/* Delete */}
+          {!confirming ? (
+            <button
+              type="button"
+              onClick={() => setConfirming(true)}
+              disabled={status === 'deleting'}
+              className="w-full py-2 rounded-xl font-body text-sm font-semibold text-danger-700 hover:bg-danger-50 focus-ring transition-colors disabled:opacity-50"
+            >
+              {t('tasks.deleteTask')}
+            </button>
+          ) : (
+            <div className="flex items-center gap-2 rounded-xl bg-danger-50 p-3">
+              <p className="flex-1 font-body text-sm text-danger-700 font-semibold">
+                {t('tasks.deleteConfirm')}
+              </p>
+              <button
+                type="button"
+                onClick={() => setConfirming(false)}
+                className="font-body text-sm text-gray-500 hover:text-gray-700 focus-ring rounded px-2 py-1"
+              >
+                {t('common.cancel')}
+              </button>
+              <button
+                type="button"
+                onClick={handleDelete}
+                disabled={status === 'deleting'}
+                className="bg-danger-700 hover:opacity-90 text-white font-body text-sm font-semibold px-3 py-1.5 rounded-lg focus-ring transition-opacity disabled:opacity-50"
+              >
+                {status === 'deleting' ? t('tasks.deleting') : t('tasks.deleteConfirmYes')}
+              </button>
+            </div>
+          )}
 
         </form>
       )}
