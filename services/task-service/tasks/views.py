@@ -48,7 +48,11 @@ from .throttles import KidAIClassifyThrottle
     ),
 )
 class TaskListCreateView(generics.ListCreateAPIView):
-    throttle_classes = [KidAIClassifyThrottle]
+    def get_throttles(self):
+        if self.request.method == 'POST':
+            return [KidAIClassifyThrottle()]
+        return []
+
     def get_queryset(self):
         user = self.request.user
         if isinstance(user, KidActor):
