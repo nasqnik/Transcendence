@@ -93,7 +93,13 @@
     "selectedCount": "تم تحديد {{count}}",
     "deleteSelected": "حذف المحدد",
     "deleteConfirmMany": "هل تريد حذف {{count}} مهام؟",
-    "deleteConfirmYes": "حذف"
+    "deleteConfirmYes": "حذف",
+    "editTask": "تعديل المهمة",
+    "editBtn": "تعديل",
+    "saveTask": "حفظ",
+    "deleteTask": "حذف المهمة",
+    "deleteConfirm": "هل تريد حذف هذه المهمة؟",
+    "deleting": "جاري الحذف..."
   },
   "character": {
     "create": "أنشئ شخصيتك",
@@ -112,7 +118,8 @@
     "mainNav": "التنقل الرئيسي",
     "legalNav": "الوثائق القانونية",
     "completeTask": "وضع علامة \"مكتمل\" على \"{{title}}\"",
-    "selectTask": "تحديد \"{{title}}\""
+    "selectTask": "تحديد \"{{title}}\"",
+    "editTask": "تعديل \"{{title}}\""
   },
   "kidDash": {
     "readyToLevel": "هل أنت مستعد للارتقاء بمستواك اليوم؟",
@@ -282,6 +289,7 @@
   },
   "notifications": {
     "title": "الإشعارات",
-    "empty": "ليس لديك إشعارات جديدة!"
+    "empty": "ليس لديك إشعارات جديدة!",
+    "newCount": "{{count}} جديد"
   }
 }

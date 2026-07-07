@@ -51,29 +51,12 @@ export async function createTask(data: CreateTaskInput): Promise<Task> {
   return res.data
 }
 
-export async function createTaskStream(
-  data: CreateTaskInput,
+async function readTaskSSE(
+  body: ReadableStream<Uint8Array>,
   onToken: (text: string) => void,
   onDone: (task: Task) => void,
-  signal?: AbortSignal,
 ): Promise<void> {
-  const token = useAuthStore.getState().token
-  const baseURL = client.defaults.baseURL ?? 'https://localhost/api'
-
-  const res = await fetch(`${baseURL}/task/tasks/`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    },
-    body: JSON.stringify(data),
-    signal,
-  })
-
-  if (!res.ok) throw new Error(`${res.status}`)
-  if (!res.body) throw new Error('no-body')
-
-  const reader = res.body.getReader()
+  const reader = body.getReader()
   const decoder = new TextDecoder()
   let buffer = ''
 
@@ -102,7 +85,6 @@ export async function createTaskStream(
     }
   }
 
-  // Fallback: backend returned plain JSON instead of SSE
   const remaining = buffer.trim()
   if (remaining) {
     try {
@@ -110,6 +92,64 @@ export async function createTaskStream(
       if (payload.id) onDone(payload as Task)
     } catch { /* ignore */ }
   }
+}
+
+export async function createTaskStream(
+  data: CreateTaskInput,
+  onToken: (text: string) => void,
+  onDone: (task: Task) => void,
+  signal?: AbortSignal,
+): Promise<void> {
+  const token = useAuthStore.getState().token
+  const baseURL = client.defaults.baseURL ?? 'https://localhost/api'
+
+  const res = await fetch(`${baseURL}/task/tasks/`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+    body: JSON.stringify(data),
+    signal,
+  })
+
+  if (!res.ok) throw new Error(`${res.status}`)
+  if (!res.body) throw new Error('no-body')
+
+  await readTaskSSE(res.body, onToken, onDone)
+}
+
+export async function updateTaskStream(
+  taskId: string,
+  data: UpdateTaskInput,
+  onToken: (text: string) => void,
+  onDone: (task: Task) => void,
+  signal?: AbortSignal,
+): Promise<void> {
+  const token = useAuthStore.getState().token
+  const baseURL = client.defaults.baseURL ?? 'https://localhost/api'
+
+  const res = await fetch(`${baseURL}/task/tasks/${taskId}/`, {
+    method: 'PATCH',
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+    body: JSON.stringify(data),
+    signal,
+  })
+
+  if (!res.ok) throw new Error(`${res.status}`)
+  if (!res.body) throw new Error('no-body')
+
+  // If only due_date changed, backend returns plain JSON (no AI re-classification)
+  if (!(res.headers.get('content-type') ?? '').includes('text/event-stream')) {
+    const task = await res.json() as Task
+    onDone(task)
+    return
+  }
+
+  await readTaskSSE(res.body, onToken, onDone)
 }
 
 export interface UpdateTaskInput {
