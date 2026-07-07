@@ -87,7 +87,13 @@
     "emptyKid": "لا توجد مهام بعد. اطلب من والدك إضافة مهمة!",
     "emptyParent": "لم يتم إنشاء أي مهام بعد.",
     "invalidKidId": "أدخل معرّف حساب الطفل الصحيح (UUID).",
-    "invalidXp": "أدخل قيمة XP صحيحة (0 أو أكثر)."
+    "invalidXp": "أدخل قيمة XP صحيحة (0 أو أكثر).",
+    "aiThinking": "الذكاء الاصطناعي يعالج مهمتك...",
+    "select": "تحديد",
+    "selectedCount": "تم تحديد {{count}}",
+    "deleteSelected": "حذف المحدد",
+    "deleteConfirmMany": "هل تريد حذف {{count}} مهام؟",
+    "deleteConfirmYes": "حذف"
   },
   "character": {
     "create": "أنشئ شخصيتك",
@@ -105,7 +111,8 @@
     "skipToContent": "تخطَّ إلى المحتوى الرئيسي",
     "mainNav": "التنقل الرئيسي",
     "legalNav": "الوثائق القانونية",
-    "completeTask": "وضع علامة \"مكتمل\" على \"{{title}}\""
+    "completeTask": "وضع علامة \"مكتمل\" على \"{{title}}\"",
+    "selectTask": "تحديد \"{{title}}\""
   },
   "kidDash": {
     "readyToLevel": "هل أنت مستعد للارتقاء بمستواك اليوم؟",
@@ -162,7 +169,11 @@
     "nav": {
       "home": "الرئيسية",
       "settings": "الإعدادات"
-    }
+    },
+    "welcomeModalTitle": "مرحباً بك في KiddoPath! 🌟",
+    "welcomeModalBody": "يمكنك إضافة المهام بنفسك أو طلب من أحد والديك إضافتها لك.",
+    "welcomeAddTask": "أضف مهمتي الأولى",
+    "welcomeAskParent": "اطلب من أحد والديك"
   },
   "inviteParent": {
     "title": "دعوة ولي أمر",
@@ -213,6 +224,7 @@
   },
   "common": {
     "close": "إغلاق",
+    "cancel": "إلغاء",
     "and": "و"
   },
   "legal": {
@@ -267,5 +279,9 @@
       "verificationExpired": "انتهت صلاحية رابط التحقق. يرجى التسجيل مرة أخرى.",
       "alreadyVerified": "بريدك الإلكتروني محقق بالفعل. يمكنك تسجيل الدخول."
     }
+  },
+  "notifications": {
+    "title": "الإشعارات",
+    "empty": "ليس لديك إشعارات جديدة!"
   }
 }
