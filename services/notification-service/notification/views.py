@@ -66,8 +66,8 @@ class InternalNotifyView(APIView):
 
 
 @extend_schema(
-    summary='List unread notifications',
-    description='Returns all unread notifications for the logged-in kid or parent.',
+    summary='List notifications',
+    description='Returns all notifications for the logged-in kid or parent, ordered by most recent. Use the is_read field to filter on the client side.',
     responses={200: NotificationSerializer(many=True)},
     auth=[{'BearerAuth': []}],
     tags=['Notifications'],
@@ -82,8 +82,7 @@ class NotificationListView(APIView):
             recipient_id = request.user.user_id
         notifications = Notification.objects.filter(
             recipient_id=recipient_id,
-            is_read=False,
-        )
+        ).order_by('-created_at')
         return Response(NotificationSerializer(notifications, many=True).data)
 
 
