@@ -80,3 +80,17 @@
     @apply font-body text-sm text-danger-700;
   }
 }
+
+/* Honor the OS "reduce motion" setting: neutralize non-essential animation and
+   transitions app-wide (progress-bar fills, skeleton pulses, toast, streaming
+   cursor). Kept as near-instant rather than 0 so state still settles. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  ::before,
+  ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

@@ -13,25 +13,15 @@ export function useNotifications() {
   const token = useAuthStore(s => s.token)
   const queryClient = useQueryClient()
 
+  // The server returns every notification (read + unread) newest-first, so its
+  // response is the complete list — no client-side merge or persistence needed.
   const { data: notifications = [] } = useQuery({
     queryKey: KEY,
-    queryFn: async () => {
-      const fresh = await getNotifications()
-      // Server only returns unread. Merge with the in-memory cache first
-      // (has optimistic read-state), then fall back to sessionStorage so
-      // read notifications survive a hard page refresh.
-      const stored: Notification[] = JSON.parse(sessionStorage.getItem('notifications') ?? '[]')
-      const prev = queryClient.getQueryData<Notification[]>(KEY) ?? stored
-      const ids = new Set(fresh.map(n => n.id))
-      const merged = [...fresh, ...prev.filter(n => !ids.has(n.id))]
-        .sort((a, b) => +new Date(b.created_at) - +new Date(a.created_at))
-      sessionStorage.setItem('notifications', JSON.stringify(merged))
-      return merged
-    },
+    queryFn: getNotifications,
     enabled: !!token,
   })
 
-  // Live updates over WebSocket, written straight into the query cache.
+  // Live updates over WebSocket, prepended straight into the query cache.
   useEffect(() => {
     if (!token) return
     let unmounted = false
@@ -49,11 +39,9 @@ export function useNotifications() {
       socket.onmessage = (e) => {
         try {
           const notification = JSON.parse(e.data) as Notification
-          queryClient.setQueryData<Notification[]>(KEY, (prev = []) => {
-            const updated = [notification, ...prev.filter(n => n.id !== notification.id)]
-            sessionStorage.setItem('notifications', JSON.stringify(updated))
-            return updated
-          })
+          queryClient.setQueryData<Notification[]>(KEY, (prev = []) =>
+            [notification, ...prev.filter(n => n.id !== notification.id)]
+          )
           if (notification.notification_type === 'task_confirmed' ||
               notification.notification_type === 'task_rejected') {
             queryClient.invalidateQueries({ queryKey: ['completions'] })
@@ -96,16 +84,13 @@ export function useNotifications() {
     onMutate: async (id: string) => {
       await queryClient.cancelQueries({ queryKey: KEY })
       const previous = queryClient.getQueryData<Notification[]>(KEY)
-      const updated = (previous ?? []).map(n => n.id === id ? { ...n, is_read: true } : n)
-      queryClient.setQueryData<Notification[]>(KEY, updated)
-      sessionStorage.setItem('notifications', JSON.stringify(updated))
+      queryClient.setQueryData<Notification[]>(KEY, (prev = []) =>
+        prev.map(n => n.id === id ? { ...n, is_read: true } : n)
+      )
       return { previous }
     },
     onError: (_err, _id, ctx) => {
-      if (ctx?.previous) {
-        queryClient.setQueryData(KEY, ctx.previous)
-        sessionStorage.setItem('notifications', JSON.stringify(ctx.previous))
-      }
+      if (ctx?.previous) queryClient.setQueryData(KEY, ctx.previous)
     },
   })
 
