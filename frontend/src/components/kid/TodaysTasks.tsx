@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { getTasks, getCompletions, postCompletion, deleteTask, type CompletionInfo } from '../../api/tasks'
 import { CATEGORY_STYLE, primaryCategory } from '../../constants/categories'
+import { todayStr, dateStrFromToday } from '../../utils/date'
 import TaskRow from './TaskRow'
 import TasksAll from './TasksAll'
 import AddTaskModal from './AddTaskModal'
@@ -19,9 +20,9 @@ export default function TodaysTasks() {
   const [toastError, setToastError]     = useState(false)
   const toastErrorTimer                 = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  const today    = new Date().toISOString().slice(0, 10)
-  const tomorrow = (() => { const d = new Date(); d.setDate(d.getDate() + 1); return d.toISOString().slice(0, 10) })()
-  const in7Days  = (() => { const d = new Date(); d.setDate(d.getDate() + 7); return d.toISOString().slice(0, 10) })()
+  const today    = todayStr()
+  const tomorrow = dateStrFromToday(1)
+  const in7Days  = dateStrFromToday(7)
 
   const { data: tasks       = [], isLoading: tasksLoading       } = useQuery({ queryKey: ['tasks'],       queryFn: getTasks })
   const { data: completions = [], isLoading: completionsLoading } = useQuery({ queryKey: ['completions'], queryFn: getCompletions })
@@ -79,8 +80,9 @@ export default function TodaysTasks() {
       .map(c => c.task)
   )
 
-  const todaysTasks  = tasks.filter(task => task.due_date === today)
-  const pendingTasks = todaysTasks.filter(task => !completedIds.has(task.id))
+  const todaysTasks   = tasks.filter(task => task.due_date === today)
+  const pendingTasks  = todaysTasks.filter(task => !completedIds.has(task.id))
+  const allEditableTasks = tasks.filter(task => !completedIds.has(task.id))
   const overdueTasks = tasks.filter(task =>
     task.due_date !== null && task.due_date < today && !completedIds.has(task.id)
   )
@@ -116,7 +118,7 @@ export default function TodaysTasks() {
               </span>
             )}
           </div>
-          {todaysTasks.length > 0 && (
+          {allEditableTasks.length > 0 && (
             <button
               type="button"
               className="font-body text-sm font-semibold text-primary-600 hover:text-primary-700 focus-ring rounded"
@@ -278,7 +280,7 @@ export default function TodaysTasks() {
 
       {viewAllOpen && (
         <TasksAll
-          tasks={todaysTasks}
+          tasks={allEditableTasks}
           completionInfo={completionInfo}
           onComplete={complete}
           onDelete={removeTasks}

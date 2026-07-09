@@ -1,4 +1,5 @@
-import { type ReactNode, useRef } from 'react'
+import { type ReactNode, useRef, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import { useFocusTrap } from '../hooks/useFocusTrap'
 
 interface ModalProps {
@@ -16,8 +17,9 @@ interface ModalProps {
 /**
  * Centered modal dialog: dimmed backdrop, focus trap (Tab cycling + Escape to
  * close + focus restore on unmount via useFocusTrap), and click-outside-to-close
- * (mousedown on the backdrop itself). Callers supply the card's shape classes
- * and the labelling element inside `children`.
+ * (mousedown on the backdrop itself). Portals to document.body and marks all
+ * other body children as `inert` so background content is unreachable by
+ * keyboard and assistive technology.
  */
 export default function Modal({
   onClose,
@@ -27,11 +29,27 @@ export default function Modal({
   cardClassName = '',
   children,
 }: ModalProps) {
+  const backdropRef = useRef<HTMLDivElement>(null)
   const cardRef = useRef<HTMLDivElement>(null)
+
+  // Declared BEFORE useFocusTrap so React runs this cleanup first on unmount:
+  // inert must be removed before useFocusTrap tries to restore focus,
+  // otherwise the previously-focused element is unreachable and focus silently fails.
+  useEffect(() => {
+    const backdrop = backdropRef.current
+    if (!backdrop) return
+    const toInert = Array.from(document.body.children).filter(
+      el => el !== backdrop && !el.hasAttribute('inert')
+    )
+    toInert.forEach(el => el.setAttribute('inert', ''))
+    return () => toInert.forEach(el => el.removeAttribute('inert'))
+  }, [])
+
   useFocusTrap(cardRef, onClose)
 
-  return (
+  return createPortal(
     <div
+      ref={backdropRef}
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
       onMouseDown={e => { if (e.target === e.currentTarget) onClose() }}
     >
@@ -46,6 +64,7 @@ export default function Modal({
       >
         {children}
       </div>
-    </div>
+    </div>,
+    document.body
   )
 }

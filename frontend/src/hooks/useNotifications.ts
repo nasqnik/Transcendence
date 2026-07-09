@@ -1,4 +1,5 @@
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useEffect } from 'react'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { getNotifications, markNotificationRead, type Notification } from '../api/notifications'
 import useAuthStore from '../store/authStore'
 
@@ -6,96 +7,109 @@ const WS_BASE = (import.meta.env.VITE_API_URL ?? 'https://localhost/api')
   .replace('https://', 'wss://')
   .replace('/api', '')
 
-// Module-level cache so read notifications survive hook remounts within the tab
-let notificationCache: Notification[] = []
+const KEY = ['notifications'] as const
 
 export function useNotifications() {
   const token = useAuthStore(s => s.token)
-  const [notifications, setNotifications] = useState<Notification[]>(notificationCache)
-  const wsRef            = useRef<WebSocket | null>(null)
-  const reconnectDelay   = useRef(1000)
-  const reconnectTimer   = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const unmountedRef     = useRef(false)
+  const queryClient = useQueryClient()
 
-  // Initial fetch — merge unread from API with cached read notifications
-  useEffect(() => {
-    getNotifications()
-      .then(fresh => {
-        const freshIds = new Set(fresh.map(n => n.id))
-        const cached   = notificationCache.filter(n => !freshIds.has(n.id))
-        const merged   = [...fresh, ...cached].sort(
-          (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-        )
-        notificationCache = merged
-        setNotifications(merged)
-      })
-      .catch(() => {})
-  }, [])
+  const { data: notifications = [] } = useQuery({
+    queryKey: KEY,
+    queryFn: async () => {
+      const fresh = await getNotifications()
+      // Server only returns unread. Merge with the in-memory cache first
+      // (has optimistic read-state), then fall back to sessionStorage so
+      // read notifications survive a hard page refresh.
+      const stored: Notification[] = JSON.parse(sessionStorage.getItem('notifications') ?? '[]')
+      const prev = queryClient.getQueryData<Notification[]>(KEY) ?? stored
+      const ids = new Set(fresh.map(n => n.id))
+      const merged = [...fresh, ...prev.filter(n => !ids.has(n.id))]
+        .sort((a, b) => +new Date(b.created_at) - +new Date(a.created_at))
+      sessionStorage.setItem('notifications', JSON.stringify(merged))
+      return merged
+    },
+    enabled: !!token,
+  })
 
-  // WebSocket with reconnect
+  // Live updates over WebSocket, written straight into the query cache.
   useEffect(() => {
     if (!token) return
-    unmountedRef.current = false
+    let unmounted = false
+    let ws: WebSocket | null = null
+    let reconnectDelay = 1000
+    let timer: ReturnType<typeof setTimeout> | null = null
 
     function connect() {
-      if (unmountedRef.current) return
-      const ws = new WebSocket(`${WS_BASE}/ws/notifications/?token=${token}`)
-      wsRef.current = ws
+      if (unmounted) return
+      const socket = new WebSocket(`${WS_BASE}/ws/notifications/?token=${token}`)
+      ws = socket
 
-      ws.onopen = () => {
-        reconnectDelay.current = 1000
-      }
+      socket.onopen = () => { reconnectDelay = 1000 }
 
-      ws.onmessage = (e) => {
+      socket.onmessage = (e) => {
         try {
           const notification = JSON.parse(e.data) as Notification
-          setNotifications(prev => {
+          queryClient.setQueryData<Notification[]>(KEY, (prev = []) => {
             const updated = [notification, ...prev.filter(n => n.id !== notification.id)]
-            notificationCache = updated
+            sessionStorage.setItem('notifications', JSON.stringify(updated))
             return updated
           })
+          if (notification.notification_type === 'task_confirmed' ||
+              notification.notification_type === 'task_rejected') {
+            queryClient.invalidateQueries({ queryKey: ['completions'] })
+          }
         } catch { /* ignore malformed message */ }
       }
 
-      ws.onclose = () => {
-        if (unmountedRef.current) return
-        reconnectTimer.current = setTimeout(() => {
-          reconnectDelay.current = Math.min(reconnectDelay.current * 2, 30000)
+      socket.onclose = () => {
+        if (unmounted) return
+        timer = setTimeout(() => {
+          reconnectDelay = Math.min(reconnectDelay * 2, 30000)
           connect()
-        }, reconnectDelay.current)
+        }, reconnectDelay)
       }
 
-      ws.onerror = () => ws.close()
+      socket.onerror = () => socket.close()
     }
 
     connect()
 
     return () => {
-      unmountedRef.current = true
-      if (reconnectTimer.current) clearTimeout(reconnectTimer.current)
-      wsRef.current?.close()
-      wsRef.current = null
+      unmounted = true
+      if (timer) clearTimeout(timer)
+      const socket = ws
+      ws = null
+      if (!socket) return
+      // Detach handlers so teardown can't trigger a reconnect or a cache write.
+      socket.onopen = socket.onmessage = socket.onerror = socket.onclose = null
+      // Closing a still-CONNECTING socket logs a noisy "closed before the
+      // connection is established" warning (happens on every StrictMode remount
+      // in dev), so defer the close until it has actually opened.
+      if (socket.readyState === WebSocket.CONNECTING) socket.onopen = () => socket.close()
+      else socket.close()
     }
-  }, [token])
+  }, [token, queryClient])
+
+  // Optimistic mark-as-read with rollback on failure.
+  const { mutate: markRead } = useMutation({
+    mutationFn: markNotificationRead,
+    onMutate: async (id: string) => {
+      await queryClient.cancelQueries({ queryKey: KEY })
+      const previous = queryClient.getQueryData<Notification[]>(KEY)
+      const updated = (previous ?? []).map(n => n.id === id ? { ...n, is_read: true } : n)
+      queryClient.setQueryData<Notification[]>(KEY, updated)
+      sessionStorage.setItem('notifications', JSON.stringify(updated))
+      return { previous }
+    },
+    onError: (_err, _id, ctx) => {
+      if (ctx?.previous) {
+        queryClient.setQueryData(KEY, ctx.previous)
+        sessionStorage.setItem('notifications', JSON.stringify(ctx.previous))
+      }
+    },
+  })
 
   const unreadCount = notifications.filter(n => !n.is_read).length
-
-  const markRead = useCallback(async (id: string) => {
-    setNotifications(prev => {
-      const updated = prev.map(n => n.id === id ? { ...n, is_read: true } : n)
-      notificationCache = updated
-      return updated
-    })
-    try {
-      await markNotificationRead(id)
-    } catch {
-      setNotifications(prev => {
-        const reverted = prev.map(n => n.id === id ? { ...n, is_read: false } : n)
-        notificationCache = reverted
-        return reverted
-      })
-    }
-  }, [])
 
   return { notifications, unreadCount, markRead }
 }

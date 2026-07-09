@@ -1,7 +1,8 @@
-import { useRef, useEffect, useState } from 'react'
+import { useRef, useState, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import useAuthStore from '../../store/authStore'
+import { useDismissable } from '../../hooks/useDismissable'
 
 export default function KidUserMenu() {
   const { t } = useTranslation()
@@ -11,27 +12,8 @@ export default function KidUserMenu() {
   const [menuOpen, setMenuOpen] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
   const triggerRef = useRef<HTMLButtonElement>(null)
-
-  function closeMenu() {
-    setMenuOpen(false)
-    triggerRef.current?.focus()
-  }
-
-  useEffect(() => {
-    if (!menuOpen) return
-    function handleClickOutside(e: MouseEvent) {
-      if (!menuRef.current?.contains(e.target as Node)) setMenuOpen(false)
-    }
-    function handleEscape(e: KeyboardEvent) {
-      if (e.key === 'Escape') closeMenu()
-    }
-    document.addEventListener('mousedown', handleClickOutside)
-    document.addEventListener('keydown', handleEscape)
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside)
-      document.removeEventListener('keydown', handleEscape)
-    }
-  }, [menuOpen])
+  const closeMenu = useCallback(() => { setMenuOpen(false); triggerRef.current?.focus() }, [])
+  useDismissable(menuRef, closeMenu, { enabled: menuOpen })
 
   return (
     <div className="relative" ref={menuRef}>

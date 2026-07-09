@@ -5,6 +5,7 @@ import {
   getGamificationStats,
   getGamificationProfile,
 } from '../api/gamification'
+import { localDateStr } from '../utils/date'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -41,11 +42,6 @@ function emptyStats(): Record<TaskCategory, { level: number; xp_percent: number 
 
 function emptyPending(): Record<TaskCategory, number> {
   return Object.fromEntries(CATEGORIES.map(cat => [cat, 0])) as Record<TaskCategory, number>
-}
-
-/** Format a Date as YYYY-MM-DD in the browser's local timezone. */
-function localDateStr(d: Date): string {
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
 }
 
 function computeStreak(completions: Completion[]): number {

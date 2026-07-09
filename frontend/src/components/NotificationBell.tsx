@@ -1,6 +1,7 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNotifications } from '../hooks/useNotifications'
+import { useDismissable } from '../hooks/useDismissable'
 
 const TYPE_ICON: Record<string, string> = {
   task_confirmed: '✅',
@@ -26,22 +27,8 @@ export default function NotificationBell() {
   const [open, setOpen] = useState(false)
   const containerRef = useRef<HTMLDivElement>(null)
   const triggerRef   = useRef<HTMLButtonElement>(null)
-
-  useEffect(() => {
-    if (!open) return
-    function onMouseDown(e: MouseEvent) {
-      if (!containerRef.current?.contains(e.target as Node)) setOpen(false)
-    }
-    function onKeyDown(e: KeyboardEvent) {
-      if (e.key === 'Escape') { setOpen(false); triggerRef.current?.focus() }
-    }
-    document.addEventListener('mousedown', onMouseDown)
-    document.addEventListener('keydown', onKeyDown)
-    return () => {
-      document.removeEventListener('mousedown', onMouseDown)
-      document.removeEventListener('keydown', onKeyDown)
-    }
-  }, [open])
+  const close = useCallback(() => { setOpen(false); triggerRef.current?.focus() }, [])
+  useDismissable(containerRef, close, { enabled: open })
 
   return (
     <div className="relative" ref={containerRef}>
@@ -52,7 +39,7 @@ export default function NotificationBell() {
         onClick={() => setOpen(v => !v)}
         aria-label={t('notifications.title')}
         aria-expanded={open}
-        aria-haspopup="listbox"
+        aria-haspopup="true"
         className="relative w-10 h-10 flex items-center justify-center rounded-full hover:bg-gray-100 focus-ring transition-colors text-gray-500 hover:text-gray-700"
       >
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -71,7 +58,6 @@ export default function NotificationBell() {
 
       {open && (
         <div
-          role="listbox"
           aria-label={t('notifications.title')}
           className="absolute end-0 top-full mt-2 w-80 bg-white rounded-2xl shadow-lg border border-gray-100 z-50 overflow-hidden"
         >
@@ -91,7 +77,7 @@ export default function NotificationBell() {
               </li>
             ) : (
               notifications.map(n => (
-                <li key={n.id} role="option" aria-selected={!n.is_read}>
+                <li key={n.id}>
                   <button
                     type="button"
                     onClick={() => { if (!n.is_read) markRead(n.id) }}
