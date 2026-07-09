@@ -37,9 +37,13 @@ export default function NotificationBell() {
         ref={triggerRef}
         type="button"
         onClick={() => setOpen(v => !v)}
-        aria-label={t('notifications.title')}
+        aria-label={
+          unreadCount > 0
+            ? `${t('notifications.title')}, ${t('notifications.newCount', { count: unreadCount })}`
+            : t('notifications.title')
+        }
         aria-expanded={open}
-        aria-haspopup="true"
+        aria-controls="notification-panel"
         className="relative w-10 h-10 flex items-center justify-center rounded-full hover:bg-gray-100 focus-ring transition-colors text-gray-500 hover:text-gray-700"
       >
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -58,7 +62,7 @@ export default function NotificationBell() {
 
       {open && (
         <div
-          aria-label={t('notifications.title')}
+          id="notification-panel"
           className="absolute end-0 top-full mt-2 w-80 bg-white rounded-2xl shadow-lg border border-gray-100 z-50 overflow-hidden"
         >
           <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between">

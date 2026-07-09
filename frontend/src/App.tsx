@@ -42,10 +42,7 @@ export default function App() {
   // same tab never briefly sees the previous user's tasks, stats, or notifications.
   useEffect(() =>
     useAuthStore.subscribe((state, prev) => {
-      if (prev.token && !state.token) {
-        queryClient.clear()
-        sessionStorage.removeItem('notifications')
-      }
+      if (prev.token && !state.token) queryClient.clear()
     }),
   [queryClient])
 
