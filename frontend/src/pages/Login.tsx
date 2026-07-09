@@ -58,7 +58,7 @@ export default function Login() {
         headingId="waiting-heading"
         icon="📬"
         title={t('auth.waitingForParent')}
-        statusMessage={t('auth.waitingForParentHintGeneric')}
+        statusMessage={t('auth.waitingForParent')}
       >
         <p className="font-body text-sm text-gray-500 text-center w-full">
           {t('auth.waitingForParentHintGeneric')}

@@ -172,7 +172,11 @@ export default function TaskRow({
             ⏳
           </span>
         ) : isDone ? (
-          <span className="w-8 h-8 rounded-full bg-teal-500 shrink-0 flex items-center justify-center shadow-sm">
+          <span
+            role="img"
+            aria-label={t('kidDash.statusConfirmed')}
+            className="w-8 h-8 rounded-full bg-teal-500 shrink-0 flex items-center justify-center shadow-sm"
+          >
             <Checkmark />
           </span>
         ) : (

@@ -6,7 +6,8 @@ interface Props {
 }
 
 export default function WelcomeModal({ onDismiss }: Props) {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
+  const arrow = i18n.dir() === 'rtl' ? '←' : '→'
 
   return (
     <Modal onClose={onDismiss} labelledBy="welcome-heading" cardClassName="rounded-2xl w-full max-w-sm mx-4">
@@ -14,9 +15,9 @@ export default function WelcomeModal({ onDismiss }: Props) {
 
         <div className="flex justify-center items-center gap-3" aria-hidden="true">
           <span className="text-3xl">📋</span>
-          <span className="text-gray-300 font-bold">→</span>
+          <span className="text-gray-300 font-bold">{arrow}</span>
           <span className="text-3xl">⭐</span>
-          <span className="text-gray-300 font-bold">→</span>
+          <span className="text-gray-300 font-bold">{arrow}</span>
           <span className="text-3xl">🏆</span>
         </div>
 

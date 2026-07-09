@@ -1,10 +1,11 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { type Task } from '../../constants/categories'
 import { type CompletionInfo } from '../../api/tasks'
 import TaskRow from './TaskRow'
 import EditTaskModal from './EditTaskModal'
 import { useFocusTrap } from '../../hooks/useFocusTrap'
+import { useDismissable } from '../../hooks/useDismissable'
 
 interface Props {
   tasks: Task[]
@@ -22,15 +23,7 @@ export default function TasksAll({ tasks, completionInfo, onComplete, onDelete, 
   const [confirming, setConfirming] = useState(false)
   const [editingTask, setEditingTask] = useState<Task | null>(null)
 
-  useEffect(() => {
-    function handleClickOutside(e: MouseEvent) {
-      if (editingTask) return
-      if (!cardRef.current?.contains(e.target as Node)) onClose()
-    }
-    document.addEventListener('mousedown', handleClickOutside)
-    return () => document.removeEventListener('mousedown', handleClickOutside)
-  }, [onClose, editingTask])
-
+  useDismissable(cardRef, onClose, { enabled: !editingTask, handleEscape: false })
   useFocusTrap(cardRef, editingTask ? () => {} : onClose)
 
   function toggleSelect(id: string) {

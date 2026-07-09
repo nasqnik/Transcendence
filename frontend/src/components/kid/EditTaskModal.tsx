@@ -4,6 +4,8 @@ import { useQueryClient } from '@tanstack/react-query'
 import { updateTaskStream, deleteTask } from '../../api/tasks'
 import { type Task } from '../../constants/categories'
 import Modal from '../Modal'
+import StreamingView from './StreamingView'
+import TaskFormFields from './TaskFormFields'
 
 interface Props {
   task: Task
@@ -93,71 +95,20 @@ export default function EditTaskModal({ task, onClose }: Props) {
 
       {/* Streaming view */}
       {status === 'streaming' ? (
-        <div className="p-6 flex flex-col gap-4">
-          <p className="font-body text-sm font-semibold text-primary-600" aria-live="polite">
-            <span aria-hidden="true">✨</span> {t('tasks.aiThinking')}
-          </p>
-          <p className="font-heading text-base font-bold text-gray-900">{title}</p>
-          <div
-            aria-live="polite"
-            aria-label={t('tasks.aiThinking')}
-            className="min-h-20 rounded-xl bg-gray-50 border border-gray-200 p-3 font-body text-sm text-gray-700 leading-relaxed"
-          >
-            {(() => {
-              const m = /"summary"\s*:\s*"((?:[^"\\]|\\.)*)/.exec(streamingText)
-              return m ? m[1] : ''
-            })()}
-            <span
-              aria-hidden="true"
-              className="inline-block w-0.5 h-[1em] bg-primary-500 animate-pulse ms-0.5 align-text-bottom"
-            />
-          </div>
-        </div>
+        <StreamingView title={title} streamingText={streamingText} />
       ) : (
         /* Form */
         <form onSubmit={handleSave} className="p-6 flex flex-col gap-4">
 
-          <div className="flex flex-col gap-1">
-            <label htmlFor="edit-task-title" className="font-body text-sm font-semibold text-gray-700">
-              {t('tasks.title')}
-            </label>
-            <input
-              id="edit-task-title"
-              type="text"
-              value={title}
-              onChange={e => setTitle(e.target.value)}
-              required
-              autoFocus
-              className="w-full px-4 py-2.5 rounded-xl border border-gray-300 font-body text-sm text-gray-900 placeholder-gray-400 focus-ring outline-none"
-            />
-          </div>
-
-          <div className="flex flex-col gap-1">
-            <label htmlFor="edit-task-description" className="font-body text-sm font-semibold text-gray-700">
-              {t('tasks.description')}
-            </label>
-            <textarea
-              id="edit-task-description"
-              value={description}
-              onChange={e => setDescription(e.target.value)}
-              rows={3}
-              className="w-full px-4 py-2.5 rounded-xl border border-gray-300 font-body text-sm text-gray-900 placeholder-gray-400 focus-ring outline-none resize-none"
-              placeholder={t('tasks.description')}
-            />
-          </div>
-
-          <div className="flex flex-col gap-1">
-            <label htmlFor="edit-task-due-date" className="font-body text-sm font-semibold text-gray-700">
-              {t('tasks.dueDateLabel')}
-            </label>
-            <input
-              id="edit-task-due-date"
-              type="date"
-              value={dueDate}
-              onChange={e => setDueDate(e.target.value)}
-              className="w-full px-4 py-2.5 rounded-xl border border-gray-300 font-body text-sm text-gray-900 focus-ring outline-none"
-            />
-          </div>
+          <TaskFormFields
+            idPrefix="edit-task"
+            title={title}
+            description={description}
+            dueDate={dueDate}
+            onTitleChange={setTitle}
+            onDescriptionChange={setDescription}
+            onDueDateChange={setDueDate}
+          />
 
           {status === 'error' && (
             <p role="alert" className="font-body text-sm text-danger-700">

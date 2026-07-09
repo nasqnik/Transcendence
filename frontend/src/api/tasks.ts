@@ -46,11 +46,6 @@ export interface CreateTaskInput {
   due_date: string | null
 }
 
-export async function createTask(data: CreateTaskInput): Promise<Task> {
-  const res = await client.post('/task/tasks/', data)
-  return res.data
-}
-
 async function readTaskSSE(
   body: ReadableStream<Uint8Array>,
   onToken: (text: string) => void,
@@ -158,11 +153,13 @@ export interface UpdateTaskInput {
   due_date?: string | null
 }
 
-export async function updateTask(taskId: string, data: UpdateTaskInput): Promise<Task> {
-  const res = await client.patch(`/task/tasks/${taskId}/`, data)
-  return res.data
-}
-
 export async function deleteTask(taskId: string): Promise<void> {
   await client.delete(`/task/tasks/${taskId}/`)
+}
+
+/** Progressively extracts the human-readable "summary" field from a
+ *  partially-received SSE JSON payload while the AI stream is in flight. */
+export function extractStreamingSummary(buffer: string): string {
+  const m = /"summary"\s*:\s*"((?:[^"\\]|\\.)*)/.exec(buffer)
+  return m ? m[1] : ''
 }
