@@ -47,3 +47,19 @@ export function primaryCategory(rewards: CategoryReward[]): TaskCategory {
   if (!rewards.length) return 'learning'
   return [...rewards].sort((a, b) => b.points_value - a.points_value)[0].category
 }
+
+export interface KidStat {
+  id: string
+  kid_id: string
+  category: TaskCategory
+  level: number
+  xp_percent: number
+}
+
+export interface KidProfile {
+  id: string
+  kid_id: string
+  main_level: number
+  overall_xp: number
+  coins: number
+}

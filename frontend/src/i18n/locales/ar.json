@@ -207,6 +207,24 @@
     "terms": "شروط الخدمة",
     "lastUpdated": "آخر تحديث: {{date}}"
   },
+  "parentDash": {
+    "title": "لوحة تحكم ولي الأمر",
+    "noKid": "لم يتم ربط حساب طفل بعد.",
+    "pendingApprovals": "في انتظار المراجعة",
+    "noPending": "لا توجد مهام في انتظار مراجعتك.",
+    "kidStats": "تقدم {{name}}",
+    "overview": "نظرة عامة",
+    "approve": "موافقة",
+    "reject": "رفض",
+    "reviewing": "جارٍ الحفظ...",
+    "rejectTitle": "رفض المهمة",
+    "reviewNote": "ملاحظة لطفلك (اختياري)",
+    "submittedAt": "أُرسلت {{date}}",
+    "level": "المستوى {{level}}",
+    "coins": "{{coins}} عملة",
+    "xp": "{{xp}} XP",
+    "allCategories": "جميع الفئات"
+  },
   "errors": {
     "required": "هذا الحقل مطلوب",
     "mustAgreeToTerms": "يجب الموافقة على شروط الخدمة وسياسة الخصوصية للمتابعة.",

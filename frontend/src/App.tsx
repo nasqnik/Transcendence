@@ -14,6 +14,7 @@ import NotFound from './pages/NotFound'
 import VerifyEmail from './pages/VerifyEmail'
 import VerifyKidEmail from './pages/VerifyKidEmail'
 import KidLayout from './components/kid/KidLayout'
+import ParentLayout from './components/parent/ParentLayout'
 import ChildDashboard from './pages/ChildDashboard'
 import KidSettings from './pages/KidSettings'
 import ParentDashboard from './pages/ParentDashboard'
@@ -77,7 +78,9 @@ export default function App() {
 
         {/* Parent (protected) */}
         <Route element={<ProtectedRoute role="parent" />}>
-          <Route path="/parent/dashboard" element={<ParentDashboard />} />
+          <Route element={<ParentLayout />}>
+            <Route path="/parent/dashboard" element={<ParentDashboard />} />
+          </Route>
           <Route path="/parent/profile" element={<ParentProfile />} />
         </Route>
 
