@@ -213,6 +213,24 @@
     "terms": "Terms of Service",
     "lastUpdated": "Last updated: {{date}}"
   },
+  "parentDash": {
+    "title": "Parent Dashboard",
+    "noKid": "No child account linked yet.",
+    "pendingApprovals": "Pending Approvals",
+    "noPending": "No tasks waiting for your review.",
+    "kidStats": "{{name}}'s Progress",
+    "overview": "Overview",
+    "approve": "Approve",
+    "reject": "Reject",
+    "reviewing": "Saving...",
+    "rejectTitle": "Reject task",
+    "reviewNote": "Note for your child (optional)",
+    "submittedAt": "Submitted {{date}}",
+    "level": "Level {{level}}",
+    "coins": "{{coins}} coins",
+    "xp": "{{xp}} XP",
+    "allCategories": "All Categories"
+  },
   "errors": {
     "required": "This field is required",
     "mustAgreeToTerms": "You must agree to the Terms of Service and Privacy Policy to continue.",
