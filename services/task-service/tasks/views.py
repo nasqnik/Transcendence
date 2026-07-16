@@ -208,9 +208,9 @@ class TaskCompletionListCreateView(generics.ListCreateAPIView):
     def get_queryset(self):
         user = self.request.user
         if isinstance(user, KidActor):
-            return TaskCompletion.objects.filter(kid_id=user.kid_id)
+            return TaskCompletion.objects.select_related('task').filter(kid_id=user.kid_id)
         if isinstance(user, ParentActor):
-            return TaskCompletion.objects.filter(kid_id__in=user.kid_ids)
+            return TaskCompletion.objects.select_related('task').filter(kid_id__in=user.kid_ids)
         return TaskCompletion.objects.none()
 
     def get_serializer_class(self):
