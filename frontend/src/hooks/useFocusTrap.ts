@@ -19,7 +19,9 @@ export function useFocusTrap(dialogRef: RefObject<HTMLElement | null>, onClose: 
     // Respect an element that already grabbed focus on mount (e.g. an input
     // with `autoFocus`) instead of always jumping to the first focusable item.
     if (dialog && !dialog.contains(document.activeElement)) {
-      const focusable = dialog.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR)
+      const focusable = Array.from(
+        dialog.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR)
+      ).filter(el => !el.hasAttribute('disabled'))
       ;(focusable[0] ?? dialog).focus()
     }
 
