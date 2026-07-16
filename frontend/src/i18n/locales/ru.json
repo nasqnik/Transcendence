@@ -255,7 +255,12 @@
     "level": "Уровень {{level}}",
     "coins": "{{coins}} монет",
     "xp": "{{xp}} XP",
-    "allCategories": "Все категории"
+    "allCategories": "Все категории",
+    "dueDate": "Срок: {{date}}",
+    "noDueDate": "Без срока",
+    "untitledTask": "Задача без названия",
+    "monitorHint": "Вот как дела у ваших детей.",
+    "yourChild": "Ваш ребёнок"
   },
   "errors": {
     "required": "Это поле обязательно",
