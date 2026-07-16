@@ -1,8 +1,8 @@
 /**
  * Error utilities for axios/DRF responses.
  *
- * - getApiErrorKey + t(key)  = components that store the key and translate later (Login)
- * - parseApiError            = ready-to-show translated string (Signup, invites)
+ * - getApiErrorKey + t(key)  = map an error to an i18n key, translated in React (Login, Signup, invites)
+ * - getFieldErrors           = per-field validation messages, already translated
  * - is*                      = boolean helpers for branching, not display
  */
 
@@ -108,10 +108,6 @@ function translateServerMessage(message: string): string {
   return key === 'errors.passwordMinLength' ? i18n.t(key, { min: 8 }) : i18n.t(key)
 }
 
-function genericError(): string {
-  return i18n.t('errors.generic')
-}
-
 // ─── Boolean helpers (for branching, not display) ────────────────────────────
 
 /** Returns true if the kid account exists but is waiting for parent to accept the invite. */
@@ -157,7 +153,7 @@ export function isInvalidKidCredentials(error: unknown): boolean {
 /**
  * Extract per-field validation errors from a DRF response.
  * Returns field → first translated error string for every field key.
- * `detail` and `non_field_errors` are excluded (those go to parseApiError).
+ * `detail` and `non_field_errors` are excluded (those go to getApiErrorKey).
  *
  * Example input:  { email: ["user with this email already exists."], password: ["too short"] }
  * Example output: { email: "An account with this email already exists.", password: "Password must be at least 8 characters." }
@@ -178,11 +174,6 @@ export function getFieldErrors(error: unknown): Record<string, string> {
     }
   }
   return result
-}
-
-/** Returns true when the response contains at least one field-level validation error. */
-export function hasFieldErrors(error: unknown): boolean {
-  return Object.keys(getFieldErrors(error)).length > 0
 }
 
 // ─── Key / string resolution ─────────────────────────────────────────────────
@@ -226,24 +217,4 @@ export function dualLoginErrorKey(parentErr: unknown, kidErr: unknown): string {
     return getApiErrorKey(parentErr)
   }
   return getApiErrorKey(kidErr)
-}
-
-/**
- * Turn axios/DRF errors into a localized string.
- * Known backend messages are mapped to `errors.api.*`; others use `errors.apiUnknown`.
- */
-export function parseApiError(error: unknown): string {
-  const obj = getErrorPayload(error)
-  if (!obj) return genericError()
-
-  if (typeof obj.detail === 'string') return translateServerMessage(obj.detail)
-
-  for (const value of Object.values(obj)) {
-    if (Array.isArray(value) && typeof value[0] === 'string') {
-      return translateServerMessage(value[0])
-    }
-    if (typeof value === 'string') return translateServerMessage(value)
-  }
-
-  return genericError()
 }

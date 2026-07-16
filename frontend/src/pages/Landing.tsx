@@ -1,5 +1,6 @@
 import Button from '../components/Button'
 import LanguageSwitcher from '../components/LanguageSwitcher'
+import LegalLinks from '../components/LegalLinks'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { usePageTitle } from '../hooks/usePageTitle'
@@ -10,26 +11,46 @@ export default function Landing() {
   usePageTitle(t('app.name'))
 
   return (
-    <div className="flex flex-col min-h-screen bg-primary-50">
-      <main aria-labelledby="landing-heading" className="flex flex-1 flex-col items-center justify-center gap-6 py-12">
-        <h1 id="landing-heading" className="font-heading text-5xl font-bold text-primary-700 text-center">
-          {t('app.name')}
-        </h1>
-        <p className="font-body text-lg text-gray-700 text-center">{t('landing.tagline')}</p>
-        <div className="flex gap-4">
-          <Button variant="primary" onClick={() => navigate('/login')}>{t('nav.login')}</Button>
-          <Button variant="secondary" onClick={() => navigate('/signup')}>{t('nav.signup')}</Button>
+    <main aria-labelledby="landing-heading" className="min-h-screen bg-primary-50 flex flex-col items-center justify-center p-4 py-8 gap-4">
+      <div className="w-full max-w-sm flex flex-col gap-3">
+        <div className="bg-white rounded-2xl overflow-hidden">
+
+          {/* Gradient hero header */}
+          <div className="relative bg-gradient-to-br from-primary-600 to-primary-500 px-6 py-10 overflow-hidden text-center">
+            <div className="absolute -top-8 -right-8 w-32 h-32 rounded-full bg-white/10 pointer-events-none" aria-hidden="true" />
+            <div className="absolute -bottom-6 -left-6 w-24 h-24 rounded-full bg-white/10 pointer-events-none" aria-hidden="true" />
+            <div className="absolute top-1/2 right-1/4 w-12 h-12 rounded-full bg-white/5 pointer-events-none" aria-hidden="true" />
+            <div className="relative flex flex-col items-center gap-3">
+              <span className="text-5xl" aria-hidden="true">⭐</span>
+              <h1 id="landing-heading" className="font-heading text-3xl font-bold text-white">
+                {t('app.name')}
+              </h1>
+              <p className="font-body text-white/80 text-sm leading-relaxed max-w-xs">
+                {t('landing.tagline')}
+              </p>
+            </div>
+          </div>
+
+          {/* Actions */}
+          <div className="px-6 py-6 flex flex-col gap-4">
+            <nav aria-label={t('a11y.mainNav')} className="flex flex-col gap-3">
+              <Button variant="primary" className="w-full" onClick={() => navigate('/login')}>
+                {t('nav.login')}
+              </Button>
+              <Button variant="secondary" className="w-full" onClick={() => navigate('/signup')}>
+                {t('nav.signup')}
+              </Button>
+            </nav>
+
+            <LegalLinks className="justify-center pt-1" />
+          </div>
+
         </div>
-        <LanguageSwitcher />
-      </main>
-      <footer className="flex justify-center gap-6 py-4 border-t border-gray-200">
-        <a href="/privacy" className="font-body text-xs text-gray-500 underline hover:text-primary-600 focus-ring rounded-sm">
-          {t('legal.privacy')}
-        </a>
-        <a href="/terms" className="font-body text-xs text-gray-500 underline hover:text-primary-600 focus-ring rounded-sm">
-          {t('legal.terms')}
-        </a>
-      </footer>
-    </div>
+
+        <div className="flex justify-center">
+          <LanguageSwitcher />
+        </div>
+      </div>
+    </main>
   )
 }

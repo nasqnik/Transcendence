@@ -87,7 +87,19 @@
     "emptyKid": "لا توجد مهام بعد. اطلب من والدك إضافة مهمة!",
     "emptyParent": "لم يتم إنشاء أي مهام بعد.",
     "invalidKidId": "أدخل معرّف حساب الطفل الصحيح (UUID).",
-    "invalidXp": "أدخل قيمة XP صحيحة (0 أو أكثر)."
+    "invalidXp": "أدخل قيمة XP صحيحة (0 أو أكثر).",
+    "aiThinking": "الذكاء الاصطناعي يعالج مهمتك...",
+    "select": "تحديد",
+    "selectedCount": "تم تحديد {{count}}",
+    "deleteSelected": "حذف المحدد",
+    "deleteConfirmMany": "هل تريد حذف {{count}} مهام؟",
+    "deleteConfirmYes": "حذف",
+    "editTask": "تعديل المهمة",
+    "editBtn": "تعديل",
+    "saveTask": "حفظ",
+    "deleteTask": "حذف المهمة",
+    "deleteConfirm": "هل تريد حذف هذه المهمة؟",
+    "deleting": "جاري الحذف..."
   },
   "character": {
     "create": "أنشئ شخصيتك",
@@ -104,11 +116,16 @@
     "loadingSession": "جاري تحميل جلستك...",
     "skipToContent": "تخطَّ إلى المحتوى الرئيسي",
     "mainNav": "التنقل الرئيسي",
-    "legalNav": "الوثائق القانونية"
+    "legalNav": "الوثائق القانونية",
+    "completeTask": "وضع علامة \"مكتمل\" على \"{{title}}\"",
+    "selectTask": "تحديد \"{{title}}\"",
+    "editTask": "تعديل \"{{title}}\""
   },
   "kidDash": {
     "readyToLevel": "هل أنت مستعد للارتقاء بمستواك اليوم؟",
     "streak": "أيام متتالية",
+    "streakLabel": "سلسلة {{count}} أيام",
+    "xpProgressLabel": "تقدم XP نحو المستوى {{next}}",
     "coins": "العملات",
     "points": "النقاط",
     "level": "المستوى {{level}}",
@@ -143,13 +160,27 @@
       "creativity": "الإبداع"
     },
     "settings": "الإعدادات",
+    "settingsHint": "خصّص تطبيقك",
+    "missedTasks": "{{count}} فائتة",
+    "upcoming": "قادمة",
+    "tomorrow": "غداً",
+    "xpEarned": "حصلت على +{{xp}} XP",
+    "welcomeTitle": "أنت مستعد!",
+    "welcomeHint": "اطلب من ولي أمرك إضافة مهام لك. أنجزها لتحصل على XP وترتقي بمستواك!",
     "categoryVisibility": "ظهور الفئات",
-    "categoryVisibilityHint": "اختر الفئات التي يمكن لوالدك مراجعتها. الفئات المخفية تُؤكَّد تلقائياً.",
+    "categoryVisibilityHint": "أوقف فئة لتُوافَق مهامها تلقائياً — دون الحاجة لمراجعة ولي الأمر.",
+    "anytime": "في أي وقت",
     "settingsSaved": "تم الحفظ",
+    "settingsSaving": "جارٍ الحفظ…",
+    "appSettings": "إعدادات التطبيق",
     "nav": {
       "home": "الرئيسية",
       "settings": "الإعدادات"
-    }
+    },
+    "welcomeModalTitle": "مرحباً بك في KiddoPath! 🌟",
+    "welcomeModalBody": "يمكنك إضافة المهام بنفسك أو طلب من أحد والديك إضافتها لك.",
+    "welcomeAddTask": "أضف مهمتي الأولى",
+    "welcomeAskParent": "اطلب من أحد والديك"
   },
   "inviteParent": {
     "title": "دعوة ولي أمر",
@@ -166,7 +197,6 @@
     "title": "التحقق من البريد الإلكتروني",
     "loading": "جارٍ التحقق من بريدك الإلكتروني...",
     "invalidLink": "رابط التحقق غير صالح أو انتهت صلاحيته.",
-    "linkAlreadyUsed": "تم استخدام هذا الرابط مسبقاً. إذا أكملت التحقق من بريدك، تابع الخطوة التالية أدناه.",
     "errorTitle": "فشل التحقق",
     "successTitle": "تم التحقق من البريد!",
     "parentSuccessHint": "حسابك نشط. يمكنك الآن تسجيل الدخول.",
@@ -200,11 +230,13 @@
   },
   "common": {
     "close": "إغلاق",
+    "cancel": "إلغاء",
     "and": "و"
   },
   "legal": {
     "privacy": "سياسة الخصوصية",
     "terms": "شروط الخدمة",
+    "sectionTitle": "الوثائق القانونية",
     "lastUpdated": "آخر تحديث: {{date}}"
   },
   "errors": {
@@ -253,5 +285,10 @@
       "verificationExpired": "انتهت صلاحية رابط التحقق. يرجى التسجيل مرة أخرى.",
       "alreadyVerified": "بريدك الإلكتروني محقق بالفعل. يمكنك تسجيل الدخول."
     }
+  },
+  "notifications": {
+    "title": "الإشعارات",
+    "empty": "ليس لديك إشعارات جديدة!",
+    "newCount": "{{count}} جديد"
   }
 }

@@ -1,10 +1,11 @@
 import { Link, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { attemptDualRoleLogin } from '../auth/loginFlow'
+import AuthCard from '../components/AuthCard'
 import AuthMessageLayout from '../components/AuthMessageLayout'
 import GoogleSignInSection from '../components/GoogleSignInSection'
-import LanguageSwitcher from '../components/LanguageSwitcher'
+import LegalLinks from '../components/LegalLinks'
 import Button from '../components/Button'
 import FormAlert from '../components/FormAlert'
 import FormField from '../components/FormField'
@@ -19,24 +20,24 @@ export default function Login() {
   const { fieldErrors, setFieldErrors, clearFieldError, resetFieldErrors } = useFormErrors()
 
   const [identifier, setIdentifier] = useState('')
-  const [password, setPassword] = useState('')
-  const [errorKey, setErrorKey] = useState<string | null>(null)
-  const [isLoading, setIsLoading] = useState(false)
+  const [password, setPassword]     = useState('')
+  const [errorKey, setErrorKey]     = useState<string | null>(null)
+  const [isLoading, setIsLoading]   = useState(false)
   const [waitingForParent, setWaitingForParent] = useState(false)
+
+  useEffect(() => {
+    if (waitingForParent) document.getElementById('waiting-heading')?.focus()
+  }, [waitingForParent])
 
   async function runLogin(credentials: Parameters<typeof attemptDualRoleLogin>[0]) {
     setErrorKey(null)
     resetFieldErrors()
     setWaitingForParent(false)
     setIsLoading(true)
-
     try {
       const result = await attemptDualRoleLogin(credentials, navigate)
-      if (result.status === 'waiting_for_parent') {
-        setWaitingForParent(true)
-      } else if (result.status === 'error') {
-        setErrorKey(result.errorKey)
-      }
+      if (result.status === 'waiting_for_parent') setWaitingForParent(true)
+      else if (result.status === 'error') setErrorKey(result.errorKey)
     } finally {
       setIsLoading(false)
     }
@@ -44,14 +45,10 @@ export default function Login() {
 
   async function handleSubmit(e: React.SubmitEvent) {
     e.preventDefault()
-
     const errs: Record<string, string> = {}
     if (isEmpty(identifier)) errs.identifier = t('errors.required')
-    if (isEmpty(password)) errs.password = t('errors.required')
-    if (Object.keys(errs).length > 0) {
-      setFieldErrors(errs)
-      return
-    }
+    if (isEmpty(password))   errs.password   = t('errors.required')
+    if (Object.keys(errs).length > 0) { setFieldErrors(errs); return }
     await runLogin({ type: 'password', identifier, password })
   }
 
@@ -63,13 +60,13 @@ export default function Login() {
         title={t('auth.waitingForParent')}
         statusMessage={t('auth.waitingForParent')}
       >
-        <p className="font-body text-sm text-gray-700 text-center w-full">
+        <p className="font-body text-sm text-gray-500 text-center w-full">
           {t('auth.waitingForParentHintGeneric')}
         </p>
-        <Button variant="primary" onClick={() => setWaitingForParent(false)}>
+        <Button variant="primary" className="w-full" onClick={() => setWaitingForParent(false)}>
           {t('auth.tryLoginAgain')}
         </Button>
-        <Button variant="secondary" onClick={() => navigate('/')}>
+        <Button variant="secondary" className="w-full" onClick={() => navigate('/')}>
           {t('auth.backToHome')}
         </Button>
       </AuthMessageLayout>
@@ -77,21 +74,12 @@ export default function Login() {
   }
 
   return (
-    <main aria-labelledby="login-heading" className="flex flex-col items-center justify-center min-h-screen bg-primary-50 gap-6 py-12">
-      <h1 id="login-heading" className="font-heading text-3xl font-bold text-primary-700 text-center">
-        {t('auth.login')}
-      </h1>
-
-      <p className="sr-only" id="login-form-hint">
-        {t('a11y.loginFormReady')}
-      </p>
-
+    <AuthCard headingId="login-heading" title={t('auth.login')}>
       <form
         noValidate
-        className="flex w-80 max-w-full flex-col gap-4"
+        className="flex flex-col gap-4"
         onSubmit={handleSubmit}
         aria-labelledby="login-heading"
-        aria-describedby="login-form-hint"
         aria-busy={isLoading}
       >
         {errorKey && <FormAlert message={t(errorKey)} />}
@@ -122,7 +110,7 @@ export default function Login() {
           onChange={e => { setPassword(e.target.value); clearFieldError('password') }}
         />
 
-        <Button variant="primary" type="submit" disabled={isLoading}>
+        <Button variant="primary" type="submit" className="w-full" disabled={isLoading}>
           {isLoading ? t('auth.loggingIn') : t('auth.login')}
         </Button>
       </form>
@@ -133,31 +121,19 @@ export default function Login() {
         onError={() => { resetFieldErrors(); setErrorKey('errors.api.invalidGoogleToken') }}
       />
 
-      <p className="font-body text-sm text-gray-700 text-center">
-        {t('auth.noAccount')}{' '}
-        <Link
-          to="/signup"
-          className="font-semibold text-primary-600 underline hover:text-primary-700 focus-ring rounded-sm"
-          aria-label={t('a11y.goToSignup')}
-        >
-          {t('nav.signup')}
-        </Link>
-      </p>
-      <nav aria-label={t('a11y.legalNav')} className="flex gap-4">
-        <Link
-          to="/privacy"
-          className="font-body text-xs text-gray-500 underline hover:text-primary-600 focus-ring rounded-sm"
-        >
-          {t('legal.privacy')}
-        </Link>
-        <Link
-          to="/terms"
-          className="font-body text-xs text-gray-500 underline hover:text-primary-600 focus-ring rounded-sm"
-        >
-          {t('legal.terms')}
-        </Link>
-      </nav>
-      <LanguageSwitcher />
-    </main>
+      <div className="flex flex-col items-center gap-3 pt-1">
+        <p className="font-body text-sm text-gray-500 text-center">
+          {t('auth.noAccount')}{' '}
+          <Link
+            to="/signup"
+            className="font-semibold text-primary-600 hover:text-primary-700 focus-ring rounded-sm"
+            aria-label={t('a11y.goToSignup')}
+          >
+            {t('nav.signup')}
+          </Link>
+        </p>
+        <LegalLinks />
+      </div>
+    </AuthCard>
   )
 }

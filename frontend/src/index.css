@@ -2,11 +2,11 @@
 
 @theme {
   /* Colors */
-  --color-primary-50: #EEEDFE;
-  --color-primary-100: #C4B5FD;
-  --color-primary-500: #7F77DD;
-  --color-primary-600: #534AB7;
-  --color-primary-700: #3C3489;
+  --color-primary-50: #F3F0FF;
+  --color-primary-100: #DDD6FE;
+  --color-primary-500: #8B5CF6;
+  --color-primary-600: #7C3AED;
+  --color-primary-700: #6D28D9;
 
   --color-blue-50: #EFF6FF;
   --color-blue-500: #3B82F6;
@@ -67,7 +67,7 @@
   }
 
   .focus-ring {
-    @apply outline-none focus-visible:ring-2 focus-visible:ring-primary-100 focus-visible:ring-offset-2;
+    @apply outline-none focus-visible:ring-2 focus-visible:ring-primary-600 focus-visible:ring-offset-2;
   }
 
   .alert-error {
@@ -78,5 +78,19 @@
 
   .field-error {
     @apply font-body text-sm text-danger-700;
+  }
+}
+
+/* Honor the OS "reduce motion" setting: neutralize non-essential animation and
+   transitions app-wide (progress-bar fills, skeleton pulses, toast, streaming
+   cursor). Kept as near-instant rather than 0 so state still settles. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  ::before,
+  ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }
