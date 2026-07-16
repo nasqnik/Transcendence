@@ -10,6 +10,28 @@ export function kidIdsFromToken(token: string): string[] {
   return ids as string[]
 }
 
+export interface KidRef {
+  id: string
+  username?: string
+}
+
+/** A parent's kids from their JWT — id + display name, no network call.
+ *  Prefers a `kids: [{id, username}]` claim; falls back to `kid_ids` (id only)
+ *  until the backend adds names to the token. */
+export function kidsFromToken(token: string): KidRef[] {
+  const payload = decodeJWT(token)
+  const kids = payload['kids']
+  if (Array.isArray(kids)) {
+    return (kids as Array<{ id: unknown; username?: unknown }>).map(k => ({
+      id: String(k.id),
+      username: typeof k.username === 'string' ? k.username : undefined,
+    }))
+  }
+  const ids = payload['kid_ids']
+  if (Array.isArray(ids)) return (ids as string[]).map(id => ({ id }))
+  return []
+}
+
 /** GET /task/completions/ — parent JWT auto-scopes to their kids. */
 export async function getParentCompletions(): Promise<Completion[]> {
   const res = await client.get<Completion[]>('/task/completions/')
