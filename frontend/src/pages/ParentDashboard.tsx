@@ -1,7 +1,7 @@
 import { useTranslation } from 'react-i18next'
 import { useQuery } from '@tanstack/react-query'
 import useAuthStore from '../store/authStore'
-import { kidIdsFromToken, getKidStats } from '../api/parent'
+import { kidsFromToken, getKidStats } from '../api/parent'
 import { usePageTitle } from '../hooks/usePageTitle'
 import KidCard from '../components/parent/KidCard'
 import KidStatsPanel from '../components/parent/KidStatsPanel'
@@ -12,8 +12,9 @@ export default function ParentDashboard() {
   usePageTitle(t('parentDash.title'))
 
   const { token } = useAuthStore()
-  const kidIds = token ? kidIdsFromToken(token) : []
-  const kidId  = kidIds[0] ?? null
+  const kids  = token ? kidsFromToken(token) : []
+  const kid   = kids[0] ?? null
+  const kidId = kid?.id ?? null
 
   const { data: stats = [], isLoading: statsLoading } = useQuery({
     queryKey: ['kidStats', kidId],
@@ -23,7 +24,7 @@ export default function ParentDashboard() {
 
   if (!kidId) {
     return (
-      <main className="flex-1 flex items-center justify-center p-8">
+      <main id="main-content" className="flex-1 flex items-center justify-center p-4 sm:p-8">
         <div className="text-center flex flex-col items-center gap-3">
           <span className="text-5xl" aria-hidden="true">👤</span>
           <p className="font-body text-gray-500">{t('parentDash.noKid')}</p>
@@ -34,17 +35,18 @@ export default function ParentDashboard() {
 
   return (
     <main
+      id="main-content"
       aria-labelledby="dashboard-heading"
-      className="flex-1 p-8 flex flex-col gap-6 overflow-auto"
+      className="flex-1 flex flex-col gap-4 sm:gap-6 p-4 sm:p-6 overflow-auto"
     >
       {/* Hidden heading for a11y — visible heading is in ParentTopbar */}
       <h1 id="dashboard-heading" className="sr-only">
         {t('parentDash.title')}
       </h1>
 
-      <KidCard kidId={kidId} stats={stats} isLoading={statsLoading} />
+      <KidCard kidName={kid?.username} stats={stats} isLoading={statsLoading} />
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
         <div className="lg:col-span-1">
           <KidStatsPanel stats={stats} isLoading={statsLoading} />
         </div>
