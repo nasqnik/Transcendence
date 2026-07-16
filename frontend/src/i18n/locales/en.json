@@ -261,7 +261,12 @@
     "level": "Level {{level}}",
     "coins": "{{coins}} coins",
     "xp": "{{xp}} XP",
-    "allCategories": "All Categories"
+    "allCategories": "All Categories",
+    "dueDate": "Due {{date}}",
+    "noDueDate": "No due date",
+    "untitledTask": "Untitled task",
+    "monitorHint": "Here's how your kids are doing.",
+    "yourChild": "Your child"
   },
   "errors": {
     "required": "This field is required",
