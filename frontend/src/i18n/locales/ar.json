@@ -255,7 +255,12 @@
     "level": "المستوى {{level}}",
     "coins": "{{coins}} عملة",
     "xp": "{{xp}} XP",
-    "allCategories": "جميع الفئات"
+    "allCategories": "جميع الفئات",
+    "dueDate": "تاريخ الاستحقاق {{date}}",
+    "noDueDate": "بدون تاريخ استحقاق",
+    "untitledTask": "مهمة بدون عنوان",
+    "monitorHint": "إليك كيف يبلي أطفالك.",
+    "yourChild": "طفلك"
   },
   "errors": {
     "required": "هذا الحقل مطلوب",
