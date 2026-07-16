@@ -88,7 +88,7 @@ class KidCategoryVisibilitySerializer(serializers.ModelSerializer):
 
 class TaskCompletionSerializer(serializers.ModelSerializer):
     task_title = serializers.CharField(source='task.title', read_only=True)
-    task_due_date = serializers.DateTimeField(source='task.due_date', read_only=True)
+    task_due_date = serializers.DateField(source='task.due_date', read_only=True)
 
     class Meta:
         model = TaskCompletion
