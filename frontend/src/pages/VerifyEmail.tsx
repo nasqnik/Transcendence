@@ -18,7 +18,10 @@ export default function VerifyEmail() {
   const token = searchParams.get('token')
   const [state, setState] = useState<PageState>(() => token ? 'loading' : 'error')
   const [errorMessageKey, setErrorMessageKey] = useState(() => token ? '' : 'verify.invalidLink')
-  const [linkAlreadyUsed, setLinkAlreadyUsed] = useState(false)
+
+  useEffect(() => {
+    if (state !== 'loading') document.getElementById('verify-heading')?.focus()
+  }, [state])
 
   useEffect(() => {
     if (!token) return
@@ -32,17 +35,12 @@ export default function VerifyEmail() {
       .catch(err => {
         if (cancelled) return
         const key = getApiErrorKey(err)
-        if (key === 'errors.api.alreadyVerified') {
+        // An invalid/used token almost always means the email was already
+        // verified on an earlier visit — show success rather than an error.
+        if (key === 'errors.api.alreadyVerified' || key === 'errors.api.invalidVerificationToken') {
           setState('success')
           return
         }
-        if (key === 'errors.api.invalidVerificationToken') {
-          setLinkAlreadyUsed(true)
-          setErrorMessageKey('verify.linkAlreadyUsed')
-          setState('error')
-          return
-        }
-        setLinkAlreadyUsed(false)
         setErrorMessageKey(key)
         setState('error')
       })
@@ -50,7 +48,7 @@ export default function VerifyEmail() {
     return () => {
       cancelled = true
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps -- language changes must not re-trigger verification
+  // Deps intentionally limited to `token` — language changes must not re-trigger verification.
   }, [token])
 
   if (state === 'loading') {
@@ -93,36 +91,17 @@ export default function VerifyEmail() {
     )
   }
 
-  const pendingInvite = getPendingInviteToken()
-
   return (
     <AuthMessageLayout
       headingId="verify-heading"
-      icon={linkAlreadyUsed ? '✅' : '❌'}
-      title={linkAlreadyUsed ? t('verify.successTitle') : t('verify.errorTitle')}
-      alertMessage={linkAlreadyUsed ? undefined : t(errorMessageKey)}
+      icon="❌"
+      title={t('verify.errorTitle')}
+      alertMessage={t(errorMessageKey)}
       statusMessage={t(errorMessageKey)}
-      titleSize="md"
     >
-      {linkAlreadyUsed && (
-        <p className="font-body text-sm text-gray-700 text-center w-full">
-          {pendingInvite
-            ? t('verify.parentSuccessReturnInvite')
-            : t('verify.parentSuccessHint')}
-        </p>
-      )}
-      {linkAlreadyUsed && pendingInvite ? (
-        <Button
-          variant="primary"
-          onClick={() => navigate(acceptInvitePath(pendingInvite))}
-        >
-          {t('invite.returnToInvite')}
-        </Button>
-      ) : (
-        <Button variant="primary" onClick={() => navigate(linkAlreadyUsed ? '/login' : '/')}>
-          {linkAlreadyUsed ? t('auth.login') : t('auth.backToHome')}
-        </Button>
-      )}
+      <Button variant="primary" onClick={() => navigate('/')}>
+        {t('auth.backToHome')}
+      </Button>
     </AuthMessageLayout>
   )
 }

@@ -1,6 +1,7 @@
 import { useEffect, useLayoutEffect, useRef } from 'react'
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
+import { useQueryClient } from '@tanstack/react-query'
 import useAuthStore from './store/authStore'
 import { verifyAccessToken, decodeJWT } from './api/auth'
 
@@ -28,6 +29,7 @@ export default function App() {
   const { i18n } = useTranslation()
   const activeLang = i18n.resolvedLanguage ?? i18n.language
   const isRTL = i18n.dir() === 'rtl'
+  const queryClient = useQueryClient()
   // Read token once on startup without subscribing App to the store.
   // Route guards (ProtectedRoute, GuestRoute) handle auth state reactivity themselves.
   const startupTokenRef = useRef(useAuthStore.getState().token)
@@ -36,6 +38,14 @@ export default function App() {
     return state.currentUser?.role
       ?? (decodeJWT(state.token ?? '').role === 'kid' ? 'kid' : 'parent')
   })() as 'parent' | 'kid')
+
+  // Wipe all cached server data on logout so a different user signing in on the
+  // same tab never briefly sees the previous user's tasks, stats, or notifications.
+  useEffect(() =>
+    useAuthStore.subscribe((state, prev) => {
+      if (prev.token && !state.token) queryClient.clear()
+    }),
+  [queryClient])
 
   useEffect(() => {
     const startupToken = startupTokenRef.current
