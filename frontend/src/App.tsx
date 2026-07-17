@@ -19,6 +19,7 @@ import ParentLayout from './components/parent/ParentLayout'
 import ChildDashboard from './pages/ChildDashboard'
 import KidSettings from './pages/KidSettings'
 import ParentDashboard from './pages/ParentDashboard'
+import ParentApprovals from './pages/ParentApprovals'
 import CharacterCreation from './pages/CharacterCreation'
 import Profile from './pages/Profile'
 import ParentProfile from './pages/ParentProfile'
@@ -90,6 +91,7 @@ export default function App() {
         <Route element={<ProtectedRoute role="parent" />}>
           <Route element={<ParentLayout />}>
             <Route path="/parent/dashboard" element={<ParentDashboard />} />
+            <Route path="/parent/approvals" element={<ParentApprovals />} />
           </Route>
           <Route path="/parent/profile" element={<ParentProfile />} />
         </Route>
