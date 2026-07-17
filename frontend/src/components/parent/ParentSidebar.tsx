@@ -1,16 +1,23 @@
 import { NavLink } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-
-// ─── Nav items ────────────────────────────────────────────────────────────────
-
-const NAV_ITEMS = [
-  { icon: '📊', labelKey: 'parentDash.overview', path: '/parent/dashboard' },
-] as const
+import { useQuery } from '@tanstack/react-query'
+import { getParentCompletions } from '../../api/parent'
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export default function ParentSidebar() {
   const { t } = useTranslation()
+
+  const { data: completions = [] } = useQuery({
+    queryKey: ['parentCompletions'],
+    queryFn: getParentCompletions,
+  })
+  const pendingCount = completions.filter(c => c.status === 'pending').length
+
+  const NAV_ITEMS = [
+    { icon: '📊', labelKey: 'parentDash.overview',  path: '/parent/dashboard', badge: 0 },
+    { icon: '✅', labelKey: 'parentDash.approvals',  path: '/parent/approvals', badge: pendingCount },
+  ] as const
 
   return (
     <aside className="w-14 lg:w-56 shrink-0 bg-white border-r border-gray-200 flex flex-col">
@@ -37,9 +44,13 @@ export default function ParentSidebar() {
             key={item.path}
             to={item.path}
             end
-            aria-label={t(item.labelKey)}
+            aria-label={
+              item.badge > 0
+                ? `${t(item.labelKey)} (${item.badge})`
+                : t(item.labelKey)
+            }
             className={({ isActive }) =>
-              `flex items-center gap-3 px-3 lg:px-4 py-3 rounded-xl font-body font-semibold text-sm transition-colors focus-ring ${
+              `relative flex items-center gap-3 px-3 lg:px-4 py-3 rounded-xl font-body font-semibold text-sm transition-colors focus-ring ${
                 isActive
                   ? 'bg-primary-50 text-primary-700'
                   : 'text-gray-500 hover:bg-gray-50 hover:text-gray-700'
@@ -47,7 +58,15 @@ export default function ParentSidebar() {
             }
           >
             <span aria-hidden="true">{item.icon}</span>
-            <span className="hidden lg:inline">{t(item.labelKey)}</span>
+            <span className="hidden lg:inline flex-1">{t(item.labelKey)}</span>
+            {item.badge > 0 && (
+              <span
+                aria-hidden="true"
+                className="absolute top-1 end-1 lg:static lg:ms-auto min-w-5 h-5 px-1 rounded-full bg-primary-600 text-white font-body font-bold text-[10px] flex items-center justify-center"
+              >
+                {item.badge}
+              </span>
+            )}
           </NavLink>
         ))}
       </nav>
