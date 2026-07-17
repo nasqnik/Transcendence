@@ -5,7 +5,12 @@ import { getParentCompletions } from '../../api/parent'
 import type { Completion } from '../../constants/categories'
 import ReviewModal from './ReviewModal'
 
-export default function PendingApprovals() {
+interface PendingApprovalsProps {
+  /** Maps a kid_id to a display label for the per-item tag. */
+  kidLabelFor: (kidId: string) => string
+}
+
+export default function PendingApprovals({ kidLabelFor }: PendingApprovalsProps) {
   const { t, i18n } = useTranslation()
   const [reviewing, setReviewing] = useState<Completion | null>(null)
 
@@ -18,7 +23,7 @@ export default function PendingApprovals() {
 
   return (
     <>
-      <section aria-labelledby="approvals-heading" className="bg-white rounded-2xl p-6 h-full">
+      <section aria-labelledby="approvals-heading" className="bg-white rounded-2xl p-6">
         <div className="flex items-center gap-3 mb-4">
           <h2 id="approvals-heading" className="font-heading text-xl font-bold text-gray-900">
             {t('parentDash.pendingApprovals')}
@@ -67,13 +72,19 @@ export default function PendingApprovals() {
                   <p className="font-body text-sm font-semibold text-gray-900 truncate">
                     {c.task_title || t('parentDash.untitledTask')}
                   </p>
-                  <p className="font-body text-xs text-gray-400">
-                    {c.task_due_date
-                      ? t('parentDash.dueDate', {
-                          date: new Date(c.task_due_date).toLocaleDateString(i18n.language),
-                        })
-                      : t('parentDash.noDueDate')}
-                  </p>
+                  <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                    <span className="inline-flex items-center gap-1 bg-white rounded-full px-2 py-0.5 font-body text-xs font-semibold text-gray-600">
+                      <span aria-hidden="true">👤</span>
+                      {kidLabelFor(c.kid_id)}
+                    </span>
+                    <span className="font-body text-xs text-gray-400">
+                      {c.task_due_date
+                        ? t('parentDash.dueDate', {
+                            date: new Date(c.task_due_date).toLocaleDateString(i18n.language),
+                          })
+                        : t('parentDash.noDueDate')}
+                    </span>
+                  </div>
                 </div>
                 <button
                   type="button"
