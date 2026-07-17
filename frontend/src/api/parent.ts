@@ -55,6 +55,36 @@ export async function getKidStats(kidId: string): Promise<KidStat[]> {
   return res.data
 }
 
+export interface CategoryBreakdown {
+  category: string
+  total_points: number
+}
+
+export interface DailyTrend {
+  date: string        // YYYY-MM-DD
+  points: number
+}
+
+export interface CompletionRates {
+  total: number
+  confirmed: number
+  rejected: number
+  pending: number
+  rate: number        // 0-100
+}
+
+export interface KidAnalytics {
+  category_breakdown: CategoryBreakdown[]
+  daily_trend: DailyTrend[]
+  completion_rates: CompletionRates | null
+}
+
+/** GET /analytics/kids/<kid_id>/dashboard/ — insights for one kid (parent-scoped). */
+export async function getKidAnalytics(kidId: string): Promise<KidAnalytics> {
+  const res = await client.get<KidAnalytics>(`/analytics/kids/${kidId}/dashboard/`)
+  return res.data
+}
+
 /** GET /gamification/profile/ scoped to a kid — not yet available parent-side.
  *  We derive a lightweight KidProfile from the stats array instead. */
 export function profileFromStats(kidId: string, stats: KidStat[]): KidProfile {
