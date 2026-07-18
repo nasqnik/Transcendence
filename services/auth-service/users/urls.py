@@ -18,6 +18,7 @@ from .views import (
     KidTokenRefreshView,
     KidTokenVerifyView,
     KidVerifyEmailView,
+    MeView,
     ParentRegisterView,
     ParentVerifyEmailView,
 )
@@ -26,6 +27,9 @@ urlpatterns = [
     # Parent registration
     path("auth/register/", ParentRegisterView.as_view()),
     path("auth/verify-email/", ParentVerifyEmailView.as_view()),
+
+    # Current user profile (parent or kid)
+    path("auth/me/", MeView.as_view()),
 
     # Parent authentication
     path("auth/token/", TokenObtainPairView.as_view()),
@@ -67,6 +71,9 @@ urlpatterns = [
 # Parent registration
 # - /auth/register/:       "register a parent and send a verification email"
 # - /auth/verify-email/:   "verify a parent's email"
+
+# Current user profile
+# - /auth/me/:              "GET/PATCH the logged-in parent or kid profile"
 
 # Parent authentication
 # - /auth/token/:           "log in a parent with email and password"

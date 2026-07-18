@@ -754,3 +754,138 @@ class KidGoogleAuthTests(APITestCase):
         )
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertIn("access", response.data)
+
+
+@override_settings(
+    EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend",
+    FRONTEND_URL="https://localhost",
+)
+class MeProfileTests(APITestCase):
+    def _register_and_login_parent(
+        self,
+        email="parent@example.com",
+        username="parent_one",
+        password="secure-pass-1",
+    ):
+        self.client.post(
+            "/api/auth/register/",
+            {"email": email, "username": username, "password": password},
+            format="json",
+        )
+        _verify_parent(self.client, email)
+        login = self.client.post(
+            "/api/auth/token/",
+            {"emailOrUsername": email, "password": password},
+            format="json",
+        )
+        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {login.data['access']}")
+        return CustomUser.objects.get(email=email)
+
+    def _signup_activate_and_login_kid(
+        self,
+        name="Alex",
+        username="alex_me",
+        email="alex_me@example.com",
+        password="secure-pass-1",
+        parent_email="parent_me@example.com",
+    ):
+        self.client.post(
+            "/api/kids/signup/",
+            {
+                "name": name,
+                "username": username,
+                "email": email,
+                "password": password,
+                "parent_email": parent_email,
+            },
+            format="json",
+        )
+        _verify_kid(self.client, username)
+        kid = Kid.objects.get(username=username)
+        kid.registration_status = Kid.RegistrationStatus.ACTIVE
+        kid.save(update_fields=["registration_status"])
+        login = self.client.post(
+            "/api/auth/kid/token/",
+            {"emailOrUsername": username, "password": password},
+            format="json",
+        )
+        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {login.data['access']}")
+        return kid
+
+    def test_unauthenticated_me_returns_401(self):
+        response = self.client.get("/api/auth/me/")
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_parent_get_me(self):
+        parent = self._register_and_login_parent()
+        response = self.client.get("/api/auth/me/")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["id"], str(parent.id))
+        self.assertEqual(response.data["email"], parent.email)
+        self.assertEqual(response.data["username"], parent.username)
+        self.assertEqual(response.data["role"], "parent")
+        self.assertTrue(response.data["email_verified"])
+
+    def test_parent_patch_username(self):
+        self._register_and_login_parent()
+        response = self.client.patch(
+            "/api/auth/me/",
+            {"username": "new_parent_name"},
+            format="json",
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["username"], "new_parent_name")
+        self.assertTrue(
+            CustomUser.objects.filter(username="new_parent_name").exists()
+        )
+
+    def test_parent_patch_duplicate_username(self):
+        CustomUser.objects.create_user(
+            email="other@example.com",
+            username="taken_user",
+            password="secure-pass-1",
+            role="parent",
+        )
+        self._register_and_login_parent()
+        response = self.client.patch(
+            "/api/auth/me/",
+            {"username": "taken_user"},
+            format="json",
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_kid_get_me(self):
+        kid = self._signup_activate_and_login_kid()
+        response = self.client.get("/api/auth/me/")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["id"], str(kid.id))
+        self.assertEqual(response.data["name"], "Alex")
+        self.assertEqual(response.data["username"], "alex_me")
+        self.assertEqual(response.data["email"], "alex_me@example.com")
+        self.assertEqual(response.data["registration_status"], "active")
+
+    def test_kid_patch_name_and_username(self):
+        self._signup_activate_and_login_kid()
+        response = self.client.patch(
+            "/api/auth/me/",
+            {"name": "Alexandra", "username": "alexandra_me"},
+            format="json",
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["name"], "Alexandra")
+        self.assertEqual(response.data["username"], "alexandra_me")
+
+    def test_kid_patch_duplicate_username(self):
+        Kid.objects.create(
+            name="Other",
+            username="taken_kid",
+            email="other_kid@example.com",
+            registration_status=Kid.RegistrationStatus.ACTIVE,
+        )
+        self._signup_activate_and_login_kid()
+        response = self.client.patch(
+            "/api/auth/me/",
+            {"username": "taken_kid"},
+            format="json",
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)

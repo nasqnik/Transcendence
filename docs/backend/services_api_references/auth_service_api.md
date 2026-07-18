@@ -4,6 +4,19 @@ All paths are prefixed with `/api/`. Interactive docs: `/api/docs/`.
 
 Two account types: **parent** and **kid**. Most endpoints return JWT access/refresh tokens.
 
+## Profile (parent or kid)
+
+| Method | Path | Purpose |
+| --- | --- | --- |
+| GET | `/auth/me/` | Return the logged-in parent or kid profile. |
+| PATCH | `/auth/me/` | Update editable profile fields for the logged-in actor. |
+
+Editable fields:
+- **Parent:** `username`
+- **Kid:** `name`, `username`
+
+Read-only: `id`, `email`, `role` (parent), `registration_status` / `avatar_url` (kid), `email_verified`, `created_at`.
+
 ## Parent
 
 | Method | Path | Purpose |
