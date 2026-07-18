@@ -37,6 +37,10 @@ KID_GOOGLE_ACCOUNT_NOT_FOUND = "No kid account found for this Google account."
 
 # Account
 ACCOUNT_INACTIVE = "This account is inactive."
+CURRENT_PASSWORD_INCORRECT = "Current password is incorrect."
+CURRENT_PASSWORD_REQUIRED = "Current password is required."
+EMAIL_SAME_AS_CURRENT = "This is already your current email."
+EMAIL_CHANGE_PENDING = "A confirmation email was sent to the new address."
 
 # Guardians
 MAX_GUARDIANS_REACHED = "This kid already has the maximum number of guardians."

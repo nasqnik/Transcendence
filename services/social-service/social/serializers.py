@@ -1,6 +1,7 @@
 from django.db.models import Q
 from rest_framework import serializers
 
+from .auth_client import assert_active_kid_exists
 from .models import Friendship
 from .presence import online_among
 
@@ -20,6 +21,7 @@ class FriendRequestCreateSerializer(serializers.Serializer):
         me = self.context['request'].user.kid_id
         if value == me:
             raise serializers.ValidationError('You cannot friend yourself.')
+        assert_active_kid_exists(value)
         return value
 
     def validate(self, attrs):
