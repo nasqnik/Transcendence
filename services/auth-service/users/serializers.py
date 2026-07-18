@@ -55,6 +55,7 @@ from .services import (
     issue_kid_email_verification,
     issue_parent_email_verification,
     username_belongs_to_kid,
+    username_belongs_to_parent,
     username_is_taken,
     verify_kid_email,
     verify_parent_email,
@@ -600,3 +601,74 @@ class KidGoogleLoginSerializer(serializers.Serializer):
             "refresh": str(refresh),
             "access": str(refresh.access_token),
         }
+
+
+class ParentProfileSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CustomUser
+        fields = (
+            "id",
+            "email",
+            "username",
+            "role",
+            "email_verified",
+            "created_at",
+        )
+        read_only_fields = (
+            "id",
+            "email",
+            "role",
+            "email_verified",
+            "created_at",
+        )
+
+    def validate_username(self, value):
+        username = value.strip()
+        if not username:
+            raise serializers.ValidationError("Username cannot be empty.")
+        qs = CustomUser.objects.filter(username__iexact=username)
+        if self.instance is not None:
+            qs = qs.exclude(pk=self.instance.pk)
+        if qs.exists() or username_belongs_to_kid(username):
+            raise serializers.ValidationError(USERNAME_ALREADY_TAKEN)
+        return username
+
+
+class KidProfileSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Kid
+        fields = (
+            "id",
+            "name",
+            "username",
+            "email",
+            "email_verified",
+            "avatar_url",
+            "registration_status",
+            "created_at",
+        )
+        read_only_fields = (
+            "id",
+            "email",
+            "email_verified",
+            "avatar_url",
+            "registration_status",
+            "created_at",
+        )
+
+    def validate_name(self, value):
+        name = value.strip()
+        if not name:
+            raise serializers.ValidationError("Name cannot be empty.")
+        return name
+
+    def validate_username(self, value):
+        username = value.strip()
+        if not username:
+            raise serializers.ValidationError("Username cannot be empty.")
+        qs = Kid.objects.filter(username__iexact=username)
+        if self.instance is not None:
+            qs = qs.exclude(pk=self.instance.pk)
+        if qs.exists() or username_belongs_to_parent(username):
+            raise serializers.ValidationError(USERNAME_ALREADY_TAKEN)
+        return username

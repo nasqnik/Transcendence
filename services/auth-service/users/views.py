@@ -6,7 +6,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from .permissions import IsAuthenticatedKid, IsInternalService
-from .models import Kid
+from .models import CustomUser, Kid
 from .serializers import (
     AcceptGuardianInviteSerializer,
     GoogleLoginSerializer,
@@ -14,11 +14,13 @@ from .serializers import (
     InviteSecondParentSerializer,
     KidGoogleLoginSerializer,
     KidGoogleSignupSerializer,
+    KidProfileSerializer,
     KidSignupSerializer,
     KidTokenObtainSerializer,
     KidTokenRefreshSerializer,
     KidTokenVerifySerializer,
     KidVerifyEmailSerializer,
+    ParentProfileSerializer,
     ParentRegisterSerializer,
     ParentVerifyEmailSerializer,
 )
@@ -176,6 +178,37 @@ class KidParentInternalView(APIView):
                 status=status.HTTP_404_NOT_FOUND,
             )
         return Response({'parent_id': str(kid.parent_id)})
+
+
+class MeView(APIView):
+    """Return or update the authenticated parent's or kid's own profile."""
+
+    permission_classes = [IsAuthenticated]
+
+    def get_serializer(self, instance, data=None, partial=False):
+        if isinstance(instance, Kid):
+            serializer_class = KidProfileSerializer
+        else:
+            serializer_class = ParentProfileSerializer
+        if data is None:
+            return serializer_class(instance)
+        return serializer_class(instance, data=data, partial=partial)
+
+    def get(self, request):
+        serializer = self.get_serializer(request.user)
+        return Response(serializer.data)
+
+    def patch(self, request):
+        user = request.user
+        if not isinstance(user, (Kid, CustomUser)):
+            return Response(
+                {"detail": "Authentication credentials were not provided."},
+                status=status.HTTP_401_UNAUTHORIZED,
+            )
+        serializer = self.get_serializer(user, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data)
 
 
 # Permissions:
