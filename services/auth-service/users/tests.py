@@ -825,6 +825,8 @@ class MeProfileTests(APITestCase):
         self.assertEqual(response.data["username"], parent.username)
         self.assertEqual(response.data["role"], "parent")
         self.assertTrue(response.data["email_verified"])
+        self.assertTrue(response.data["has_password"])
+        self.assertIsNone(response.data["pending_email"])
 
     def test_parent_patch_username(self):
         self._register_and_login_parent()
@@ -889,3 +891,154 @@ class MeProfileTests(APITestCase):
             format="json",
         )
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+
+@override_settings(
+    EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend",
+    FRONTEND_URL="https://localhost",
+)
+class MePasswordAndEmailTests(APITestCase):
+    def _login_parent(self):
+        self.client.post(
+            "/api/auth/register/",
+            {
+                "email": "parent@example.com",
+                "username": "parent_one",
+                "password": "secure-pass-1",
+            },
+            format="json",
+        )
+        _verify_parent(self.client, "parent@example.com")
+        login = self.client.post(
+            "/api/auth/token/",
+            {"emailOrUsername": "parent@example.com", "password": "secure-pass-1"},
+            format="json",
+        )
+        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {login.data['access']}")
+        return CustomUser.objects.get(email="parent@example.com")
+
+    def test_change_password_requires_current(self):
+        self._login_parent()
+        response = self.client.post(
+            "/api/auth/me/password/",
+            {"new_password": "another-pass-1"},
+            format="json",
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_change_password_success(self):
+        self._login_parent()
+        response = self.client.post(
+            "/api/auth/me/password/",
+            {
+                "current_password": "secure-pass-1",
+                "new_password": "another-pass-1",
+            },
+            format="json",
+        )
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+        self.client.credentials()
+        login = self.client.post(
+            "/api/auth/token/",
+            {"emailOrUsername": "parent@example.com", "password": "another-pass-1"},
+            format="json",
+        )
+        self.assertEqual(login.status_code, status.HTTP_200_OK)
+
+    def test_set_password_when_none(self):
+        parent = CustomUser.objects.create_user(
+            email="google-parent@example.com",
+            username="google_parent",
+            password="temporary-ignored",
+            role="parent",
+            email_verified=True,
+        )
+        parent.set_unusable_password()
+        parent.save(update_fields=["password"])
+        from users.serializers import CustomTokenObtainPairSerializer
+
+        access = str(CustomTokenObtainPairSerializer.get_token(parent).access_token)
+        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {access}")
+        response = self.client.post(
+            "/api/auth/me/password/",
+            {"new_password": "new-google-pass-1"},
+            format="json",
+        )
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+        parent.refresh_from_db()
+        self.assertTrue(parent.has_usable_password())
+        self.assertTrue(parent.check_password("new-google-pass-1"))
+
+    def test_email_change_and_confirm(self):
+        parent = self._login_parent()
+        response = self.client.post(
+            "/api/auth/me/email/",
+            {"email": "parent-new@example.com"},
+            format="json",
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["pending_email"], "parent-new@example.com")
+        parent.refresh_from_db()
+        self.assertEqual(parent.email, "parent@example.com")
+        self.assertEqual(parent.pending_email, "parent-new@example.com")
+        self.assertEqual(len(mail.outbox), 2)  # register verify + change
+
+        token = parent.email_verification_token
+        self.client.credentials()
+        confirm = self.client.post(
+            "/api/auth/verify-email-change/",
+            {"token": str(token)},
+            format="json",
+        )
+        self.assertEqual(confirm.status_code, status.HTTP_200_OK)
+        parent.refresh_from_db()
+        self.assertEqual(parent.email, "parent-new@example.com")
+        self.assertIsNone(parent.pending_email)
+
+    def test_email_change_rejects_duplicate(self):
+        CustomUser.objects.create_user(
+            email="taken@example.com",
+            username="other",
+            password="secure-pass-1",
+            role="parent",
+        )
+        self._login_parent()
+        response = self.client.post(
+            "/api/auth/me/email/",
+            {"email": "taken@example.com"},
+            format="json",
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+
+@override_settings(INTERNAL_SERVICE_TOKEN="test-internal-token")
+class KidInternalDetailTests(APITestCase):
+    def test_active_kid_found(self):
+        kid = Kid.objects.create(
+            name="Alex",
+            username="alex_internal",
+            email="alex_internal@example.com",
+            registration_status=Kid.RegistrationStatus.ACTIVE,
+            email_verified=True,
+        )
+        response = self.client.get(
+            f"/api/auth/internal/kids/{kid.id}/",
+            HTTP_X_INTERNAL_TOKEN="test-internal-token",
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["username"], "alex_internal")
+        self.assertEqual(response.data["name"], "Alex")
+
+    def test_inactive_kid_not_found(self):
+        kid = Kid.objects.create(
+            name="Sam",
+            username="sam_internal",
+            email="sam_internal@example.com",
+            registration_status=Kid.RegistrationStatus.AWAITING_PRIMARY_PARENT,
+            email_verified=True,
+        )
+        response = self.client.get(
+            f"/api/auth/internal/kids/{kid.id}/",
+            HTTP_X_INTERNAL_TOKEN="test-internal-token",
+        )
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)

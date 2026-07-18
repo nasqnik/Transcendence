@@ -99,6 +99,12 @@ Returns `204` on success, `404` if no accepted friendship exists with that kid.
 | `declined` | Recipient declined the request. |
 | `blocked` | Reserved for later (not used in v1 flows). |
 
+Friend request rules:
+- Kids only (parents get 403).
+- Cannot friend yourself.
+- Cannot create a second pending/accepted edge in either direction.
+- `to_kid_id` must be an **active** kid in auth-service (internal lookup). Unknown IDs return `400`.
+
 ## Presence (WebSocket)
 
 Connect: `wss://localhost/ws/presence/?token=<kid access JWT>`.
@@ -108,6 +114,22 @@ On connect / disconnect the service:
 2. Notifies accepted friends over their presence channel groups.
 
 `GET /friends/` reads that Redis set to fill `is_online`.
+
+### Heartbeat
+
+Clients should send a JSON ping about every **25–30 seconds**:
+
+```json
+{ "type": "ping" }
+```
+
+Server replies:
+
+```json
+{ "type": "pong" }
+```
+
+If no ping is received for about **90 seconds**, the server closes the socket and marks the kid offline.
 
 **Event payloads**
 

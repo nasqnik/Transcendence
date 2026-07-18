@@ -17,8 +17,12 @@ from .google_kids import (
 from .google_users import GoogleAccountConflictError, get_or_create_parent_from_google
 from .messages import (
     ACCOUNT_INACTIVE,
+    CURRENT_PASSWORD_INCORRECT,
+    CURRENT_PASSWORD_REQUIRED,
     EMAIL_ALREADY_REGISTERED,
+    EMAIL_CHANGE_PENDING,
     EMAIL_REGISTERED_AS_KID_ACCOUNT,
+    EMAIL_SAME_AS_CURRENT,
     KID_ACCOUNT_NOT_ACTIVE,
     KID_ACCOUNT_NOT_ACTIVE_YET,
     KID_EMAIL_MUST_DIFFER_FROM_PARENT,
@@ -35,6 +39,8 @@ from .messages import (
 from .models import CustomUser, GuardianInvitation, Kid
 from .services import (
     EmailAlreadyVerified,
+    EmailChangeExpired,
+    EmailChangeNotFound,
     EmailVerificationExpired,
     EmailVerificationNotFound,
     InvitationEmailMismatch,
@@ -43,6 +49,7 @@ from .services import (
     InvitationNotPending,
     MaxGuardiansReached,
     accept_guardian_invitation,
+    actor_has_password,
     build_guardian_invite_url,
     build_kid_verify_email_url,
     build_parent_verify_email_url,
@@ -50,13 +57,18 @@ from .services import (
     create_secondary_guardian_invitation,
     email_belongs_to_kid,
     email_belongs_to_parent,
+    email_is_taken,
     ensure_invitation_acceptable,
     get_guardian_invitation_by_token,
+    issue_kid_email_change,
     issue_kid_email_verification,
+    issue_parent_email_change,
     issue_parent_email_verification,
+    normalize_email,
     username_belongs_to_kid,
     username_belongs_to_parent,
     username_is_taken,
+    verify_email_change,
     verify_kid_email,
     verify_parent_email,
 )
@@ -604,23 +616,32 @@ class KidGoogleLoginSerializer(serializers.Serializer):
 
 
 class ParentProfileSerializer(serializers.ModelSerializer):
+    has_password = serializers.SerializerMethodField()
+
     class Meta:
         model = CustomUser
         fields = (
             "id",
             "email",
+            "pending_email",
             "username",
             "role",
             "email_verified",
+            "has_password",
             "created_at",
         )
         read_only_fields = (
             "id",
             "email",
+            "pending_email",
             "role",
             "email_verified",
+            "has_password",
             "created_at",
         )
+
+    def get_has_password(self, obj):
+        return actor_has_password(obj)
 
     def validate_username(self, value):
         username = value.strip()
@@ -635,6 +656,8 @@ class ParentProfileSerializer(serializers.ModelSerializer):
 
 
 class KidProfileSerializer(serializers.ModelSerializer):
+    has_password = serializers.SerializerMethodField()
+
     class Meta:
         model = Kid
         fields = (
@@ -642,7 +665,9 @@ class KidProfileSerializer(serializers.ModelSerializer):
             "name",
             "username",
             "email",
+            "pending_email",
             "email_verified",
+            "has_password",
             "avatar_url",
             "registration_status",
             "created_at",
@@ -650,11 +675,16 @@ class KidProfileSerializer(serializers.ModelSerializer):
         read_only_fields = (
             "id",
             "email",
+            "pending_email",
             "email_verified",
+            "has_password",
             "avatar_url",
             "registration_status",
             "created_at",
         )
+
+    def get_has_password(self, obj):
+        return actor_has_password(obj)
 
     def validate_name(self, value):
         name = value.strip()
@@ -672,3 +702,114 @@ class KidProfileSerializer(serializers.ModelSerializer):
         if qs.exists() or username_belongs_to_parent(username):
             raise serializers.ValidationError(USERNAME_ALREADY_TAKEN)
         return username
+
+
+class MePasswordSerializer(serializers.Serializer):
+    current_password = serializers.CharField(
+        write_only=True,
+        required=False,
+        allow_blank=True,
+        default="",
+    )
+    new_password = serializers.CharField(write_only=True, min_length=8)
+
+    def validate_new_password(self, value):
+        validate_password(value)
+        return value
+
+    def validate(self, attrs):
+        actor = self.context["request"].user
+        if not isinstance(actor, (Kid, CustomUser)):
+            raise serializers.ValidationError("Authentication required.")
+
+        new_password = attrs["new_password"]
+        current_password = attrs.get("current_password") or ""
+        has_password = actor_has_password(actor)
+
+        if has_password:
+            if not current_password:
+                raise serializers.ValidationError(
+                    {"current_password": [CURRENT_PASSWORD_REQUIRED]}
+                )
+            if not actor.check_password(current_password):
+                raise serializers.ValidationError(
+                    {"current_password": [CURRENT_PASSWORD_INCORRECT]}
+                )
+
+        attrs["actor"] = actor
+        attrs["new_password"] = new_password
+        return attrs
+
+    def save(self, **kwargs):
+        actor = self.validated_data["actor"]
+        actor.set_password(self.validated_data["new_password"])
+        if isinstance(actor, Kid):
+            actor.save(update_fields=["password_hash"])
+        else:
+            actor.save(update_fields=["password"])
+        return actor
+
+
+class MeEmailChangeSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+
+    def validate_email(self, value):
+        return normalize_email(value)
+
+    def validate(self, attrs):
+        actor = self.context["request"].user
+        if not isinstance(actor, (Kid, CustomUser)):
+            raise serializers.ValidationError("Authentication required.")
+
+        new_email = attrs["email"]
+        current = (actor.email or "").lower()
+        if current and new_email == current:
+            raise serializers.ValidationError({"email": [EMAIL_SAME_AS_CURRENT]})
+
+        exclude_parent = actor if isinstance(actor, CustomUser) else None
+        exclude_kid = actor if isinstance(actor, Kid) else None
+        if email_is_taken(
+            new_email,
+            exclude_parent=exclude_parent,
+            exclude_kid=exclude_kid,
+        ):
+            raise serializers.ValidationError({"email": [EMAIL_ALREADY_REGISTERED]})
+
+        attrs["actor"] = actor
+        return attrs
+
+    def save(self, **kwargs):
+        actor = self.validated_data["actor"]
+        new_email = self.validated_data["email"]
+        if isinstance(actor, Kid):
+            issue_kid_email_change(actor, new_email)
+        else:
+            issue_parent_email_change(actor, new_email)
+        actor.refresh_from_db()
+        return {
+            "pending_email": actor.pending_email,
+            "message": EMAIL_CHANGE_PENDING,
+        }
+
+
+class VerifyEmailChangeSerializer(serializers.Serializer):
+    token = serializers.UUIDField()
+
+    def validate(self, attrs):
+        try:
+            actor, role = verify_email_change(attrs["token"])
+        except EmailChangeNotFound as exc:
+            raise serializers.ValidationError(
+                {"token": ["Invalid verification token."]}
+            ) from exc
+        except EmailChangeExpired as exc:
+            raise serializers.ValidationError(
+                {"token": ["Verification link has expired."]}
+            ) from exc
+
+        return {
+            "email": actor.email,
+            "email_verified": actor.email_verified,
+            "role": role,
+            "message": "Email updated successfully.",
+        }

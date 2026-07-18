@@ -1,7 +1,10 @@
+import asyncio
 import json
+import time
 
 from channels.db import database_sync_to_async
 from channels.generic.websocket import AsyncWebsocketConsumer
+from django.conf import settings
 from django.db.models import Q
 from rest_framework_simplejwt.tokens import AccessToken
 
@@ -23,14 +26,25 @@ class PresenceConsumer(AsyncWebsocketConsumer):
 
         self.kid_id = str(kid_id)
         self.group_name = f'presence_{self.kid_id}'
+        self.last_seen = time.monotonic()
+        self._watchdog_task = None
 
         await self.channel_layer.group_add(self.group_name, self.channel_name)
         await self.accept()
 
         await database_sync_to_async(mark_online)(self.kid_id)
         await self.notify_friends('friend_online')
+        self._watchdog_task = asyncio.create_task(self._watchdog())
 
     async def disconnect(self, close_code):
+        if getattr(self, '_watchdog_task', None):
+            self._watchdog_task.cancel()
+            try:
+                await self._watchdog_task
+            except asyncio.CancelledError:
+                pass
+            self._watchdog_task = None
+
         if not hasattr(self, 'kid_id'):
             return
         await database_sync_to_async(mark_offline)(self.kid_id)
@@ -42,7 +56,26 @@ class PresenceConsumer(AsyncWebsocketConsumer):
             )
 
     async def receive(self, text_data):
-        pass
+        try:
+            payload = json.loads(text_data)
+        except (TypeError, json.JSONDecodeError):
+            return
+
+        if payload.get('type') == 'ping':
+            self.last_seen = time.monotonic()
+            await self.send(text_data=json.dumps({'type': 'pong'}))
+
+    async def _watchdog(self):
+        interval = getattr(settings, 'PRESENCE_PING_INTERVAL', 30)
+        stale_after = getattr(settings, 'PRESENCE_STALE_AFTER', 90)
+        try:
+            while True:
+                await asyncio.sleep(interval)
+                if time.monotonic() - self.last_seen > stale_after:
+                    await self.close()
+                    return
+        except asyncio.CancelledError:
+            raise
 
     async def presence_event(self, event):
         await self.send(text_data=json.dumps(event['data']))

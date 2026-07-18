@@ -1,7 +1,9 @@
+from unittest.mock import patch
 from uuid import uuid4
 
 from django.test import override_settings
 from rest_framework import status
+from rest_framework.exceptions import ValidationError
 from rest_framework.test import APITestCase
 from rest_framework_simplejwt.tokens import AccessToken
 
@@ -29,10 +31,13 @@ def parent_access_token(user_id=None):
 
 @override_settings(
     PRESENCE_BACKEND='memory',
+    AUTH_INTERNAL_URL='http://auth-service:8000',
+    INTERNAL_SERVICE_TOKEN='test-internal-token',
     CHANNEL_LAYERS={
         'default': {'BACKEND': 'channels.layers.InMemoryChannelLayer'},
     },
 )
+@patch('social.serializers.assert_active_kid_exists', return_value=None)
 class FriendshipApiTests(APITestCase):
     def setUp(self):
         self.kid_a = uuid4()
@@ -44,18 +49,18 @@ class FriendshipApiTests(APITestCase):
             HTTP_AUTHORIZATION=f'Bearer {kid_access_token(kid_id)}'
         )
 
-    def test_unauthenticated_returns_401(self):
+    def test_unauthenticated_returns_401(self, _mock_lookup):
         response = self.client.get('/api/social/friends/')
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
-    def test_parent_forbidden(self):
+    def test_parent_forbidden(self, _mock_lookup):
         self.client.credentials(
             HTTP_AUTHORIZATION=f'Bearer {parent_access_token()}'
         )
         response = self.client.get('/api/social/friends/')
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
-    def test_send_and_list_incoming_request(self):
+    def test_send_and_list_incoming_request(self, _mock_lookup):
         self.auth_as(self.kid_a)
         create = self.client.post(
             '/api/social/friends/requests/',
@@ -71,7 +76,7 @@ class FriendshipApiTests(APITestCase):
         self.assertEqual(len(incoming.data), 1)
         self.assertEqual(incoming.data[0]['from_kid_id'], str(self.kid_a))
 
-    def test_cannot_friend_self(self):
+    def test_cannot_friend_self(self, _mock_lookup):
         self.auth_as(self.kid_a)
         response = self.client.post(
             '/api/social/friends/requests/',
@@ -80,7 +85,7 @@ class FriendshipApiTests(APITestCase):
         )
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
-    def test_duplicate_request_rejected(self):
+    def test_duplicate_request_rejected(self, _mock_lookup):
         self.auth_as(self.kid_a)
         self.client.post(
             '/api/social/friends/requests/',
@@ -102,7 +107,7 @@ class FriendshipApiTests(APITestCase):
         )
         self.assertEqual(reverse.status_code, status.HTTP_400_BAD_REQUEST)
 
-    def test_accept_list_and_unfriend(self):
+    def test_accept_list_and_unfriend(self, _mock_lookup):
         self.auth_as(self.kid_a)
         created = self.client.post(
             '/api/social/friends/requests/',
@@ -135,7 +140,7 @@ class FriendshipApiTests(APITestCase):
             Friendship.objects.filter(status=Friendship.Status.ACCEPTED).exists()
         )
 
-    def test_decline_request(self):
+    def test_decline_request(self, _mock_lookup):
         self.auth_as(self.kid_a)
         created = self.client.post(
             '/api/social/friends/requests/',
@@ -153,3 +158,13 @@ class FriendshipApiTests(APITestCase):
 
         friends = self.client.get('/api/social/friends/')
         self.assertEqual(friends.data, [])
+
+    def test_unknown_kid_rejected(self, mock_lookup):
+        mock_lookup.side_effect = ValidationError('Kid not found.')
+        self.auth_as(self.kid_a)
+        response = self.client.post(
+            '/api/social/friends/requests/',
+            {'to_kid_id': str(self.kid_c)},
+            format='json',
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)

@@ -115,7 +115,15 @@ INTERNAL_SERVICE_TOKEN = os.getenv('INTERNAL_SERVICE_TOKEN')
 if not INTERNAL_SERVICE_TOKEN:
     raise ImproperlyConfigured("INTERNAL_SERVICE_TOKEN environment variable is required.")
 
+AUTH_INTERNAL_URL = os.getenv('AUTH_INTERNAL_URL')
+if not AUTH_INTERNAL_URL:
+    raise ImproperlyConfigured("AUTH_INTERNAL_URL environment variable is required.")
+
 REDIS_URL = os.getenv('REDIS_URL', 'redis://redis:6379/0')
+
+# Presence WebSocket heartbeat (seconds)
+PRESENCE_PING_INTERVAL = int(os.getenv('PRESENCE_PING_INTERVAL', '30'))
+PRESENCE_STALE_AFTER = int(os.getenv('PRESENCE_STALE_AFTER', '90'))
 
 CHANNEL_LAYERS = {
     'default': {
