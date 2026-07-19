@@ -10,7 +10,10 @@ from .models import AvatarItem, KidAvatar, RewardPurchase
 from .serializers import (
     AvatarItemSerializer, 
     KidAvatarSerializer, 
-    PurchaseSerializer
+    PurchaseSerializer,
+    EquipSerializer,
+    UnequipSerializer,
+    PurchaseResourceSerializer,
 )
 
 class ShopListView(APIView):
@@ -19,7 +22,7 @@ class ShopListView(APIView):
     @extend_schema(
         summary='List all active shop items',
         description='Kid views all available avatar items in the shop.',
-        responses=AvatarItemSerializer(many=True),
+        responses={200: AvatarItemSerializer(many=True)},
         auth=[{'BearerAuth': []}],
         tags=['Shop'],
     )
@@ -33,9 +36,14 @@ class PurchaseView(APIView):
 
     @extend_schema(
         summary='Purchase an avatar item',
-        description='Kid spends coins to unlock an avatar item. Coins are deducted from gamification-service.',
+        description=('Kid spends coins to unlock an avatar item. Coins are deducted from gamification-service. '
+                    'Returns 400 if item already owned or insufficient coins. '
+                    'Returns 503 if gamification-service is unavailable.'),
         request=PurchaseSerializer,
-        responses={200: None},
+        responses={200: PurchaseResourceSerializer,
+                   400: None,
+                   503: None,
+                   404: None},
         auth=[{'BearerAuth': []}],
         tags=['Shop'],
     )
@@ -118,14 +126,22 @@ class EquipItemView(APIView):
 
     @extend_schema(
         summary='Equip an avatar item',
-        description='Kid equips an owned avatar item to correct slot.',
-        request=PurchaseSerializer,
-        responses=KidAvatarSerializer,
+        description=(
+            'Kid equips an owned avatar item to correct slot. '
+            'Returns 400 if item not owned. '
+            'Returns 404 if item not found or inactive'
+        ),
+        request=EquipSerializer,
+        responses={
+            200: KidAvatarSerializer,
+            400: None,
+            404: None,
+        },
         auth=[{'BearerAuth': []}],
         tags=['Avatar'],
     )
     def patch(self, request):
-        serializer = PurchaseSerializer(data=request.data)
+        serializer = EquipSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         item_id = serializer.validated_data['item_id']
         kid_id = request.user.kid_id
@@ -147,6 +163,37 @@ class EquipItemView(APIView):
             )
         slot_field = f"equipped_{item.type}"
         setattr(avatar, slot_field, item_id)
+        avatar.save()
+
+        return Response(KidAvatarSerializer(avatar).data)
+    
+class UnequipItemView(APIView):
+    permission_classes = [IsKid]
+
+    @extend_schema(
+        summary='Unequip an avatar item',
+        description=(
+            'Kid unequips an item from a specific slot. '
+            'The slot is set back to empty.'
+        ),
+        request=UnequipSerializer,
+        responses={
+            200: KidAvatarSerializer,
+            400: None,
+        },
+        auth=[{'BearerAuth': []}],
+        tags=['Avatar'],
+        )
+    def patch(self, request):
+        serializer = UnequipSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        slot = serializer.validated_data['slot']
+        kid_id = request.user.kid_id
+
+        avatar, _ = KidAvatar.objects.get_or_create(kid_id=kid_id)
+
+        slot_field = f"equipped_{slot}"
+        setattr(avatar, slot_field, None)
         avatar.save()
 
         return Response(KidAvatarSerializer(avatar).data)
