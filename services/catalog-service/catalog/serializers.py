@@ -16,6 +16,24 @@ class KidAvatarSerializer(serializers.ModelSerializer):
             'updated_at',
         ]
 
+class KidAvatarDetailSerializer(serializers.ModelSerializer):
+    unlocked_items = serializers.SerializerMethodField()
+
+    class Meta:
+        model = KidAvatar
+        fields = [
+            'id', 'kid_id', 'base_character', 'unlocked_items',
+            'equipped_hat', 'equipped_outfit',
+            'equipped_accessory', 'equipped_background',
+            'updated_at',
+        ]
+
+    def get_unlocked_items(self, obj):
+        from .models import AvatarItem
+        items = AvatarItem.objects.filter(id__in=obj.unlocked_items)
+        return AvatarItemSerializer(items, many=True).data
+
+
 class RewardPurchaseSerializer(serializers.ModelSerializer):
     class Meta:
         model = RewardPurchase

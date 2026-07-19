@@ -10,6 +10,7 @@ from .models import AvatarItem, KidAvatar, RewardPurchase
 from .serializers import (
     AvatarItemSerializer, 
     KidAvatarSerializer, 
+    KidAvatarDetailSerializer,
     PurchaseSerializer,
     EquipSerializer,
     UnequipSerializer,
@@ -113,13 +114,13 @@ class AvatarView(APIView):
     @extend_schema(
         summary='Get kid avatar',
         description='Kid views their current avatar state including owned and equipped items.',
-        responses=KidAvatarSerializer,
+        responses=KidAvatarDetailSerializer,
         auth=[{'BearerAuth': []}],
         tags=['Avatar'],
     )
     def get(self, request):
         avatar, _ = KidAvatar.objects.get_or_create(kid_id=request.user.kid_id)
-        return Response(KidAvatarSerializer(avatar).data)
+        return Response(KidAvatarDetailSerializer(avatar).data)
     
 class EquipItemView(APIView):
     permission_classes = [IsKid]
@@ -133,7 +134,7 @@ class EquipItemView(APIView):
         ),
         request=EquipSerializer,
         responses={
-            200: KidAvatarSerializer,
+            200: KidAvatarDetailSerializer,
             400: None,
             404: None,
         },
@@ -165,7 +166,7 @@ class EquipItemView(APIView):
         setattr(avatar, slot_field, item_id)
         avatar.save()
 
-        return Response(KidAvatarSerializer(avatar).data)
+        return Response(KidAvatarDetailSerializer(avatar).data)
     
 class UnequipItemView(APIView):
     permission_classes = [IsKid]
@@ -178,7 +179,7 @@ class UnequipItemView(APIView):
         ),
         request=UnequipSerializer,
         responses={
-            200: KidAvatarSerializer,
+            200: KidAvatarDetailSerializer,
             400: None,
         },
         auth=[{'BearerAuth': []}],
@@ -196,4 +197,4 @@ class UnequipItemView(APIView):
         setattr(avatar, slot_field, None)
         avatar.save()
 
-        return Response(KidAvatarSerializer(avatar).data)
+        return Response(KidAvatarDetailSerializer(avatar).data)
