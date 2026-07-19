@@ -1,4 +1,5 @@
 import json
+import asyncio
 from channels.generic.websocket import  AsyncWebsocketConsumer
 from channels.db import database_sync_to_async
 from rest_framework_simplejwt.tokens import AccessToken
@@ -24,13 +25,24 @@ class NotificationConsumer(AsyncWebsocketConsumer):
             self.channel_name,
         )
         await self.accept()
+        self._heartbeat_task = asyncio.ensure_future(self.heartbeat())
 
     async def disconnect(self, close_code):
+       if hasattr(self, '_heartbeat_task'):
+            self._heartbeat_task.cancel()
        if hasattr(self, 'group_name'):
             await self.channel_layer.group_discard(
                 self.group_name,
                 self.channel_name,
             )
+
+    async def heartbeat(self):
+        while True:
+            await asyncio.sleep(30)  # Send heartbeat every 30 seconds
+            try:
+                await self.send(text_data=json.dumps({'type': 'ping'}))
+            except Exception:
+                break
 
     async def receive(self, text_data):
         # Handle incoming messages from the WebSocket if needed
