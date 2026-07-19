@@ -45,8 +45,9 @@ class NotificationConsumer(AsyncWebsocketConsumer):
                 break
 
     async def receive(self, text_data):
-        # Handle incoming messages from the WebSocket if needed
-        pass
+        data = json.loads(text_data)
+        if data.get('type') == 'pong':
+            pass
 
     async def send_notification(self, event):
         await self.send(text_data=json.dumps(event['data']))
