@@ -48,20 +48,23 @@ class InternalNotifyView(APIView):
             notification_type=serializer.validated_data['notification_type'],
             message=serializer.validated_data['message'],
         )
-        channel_layer = get_channel_layer()
-        async_to_sync(channel_layer.group_send)(
-            f'notifications_{str(serializer.validated_data["recipient_id"])}',
-            {
-                'type': 'send_notification', 
-                'data': {
-                    'id': str(notification.id),
-                    'notification_type': notification.notification_type,
-                    'message': notification.message,
-                    'is_read': notification.is_read,
-                    'created_at': notification.created_at.isoformat(),
-
-                }}
-        )
+        try:
+            channel_layer = get_channel_layer()
+            async_to_sync(channel_layer.group_send)(
+                f'notifications_{str(serializer.validated_data["recipient_id"])}',
+                {
+                    'type': 'send_notification', 
+                    'data': {
+                        'id': str(notification.id),
+                        'notification_type': notification.notification_type,
+                        'message': notification.message,
+                        'is_read': notification.is_read,
+                        'created_at': notification.created_at.isoformat(),
+                    }
+                }
+            )
+        except Exception:
+            pass  # WebSocket push failed, but the notification is still created in the database
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
