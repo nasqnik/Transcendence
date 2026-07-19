@@ -61,6 +61,7 @@ Returns `503` if gamification-service is unavailable.
 | --- | --- | --- | --- |
 | GET | `/avatar/` | kid | Get the kid's current avatar state including owned and equipped items. |
 | PATCH | `/avatar/equip/` | kid | Equip an owned item to the correct slot. |
+| PATCH | `/avatar/unequip/` | kid | Unequip an item for specific slot
 
 **GET `/avatar/` response**
 
@@ -69,12 +70,21 @@ Returns `503` if gamification-service is unavailable.
   "id": "<uuid>",
   "kid_id": "<uuid>",
   "base_character": "default",
-  "unlocked_items": ["<uuid>", "<uuid>"],
-  "equipped_hat": "<uuid>",
+  "unlocked_items": [
+    {
+      "id": "<uuid>",
+      "name": "Golden Star",
+      "type": "accessory",
+      "image_url": "https://api.dicebear.com/7.x/adventurer/svg?seed=golden-star",
+      "coin_cost": 30,
+      "is_active": true
+    }
+  ],
+  "equipped_hat": null,
   "equipped_outfit": null,
-  "equipped_accessory": null,
+  "equipped_accessory": "<uuid>",
   "equipped_background": null,
-  "updated_at": "2026-06-25T06:50:51.825394Z"
+  "updated_at": "2026-07-19T09:38:27.860072Z"
 }
 ```
 
@@ -91,6 +101,15 @@ Returns the full updated avatar object (same shape as GET `/avatar/`).
 Returns `404` if the item does not exist or is inactive.  
 Returns `400` if the kid does not own the item.
 
+**PATCH `/avatar/unequip/` body**
+
+{ "slot": "hat" }
+
+slot must be one of: hat, outfit, accessory, background.
+
+Returns the full updated avatar object (same shape as GET `/avatar/`).
+Returns 400 if slot value is invalid.
+
 ## Misc
 
 | Method | Path | Purpose |
@@ -103,5 +122,5 @@ Returns `400` if the kid does not own the item.
 
 - The shop list is empty until an admin seeds items into the database.
 - Coin balance is owned by gamification-service — catalog-service calls it internally on purchase.
-- `unlocked_items` is a list of item UUIDs the kid owns. Use this to show lock/unlock state in the shop UI.
+- `unlocked_items` is a list of full item objects (id, name, type, image_url, coin_cost) the kid owns. Use this to render the kid's inventory directly without extra shop calls.
 - Equipped slots (`equipped_hat`, `equipped_outfit`, etc.) are UUIDs or `null` if nothing is equipped.
