@@ -22,4 +22,25 @@ class RewardPurchaseSerializer(serializers.ModelSerializer):
         fields = ['id', 'kid_id', 'item', 'coins_spent', 'purchased_at']
 
 class PurchaseSerializer(serializers.Serializer):
-    item_id = serializers.UUIDField()
+    item_id = serializers.UUIDField(
+        help_text='The UUID of the avatar item to purchase equip.'
+    )
+
+class EquipSerializer(serializers.Serializer):
+    item_id = serializers.UUIDField(
+        help_text='The UUID of the avatar item to equip.'
+    )
+
+class UnequipSerializer(serializers.Serializer):
+    slot = serializers.ChoiceField(
+        choices=['hat', 'outfit', 'accessory', 'background'],
+        help_text='Avatar slot to unequip (hat, outfit, accessory, background).'
+    )
+
+class PurchaseResourceSerializer(serializers.Serializer):
+    detail = serializers.CharField(
+        help_text="Success message."
+    )
+    remaining_coins = serializers.IntegerField(
+        help_text="Remaining coins after purchase."
+    )
