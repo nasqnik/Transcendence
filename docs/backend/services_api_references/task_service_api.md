@@ -10,9 +10,9 @@ Roles: **kid** and **parent** (decided by the JWT). A parent's token carries `ki
 | Method | Path | Role | Purpose |
 | --- | --- | --- | --- |
 | GET | `/tasks/` | kid | List the kid's own active tasks. |
-| POST | `/tasks/` | kid | Create a task. AI scores each category, writes a summary, and sets `xp_reward` = sum of points. |
+| POST | `/tasks/` | kid | Create a task. AI moderates text first, then scores categories / summary / `xp_reward`. |
 | GET | `/tasks/{task_id}/` | kid | Get one of the kid's own tasks. |
-| PATCH | `/tasks/{task_id}/` | kid | Edit a task (SSE when title/description change). |
+| PATCH | `/tasks/{task_id}/` | kid | Edit a task (SSE + moderation when title/description change). |
 | DELETE | `/tasks/{task_id}/` | kid | Soft-delete a task (`is_active=false`). Returns `204`. |
 
 **POST `/tasks/` body**
@@ -20,6 +20,11 @@ Roles: **kid** and **parent** (decided by the JWT). A parent's token carries `ki
 ```json
 { "title": "Read a book", "description": "Read 20 pages", "due_date": null }
 ```
+
+**SSE flow (create / text edit):**
+1. Content moderation (OpenRouter) — if unsafe: `error` with `code: "content_blocked"` (task not saved; warning in `message`).
+2. If allowed: `moderation` → `{ "status": "allowed" }`.
+3. Classification tokens: `token` events, then `done` with classification + task.
 
 Response (and GET) include `id`, `xp_reward`, `ai_summary`, `ai_evaluated`, `category_rewards` (per-category points), and `review_mode`.
 
