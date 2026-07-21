@@ -135,6 +135,27 @@ services:
     environment:
       DB_NAME: ${CATALOG_DB_NAME:-catalog_db}
 
+  social-service:
+    <<: *django-service
+    build:
+      context: ./services/social-service
+      dockerfile: Dockerfile
+      args:
+        DOCKER_UID: ${DOCKER_UID}
+        DOCKER_GID: ${DOCKER_GID}
+    container_name: social_service
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    volumes:
+      - ./services/social-service:/app
+    environment:
+      DB_NAME: ${SOCIAL_DB_NAME:-social_db}
+      REDIS_URL: redis://redis:6379
+    command: daphne -b 0.0.0.0 -p 8000 core.asgi:application
+
   # ---------------------------------------------------------------------------
   # Frontend
   # ---------------------------------------------------------------------------
@@ -169,6 +190,7 @@ services:
       - analytics-service
       - notification-service
       - catalog-service
+      - social-service
       - frontend
     ports:
       - "80:80"
