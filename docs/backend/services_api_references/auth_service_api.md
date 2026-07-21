@@ -57,7 +57,9 @@ Response includes `pending_email`. The current email stays active until confirma
 | POST | `/auth/token/verify/` | Check a parent's access token is valid. |
 | POST | `/auth/google/` | Log in or sign up a parent via Google. |
 
-The parent access token includes a `kid_ids` claim (the kids they guard), used by task-service.
+The parent access token includes:
+- `kid_ids` — UUIDs of kids they guard (used by task-service and others)
+- `kids` — `[{ "id", "username", "name" }, ...]` for parent UI display without an extra API call
 
 ## Kid
 
