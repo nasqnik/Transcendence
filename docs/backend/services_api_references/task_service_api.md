@@ -47,6 +47,8 @@ Only send `send_for_review` when `review_mode === "optional"`; it is ignored oth
 { "task": "<task_id>", "send_for_review": false }
 ```
 
+List/create/review responses include nested task fields: `task_title`, `task_description`, `task_due_date`.
+
 Resulting `status` depends on the kid's category visibility:
 - all the task's categories shown to parent -> `pending`
 - none shown -> `confirmed` (auto)
