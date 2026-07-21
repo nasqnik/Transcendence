@@ -37,6 +37,8 @@ class CustomUser(AbstractUser):
 
     email_verified = models.BooleanField(default=False)
 
+    pending_email = models.EmailField(null=True, blank=True)
+
     email_verification_token = models.UUIDField(
         null=True,
         blank=True,
@@ -94,6 +96,8 @@ class Kid(models.Model):
     email = models.EmailField(unique=True, null=True, blank=True)
 
     email_verified = models.BooleanField(default=False)
+
+    pending_email = models.EmailField(null=True, blank=True)
 
     google_sub = models.CharField(
         max_length=255,
