@@ -6,7 +6,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from .permissions import IsAuthenticatedKid, IsInternalService
-from .models import Kid
+from .models import CustomUser, Kid
 from .serializers import (
     AcceptGuardianInviteSerializer,
     GoogleLoginSerializer,
@@ -14,13 +14,18 @@ from .serializers import (
     InviteSecondParentSerializer,
     KidGoogleLoginSerializer,
     KidGoogleSignupSerializer,
+    KidProfileSerializer,
     KidSignupSerializer,
     KidTokenObtainSerializer,
     KidTokenRefreshSerializer,
     KidTokenVerifySerializer,
     KidVerifyEmailSerializer,
+    MeEmailChangeSerializer,
+    MePasswordSerializer,
+    ParentProfileSerializer,
     ParentRegisterSerializer,
     ParentVerifyEmailSerializer,
+    VerifyEmailChangeSerializer,
 )
 from .services import InvitationNotFound, get_guardian_invitation_by_token, mark_expired_if_needed
 
@@ -176,6 +181,104 @@ class KidParentInternalView(APIView):
                 status=status.HTTP_404_NOT_FOUND,
             )
         return Response({'parent_id': str(kid.parent_id)})
+
+
+class KidInternalDetailView(APIView):
+    """Service-to-service: confirm an active kid exists."""
+
+    authentication_classes = []
+    permission_classes = [IsInternalService]
+
+    def get(self, request, kid_id):
+        try:
+            kid = Kid.objects.get(
+                id=kid_id,
+                registration_status=Kid.RegistrationStatus.ACTIVE,
+            )
+        except Kid.DoesNotExist:
+            return Response(
+                {'detail': 'Not found.'},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+        return Response({
+            'kid_id': str(kid.id),
+            'username': kid.username,
+            'name': kid.name,
+        })
+
+
+class MeView(APIView):
+    """Return or update the authenticated parent's or kid's own profile."""
+
+    permission_classes = [IsAuthenticated]
+
+    def get_serializer(self, instance, data=None, partial=False):
+        if isinstance(instance, Kid):
+            serializer_class = KidProfileSerializer
+        else:
+            serializer_class = ParentProfileSerializer
+        if data is None:
+            return serializer_class(instance)
+        return serializer_class(instance, data=data, partial=partial)
+
+    def get(self, request):
+        serializer = self.get_serializer(request.user)
+        return Response(serializer.data)
+
+    def patch(self, request):
+        user = request.user
+        if not isinstance(user, (Kid, CustomUser)):
+            return Response(
+                {"detail": "Authentication credentials were not provided."},
+                status=status.HTTP_401_UNAUTHORIZED,
+            )
+        serializer = self.get_serializer(user, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data)
+
+
+@extend_schema(request=MePasswordSerializer)
+class MePasswordView(APIView):
+    """Set or change the authenticated parent's or kid's app password."""
+
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        serializer = MePasswordSerializer(
+            data=request.data,
+            context={'request': request},
+        )
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+@extend_schema(request=MeEmailChangeSerializer)
+class MeEmailChangeView(APIView):
+    """Request an email change; confirmation is sent to the new address."""
+
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        serializer = MeEmailChangeSerializer(
+            data=request.data,
+            context={'request': request},
+        )
+        serializer.is_valid(raise_exception=True)
+        return Response(serializer.save(), status=status.HTTP_200_OK)
+
+
+@extend_schema(request=VerifyEmailChangeSerializer)
+class VerifyEmailChangeView(APIView):
+    """Public: confirm a pending email change via token."""
+
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        serializer = VerifyEmailChangeSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        return Response(serializer.validated_data, status=status.HTTP_200_OK)
 
 
 # Permissions:
