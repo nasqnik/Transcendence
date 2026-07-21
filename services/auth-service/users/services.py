@@ -3,6 +3,7 @@ from uuid import uuid4
 
 from django.conf import settings
 from django.core.mail import EmailMultiAlternatives
+from django.db.models import Q
 from django.template.loader import render_to_string
 from django.utils import timezone
 
@@ -52,6 +53,28 @@ def email_belongs_to_kid(email: str) -> bool:
 
 def email_belongs_to_parent(email: str) -> bool:
     return CustomUser.objects.filter(email__iexact=normalize_email(email)).exists()
+
+
+def email_is_taken(email: str, *, exclude_parent=None, exclude_kid=None) -> bool:
+    """True if email is used as current or pending on any parent/kid."""
+    normalized = normalize_email(email)
+    parent_qs = CustomUser.objects.filter(
+        Q(email__iexact=normalized) | Q(pending_email__iexact=normalized)
+    )
+    if exclude_parent is not None:
+        parent_qs = parent_qs.exclude(pk=exclude_parent.pk)
+    kid_qs = Kid.objects.filter(
+        Q(email__iexact=normalized) | Q(pending_email__iexact=normalized)
+    )
+    if exclude_kid is not None:
+        kid_qs = kid_qs.exclude(pk=exclude_kid.pk)
+    return parent_qs.exists() or kid_qs.exists()
+
+
+def actor_has_password(actor) -> bool:
+    if isinstance(actor, Kid):
+        return bool(actor.password_hash)
+    return actor.has_usable_password()
 
 
 def username_belongs_to_kid(username: str) -> bool:
@@ -193,6 +216,11 @@ def build_kid_verify_email_url(token) -> str:
     return f"{base}/kid/verify-email?token={token}"
 
 
+def build_email_change_verify_url(token) -> str:
+    base = settings.FRONTEND_URL.rstrip("/")
+    return f"{base}/verify-email-change?token={token}"
+
+
 def _verification_expired(sent_at) -> bool:
     if not sent_at:
         return True
@@ -315,3 +343,124 @@ def create_primary_guardian_invitation(kid: Kid, parent_email: str) -> GuardianI
     )
     send_guardian_invitation_email(invitation)
     return invitation
+
+
+class EmailChangeNotFound(Exception):
+    pass
+
+
+class EmailChangeExpired(Exception):
+    pass
+
+
+def _send_email_change_mail(*, to_email: str, verify_url: str, display_name: str = "") -> None:
+    context = {
+        "app_name": settings.APP_NAME,
+        "verify_url": verify_url,
+        "email": to_email,
+        "display_name": display_name,
+        "expires_hours": settings.EMAIL_VERIFICATION_EXPIRY_HOURS,
+    }
+    subject = f"Confirm your new email — {settings.APP_NAME}"
+    text_body = render_to_string("emails/email_change_verify.txt", context)
+    html_body = render_to_string("emails/email_change_verify.html", context)
+    message = EmailMultiAlternatives(
+        subject=subject,
+        body=text_body,
+        from_email=settings.DEFAULT_FROM_EMAIL,
+        to=[to_email],
+    )
+    message.attach_alternative(html_body, "text/html")
+    message.send(fail_silently=False)
+
+
+def issue_parent_email_change(user: CustomUser, new_email: str) -> None:
+    user.pending_email = normalize_email(new_email)
+    user.email_verification_token = uuid4()
+    user.email_verification_sent_at = timezone.now()
+    user.save(
+        update_fields=[
+            "pending_email",
+            "email_verification_token",
+            "email_verification_sent_at",
+        ]
+    )
+    verify_url = build_email_change_verify_url(user.email_verification_token)
+    _send_email_change_mail(
+        to_email=user.pending_email,
+        verify_url=verify_url,
+        display_name=user.username,
+    )
+
+
+def issue_kid_email_change(kid: Kid, new_email: str) -> None:
+    kid.pending_email = normalize_email(new_email)
+    kid.email_verification_token = uuid4()
+    kid.email_verification_sent_at = timezone.now()
+    kid.save(
+        update_fields=[
+            "pending_email",
+            "email_verification_token",
+            "email_verification_sent_at",
+        ]
+    )
+    verify_url = build_email_change_verify_url(kid.email_verification_token)
+    _send_email_change_mail(
+        to_email=kid.pending_email,
+        verify_url=verify_url,
+        display_name=kid.name,
+    )
+
+
+def verify_email_change(token):
+    """Apply pending_email for parent or kid. Returns (actor, role)."""
+    user = (
+        CustomUser.objects.filter(email_verification_token=token)
+        .exclude(pending_email__isnull=True)
+        .exclude(pending_email="")
+        .first()
+    )
+    if user is not None:
+        if _verification_expired(user.email_verification_sent_at):
+            raise EmailChangeExpired
+        user.email = user.pending_email
+        user.pending_email = None
+        user.email_verified = True
+        user.email_verification_token = None
+        user.email_verification_sent_at = None
+        user.save(
+            update_fields=[
+                "email",
+                "pending_email",
+                "email_verified",
+                "email_verification_token",
+                "email_verification_sent_at",
+            ]
+        )
+        return user, "parent"
+
+    kid = (
+        Kid.objects.filter(email_verification_token=token)
+        .exclude(pending_email__isnull=True)
+        .exclude(pending_email="")
+        .first()
+    )
+    if kid is None:
+        raise EmailChangeNotFound
+    if _verification_expired(kid.email_verification_sent_at):
+        raise EmailChangeExpired
+    kid.email = kid.pending_email
+    kid.pending_email = None
+    kid.email_verified = True
+    kid.email_verification_token = None
+    kid.email_verification_sent_at = None
+    kid.save(
+        update_fields=[
+            "email",
+            "pending_email",
+            "email_verified",
+            "email_verification_token",
+            "email_verification_sent_at",
+        ]
+    )
+    return kid, "kid"
