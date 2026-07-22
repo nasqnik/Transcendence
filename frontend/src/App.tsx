@@ -13,6 +13,7 @@ import Signup from './pages/Signup'
 import AcceptInvite from './pages/AcceptInvite'
 import NotFound from './pages/NotFound'
 import VerifyEmail from './pages/VerifyEmail'
+import VerifyEmailChange from './pages/VerifyEmailChange'
 import VerifyKidEmail from './pages/VerifyKidEmail'
 import KidLayout from './components/kid/KidLayout'
 import ParentLayout from './components/parent/ParentLayout'
@@ -22,7 +23,7 @@ import ParentDashboard from './pages/ParentDashboard'
 import ParentApprovals from './pages/ParentApprovals'
 import CharacterCreation from './pages/CharacterCreation'
 import Profile from './pages/Profile'
-import ParentProfile from './pages/ParentProfile'
+import ParentSettings from './pages/ParentSettings'
 import PrivacyPolicy from './pages/PrivacyPolicy'
 import TermsOfService from './pages/TermsOfService'
 
@@ -75,6 +76,7 @@ export default function App() {
         <Route path="/terms" element={<TermsOfService />} />
         <Route path="/accept-invite" element={<AcceptInvite />} />
         <Route path="/verify-email" element={<VerifyEmail />} />
+        <Route path="/verify-email-change" element={<VerifyEmailChange />} />
         <Route path="/kid/verify-email" element={<VerifyKidEmail />} />
 
         {/* Child (protected) */}
@@ -92,8 +94,8 @@ export default function App() {
           <Route element={<ParentLayout />}>
             <Route path="/parent/dashboard" element={<ParentDashboard />} />
             <Route path="/parent/approvals" element={<ParentApprovals />} />
+            <Route path="/parent/settings" element={<ParentSettings />} />
           </Route>
-          <Route path="/parent/profile" element={<ParentProfile />} />
         </Route>
 
         <Route path="*" element={<NotFound />} />
