@@ -1,0 +1,28 @@
+import { Outlet } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
+import ParentSidebar from './ParentSidebar'
+import ParentTopbar from './ParentTopbar'
+import LegalLinks from '../LegalLinks'
+
+export default function ParentLayout() {
+  const { t } = useTranslation()
+
+  return (
+    <div className="flex min-h-screen bg-primary-50">
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:start-2 focus:z-[60] focus:bg-white focus:text-primary-700 focus:px-4 focus:py-2 focus:rounded-lg focus:shadow-lg focus-ring"
+      >
+        {t('a11y.skipToContent')}
+      </a>
+      <ParentSidebar />
+      <div className="flex-1 flex flex-col min-w-0">
+        <ParentTopbar />
+        <Outlet />
+        <footer className="border-t border-gray-200 bg-white px-4 sm:px-8 py-3 flex justify-center sm:justify-end shrink-0">
+          <LegalLinks />
+        </footer>
+      </div>
+    </div>
+  )
+}
