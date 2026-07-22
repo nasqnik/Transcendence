@@ -23,7 +23,8 @@ export interface Task {
 export interface Completion {
   id: string
   task: string              // task id
-  task_title?: string       // requires backend to expose it on the completion payload
+  task_title?: string       
+  task_description?: string 
   task_due_date?: string | null
   kid_id: string
   status: 'pending' | 'confirmed' | 'rejected'
