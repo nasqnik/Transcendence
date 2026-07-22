@@ -1,6 +1,7 @@
 import { useEffect, useLayoutEffect, useRef } from 'react'
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
+import { useQueryClient } from '@tanstack/react-query'
 import useAuthStore from './store/authStore'
 import { verifyAccessToken, decodeJWT } from './api/auth'
 
@@ -12,19 +13,25 @@ import Signup from './pages/Signup'
 import AcceptInvite from './pages/AcceptInvite'
 import NotFound from './pages/NotFound'
 import VerifyEmail from './pages/VerifyEmail'
+import VerifyEmailChange from './pages/VerifyEmailChange'
 import VerifyKidEmail from './pages/VerifyKidEmail'
 import KidLayout from './components/kid/KidLayout'
+import ParentLayout from './components/parent/ParentLayout'
 import ChildDashboard from './pages/ChildDashboard'
 import KidSettings from './pages/KidSettings'
 import ParentDashboard from './pages/ParentDashboard'
+import ParentApprovals from './pages/ParentApprovals'
 import CharacterCreation from './pages/CharacterCreation'
 import Profile from './pages/Profile'
-import ParentProfile from './pages/ParentProfile'
+import ParentSettings from './pages/ParentSettings'
+import PrivacyPolicy from './pages/PrivacyPolicy'
+import TermsOfService from './pages/TermsOfService'
 
 export default function App() {
   const { i18n } = useTranslation()
   const activeLang = i18n.resolvedLanguage ?? i18n.language
   const isRTL = i18n.dir() === 'rtl'
+  const queryClient = useQueryClient()
   // Read token once on startup without subscribing App to the store.
   // Route guards (ProtectedRoute, GuestRoute) handle auth state reactivity themselves.
   const startupTokenRef = useRef(useAuthStore.getState().token)
@@ -33,6 +40,14 @@ export default function App() {
     return state.currentUser?.role
       ?? (decodeJWT(state.token ?? '').role === 'kid' ? 'kid' : 'parent')
   })() as 'parent' | 'kid')
+
+  // Wipe all cached server data on logout so a different user signing in on the
+  // same tab never briefly sees the previous user's tasks, stats, or notifications.
+  useEffect(() =>
+    useAuthStore.subscribe((state, prev) => {
+      if (prev.token && !state.token) queryClient.clear()
+    }),
+  [queryClient])
 
   useEffect(() => {
     const startupToken = startupTokenRef.current
@@ -57,8 +72,11 @@ export default function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
         </Route>
+        <Route path="/privacy" element={<PrivacyPolicy />} />
+        <Route path="/terms" element={<TermsOfService />} />
         <Route path="/accept-invite" element={<AcceptInvite />} />
         <Route path="/verify-email" element={<VerifyEmail />} />
+        <Route path="/verify-email-change" element={<VerifyEmailChange />} />
         <Route path="/kid/verify-email" element={<VerifyKidEmail />} />
 
         {/* Child (protected) */}
@@ -73,8 +91,11 @@ export default function App() {
 
         {/* Parent (protected) */}
         <Route element={<ProtectedRoute role="parent" />}>
-          <Route path="/parent/dashboard" element={<ParentDashboard />} />
-          <Route path="/parent/profile" element={<ParentProfile />} />
+          <Route element={<ParentLayout />}>
+            <Route path="/parent/dashboard" element={<ParentDashboard />} />
+            <Route path="/parent/approvals" element={<ParentApprovals />} />
+            <Route path="/parent/settings" element={<ParentSettings />} />
+          </Route>
         </Route>
 
         <Route path="*" element={<NotFound />} />

@@ -1,8 +1,8 @@
 /**
  * Error utilities for axios/DRF responses.
  *
- * - getApiErrorKey + t(key)  = components that store the key and translate later (Login)
- * - parseApiError            = ready-to-show translated string (Signup, invites)
+ * - getApiErrorKey + t(key)  = map an error to an i18n key, translated in React (Login, Signup, invites)
+ * - getFieldErrors           = per-field validation messages, already translated
  * - is*                      = boolean helpers for branching, not display
  */
 
@@ -86,29 +86,26 @@ function getDetail(error: unknown): string {
   return typeof obj?.detail === 'string' ? obj.detail.trim() : ''
 }
 
-function translateServerMessage(message: string): string {
+/**
+ * Map a single server message string to an `errors.*` i18n key.
+ * Returns null when the message isn't recognised (caller decides the fallback).
+ */
+function resolveMessageKey(message: string): string | null {
   const trimmed = message.trim()
   const key = API_ERROR_KEYS[trimmed]
-  if (key) return i18n.t(key)
-
-  if (trimmed.startsWith('Invitation is not pending')) {
-    return i18n.t('errors.api.invitationNotPending')
-  }
-
+  if (key) return key
+  if (trimmed.startsWith('Invitation is not pending')) return 'errors.api.invitationNotPending'
   for (const { prefix, key } of PASSWORD_ERROR_PREFIXES) {
-    if (trimmed.startsWith(prefix)) {
-      return key === 'errors.passwordMinLength'
-        ? i18n.t(key, { min: 8 })
-        : i18n.t(key)
-    }
+    if (trimmed.startsWith(prefix)) return key
   }
-
-  // Unknown server text — avoid mixing English into AR/RU UI
-  return i18n.t('errors.apiUnknown')
+  return null
 }
 
-function genericError(): string {
-  return i18n.t('errors.generic')
+function translateServerMessage(message: string): string {
+  const key = resolveMessageKey(message)
+  if (!key) return i18n.t('errors.apiUnknown')
+  // passwordMinLength requires an interpolation value
+  return key === 'errors.passwordMinLength' ? i18n.t(key, { min: 8 }) : i18n.t(key)
 }
 
 // ─── Boolean helpers (for branching, not display) ────────────────────────────
@@ -156,7 +153,7 @@ export function isInvalidKidCredentials(error: unknown): boolean {
 /**
  * Extract per-field validation errors from a DRF response.
  * Returns field → first translated error string for every field key.
- * `detail` and `non_field_errors` are excluded (those go to parseApiError).
+ * `detail` and `non_field_errors` are excluded (those go to getApiErrorKey).
  *
  * Example input:  { email: ["user with this email already exists."], password: ["too short"] }
  * Example output: { email: "An account with this email already exists.", password: "Password must be at least 8 characters." }
@@ -179,11 +176,6 @@ export function getFieldErrors(error: unknown): Record<string, string> {
   return result
 }
 
-/** Returns true when the response contains at least one field-level validation error. */
-export function hasFieldErrors(error: unknown): boolean {
-  return Object.keys(getFieldErrors(error)).length > 0
-}
-
 // ─── Key / string resolution ─────────────────────────────────────────────────
 
 /** Map a backend/axios error to an `errors.*` i18n key (translate in React with `t(key)`). */
@@ -193,23 +185,16 @@ export function getApiErrorKey(error: unknown): string {
 
   const detail = getDetail(error)
   if (detail) {
-    const key = API_ERROR_KEYS[detail]
+    const key = resolveMessageKey(detail)
     if (key) return key
-    if (detail.startsWith('Invitation is not pending')) {
-      return 'errors.api.invitationNotPending'
-    }
-    for (const { prefix, key } of PASSWORD_ERROR_PREFIXES) {
-      if (detail.startsWith(prefix)) return key
-    }
   }
 
   for (const value of Object.values(obj)) {
-    if (Array.isArray(value) && typeof value[0] === 'string') {
-      const key = API_ERROR_KEYS[value[0].trim()]
-      if (key) return key
-    }
-    if (typeof value === 'string') {
-      const key = API_ERROR_KEYS[value.trim()]
+    const msg =
+      Array.isArray(value) && typeof value[0] === 'string' ? value[0] :
+      typeof value === 'string' ? value : null
+    if (msg) {
+      const key = resolveMessageKey(msg)
       if (key) return key
     }
   }
@@ -232,24 +217,4 @@ export function dualLoginErrorKey(parentErr: unknown, kidErr: unknown): string {
     return getApiErrorKey(parentErr)
   }
   return getApiErrorKey(kidErr)
-}
-
-/**
- * Turn axios/DRF errors into a localized string.
- * Known backend messages are mapped to `errors.api.*`; others use `errors.apiUnknown`.
- */
-export function parseApiError(error: unknown): string {
-  const obj = getErrorPayload(error)
-  if (!obj) return genericError()
-
-  if (typeof obj.detail === 'string') return translateServerMessage(obj.detail)
-
-  for (const value of Object.values(obj)) {
-    if (Array.isArray(value) && typeof value[0] === 'string') {
-      return translateServerMessage(value[0])
-    }
-    if (typeof value === 'string') return translateServerMessage(value)
-  }
-
-  return genericError()
 }
