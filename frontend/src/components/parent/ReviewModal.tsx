@@ -50,6 +50,13 @@ export default function ReviewModal({ completion, onClose }: ReviewModalProps) {
         </div>
       </div>
 
+      {/* Task description */}
+      {completion.task_description && (
+        <p className="font-body text-sm text-gray-600 leading-relaxed whitespace-pre-wrap">
+          {completion.task_description}
+        </p>
+      )}
+
       {/* Review note */}
       <div className="flex flex-col gap-2">
         <label htmlFor="review-note" className="font-body text-sm font-semibold text-gray-700">
