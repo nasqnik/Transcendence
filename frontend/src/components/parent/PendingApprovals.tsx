@@ -8,9 +8,11 @@ import ReviewModal from './ReviewModal'
 interface PendingApprovalsProps {
   /** Maps a kid_id to a display label for the per-item tag. */
   kidLabelFor: (kidId: string) => string
+  /** Show the per-item kid tag (only useful with more than one kid). */
+  showKidLabel: boolean
 }
 
-export default function PendingApprovals({ kidLabelFor }: PendingApprovalsProps) {
+export default function PendingApprovals({ kidLabelFor, showKidLabel }: PendingApprovalsProps) {
   const { t, i18n } = useTranslation()
   const [reviewing, setReviewing] = useState<Completion | null>(null)
 
@@ -73,10 +75,12 @@ export default function PendingApprovals({ kidLabelFor }: PendingApprovalsProps)
                     {c.task_title || t('parentDash.untitledTask')}
                   </p>
                   <div className="flex items-center gap-2 mt-0.5 flex-wrap">
-                    <span className="inline-flex items-center gap-1 bg-white rounded-full px-2 py-0.5 font-body text-xs font-semibold text-gray-600">
-                      <span aria-hidden="true">👤</span>
-                      {kidLabelFor(c.kid_id)}
-                    </span>
+                    {showKidLabel && (
+                      <span className="inline-flex items-center gap-1 bg-white rounded-full px-2 py-0.5 font-body text-xs font-semibold text-gray-600">
+                        <span aria-hidden="true">👤</span>
+                        {kidLabelFor(c.kid_id)}
+                      </span>
+                    )}
                     <span className="font-body text-xs text-gray-400">
                       {c.task_due_date
                         ? t('parentDash.dueDate', {

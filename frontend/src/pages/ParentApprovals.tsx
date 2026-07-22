@@ -1,8 +1,9 @@
 import { useTranslation } from 'react-i18next'
 import useAuthStore from '../store/authStore'
-import { kidsFromToken } from '../api/parent'
+import { kidsFromToken, kidDisplayName } from '../api/parent'
 import { usePageTitle } from '../hooks/usePageTitle'
 import PendingApprovals from '../components/parent/PendingApprovals'
+import RecentlyReviewed from '../components/parent/RecentlyReviewed'
 
 export default function ParentApprovals() {
   const { t } = useTranslation()
@@ -15,7 +16,7 @@ export default function ParentApprovals() {
   const labels = new Map(
     kids.map((k, i) => [
       k.id,
-      k.username || (kids.length > 1 ? t('parentDash.childN', { n: i + 1 }) : t('parentDash.yourChild')),
+      kidDisplayName(k) || (kids.length > 1 ? t('parentDash.childN', { n: i + 1 }) : t('parentDash.yourChild')),
     ]),
   )
   const kidLabelFor = (id: string) => labels.get(id) ?? t('parentDash.yourChild')
@@ -30,7 +31,8 @@ export default function ParentApprovals() {
         {t('parentDash.pendingApprovals')}
       </h1>
 
-      <PendingApprovals kidLabelFor={kidLabelFor} />
+      <PendingApprovals kidLabelFor={kidLabelFor} showKidLabel={kids.length > 1} />
+      <RecentlyReviewed kidLabelFor={kidLabelFor} showKidLabel={kids.length > 1} />
     </main>
   )
 }
