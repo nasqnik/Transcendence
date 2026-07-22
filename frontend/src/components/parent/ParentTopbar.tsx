@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 import useAuthStore from '../../store/authStore'
 import { useDismissable } from '../../hooks/useDismissable'
 import LanguageSwitcher from '../LanguageSwitcher'
+import NotificationBell from '../NotificationBell'
 
 export default function ParentTopbar() {
   const { t } = useTranslation()
@@ -28,6 +29,7 @@ export default function ParentTopbar() {
 
       <div className="flex items-center gap-2 sm:gap-3 shrink-0">
         <LanguageSwitcher />
+        <NotificationBell />
 
         {/* User menu */}
         <div className="relative" ref={menuRef}>
