@@ -17,6 +17,7 @@ export default function ParentSidebar() {
   const NAV_ITEMS = [
     { icon: '📊', labelKey: 'parentDash.overview',  path: '/parent/dashboard', badge: 0 },
     { icon: '✅', labelKey: 'parentDash.approvals',  path: '/parent/approvals', badge: pendingCount },
+    { icon: '⚙️', labelKey: 'parentDash.settings',   path: '/parent/settings',  badge: 0 },
   ] as const
 
   return (
