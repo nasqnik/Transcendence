@@ -12,6 +12,7 @@ import KidStatsPanel from './KidStatsPanel'
 
 interface KidInsightsProps {
   kidId: string
+  kidName?: string
   stats: KidStat[]
   statsLoading: boolean
 }
@@ -81,7 +82,7 @@ function EmptyMini({ label, className = 'h-48' }: { label: string; className?: s
   )
 }
 
-export default function KidInsights({ kidId, stats, statsLoading }: KidInsightsProps) {
+export default function KidInsights({ kidId, kidName, stats, statsLoading }: KidInsightsProps) {
   const { t, i18n } = useTranslation()
 
   const { data, isLoading, isError } = useQuery({
@@ -126,7 +127,29 @@ export default function KidInsights({ kidId, stats, statsLoading }: KidInsightsP
   const errText = <p className="font-body text-sm text-danger-700 py-6 text-center">{t('errors.generic')}</p>
 
   return (
-    <div className="flex flex-col gap-4 sm:gap-6">
+    <div id="insights-print" className="flex flex-col gap-4 sm:gap-6">
+
+      {/* Report header — only rendered in the printed PDF */}
+      <div className="print-only mb-2">
+        <p className="font-heading text-2xl font-bold text-gray-900">
+          {kidName ? `${kidName} — ` : ''}{t('parentDash.progressReport')}
+        </p>
+        <p className="font-body text-sm text-gray-500">
+          {new Date().toLocaleDateString(i18n.language)}
+        </p>
+      </div>
+
+      {/* Toolbar (hidden in print) */}
+      <div className="flex items-center justify-between gap-3 no-print">
+        <h2 className="font-heading text-xl font-bold text-gray-900">{t('parentDash.insights')}</h2>
+        <button
+          type="button"
+          onClick={() => window.print()}
+          className="inline-flex items-center gap-1.5 font-body font-semibold text-sm px-4 py-2 rounded-xl border border-gray-200 text-gray-700 hover:bg-gray-50 focus-ring transition-colors"
+        >
+          <span aria-hidden="true">⬇️</span> {t('parentDash.exportPdf')}
+        </button>
+      </div>
 
       {/* KPI tiles */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">

@@ -14,7 +14,7 @@ export default function KidStatsPanel({ stats, isLoading }: KidStatsPanelProps) 
   return (
     <section aria-labelledby="kid-stats-heading" className="bg-white rounded-2xl p-5">
       <h2 id="kid-stats-heading" className="font-heading text-lg font-bold text-gray-900 mb-4">
-        {t('parentDash.subjectFocus')}
+        {t('parentDash.categoryProgress')}
       </h2>
 
       <div className="flex flex-col gap-5">
