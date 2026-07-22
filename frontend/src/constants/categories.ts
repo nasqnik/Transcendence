@@ -23,6 +23,9 @@ export interface Task {
 export interface Completion {
   id: string
   task: string              // task id
+  task_title?: string       
+  task_description?: string 
+  task_due_date?: string | null
   kid_id: string
   status: 'pending' | 'confirmed' | 'rejected'
   completed_at: string
@@ -46,4 +49,20 @@ export const CATEGORY_STYLE: Record<TaskCategory, { bg: string; text: string; ba
 export function primaryCategory(rewards: CategoryReward[]): TaskCategory {
   if (!rewards.length) return 'learning'
   return [...rewards].sort((a, b) => b.points_value - a.points_value)[0].category
+}
+
+export interface KidStat {
+  id: string
+  kid_id: string
+  category: TaskCategory
+  level: number
+  xp_percent: number
+}
+
+export interface KidProfile {
+  id: string
+  kid_id: string
+  main_level: number
+  overall_xp: number
+  coins: number
 }
