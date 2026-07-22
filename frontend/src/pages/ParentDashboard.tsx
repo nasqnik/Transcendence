@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useQuery } from '@tanstack/react-query'
 import useAuthStore from '../store/authStore'
-import { kidsFromToken, getKidStats, type KidRef } from '../api/parent'
+import { kidsFromToken, kidDisplayName, getKidStats, type KidRef } from '../api/parent'
 import { usePageTitle } from '../hooks/usePageTitle'
 import KidCard from '../components/parent/KidCard'
 import KidSwitcher from '../components/parent/KidSwitcher'
@@ -16,16 +16,15 @@ export default function ParentDashboard() {
   const kids = token ? kidsFromToken(token) : []
 
   const [selectedKidId, setSelectedKidId] = useState<string | null>(kids[0]?.id ?? null)
-  // Fall back to the first kid if the stored selection is missing/stale.
+  // Fall back to the first kid if the stored selection is missing
   const kidId =
     selectedKidId && kids.some(k => k.id === selectedKidId)
       ? selectedKidId
       : kids[0]?.id ?? null
 
-  // Name when the backend provides it; otherwise "Child N" (multiple) or
-  // "Your child" (single) so kids stay distinguishable in the switcher.
+
   const labelFor = (kid: KidRef, index: number) =>
-    kid.username || (kids.length > 1 ? t('parentDash.childN', { n: index + 1 }) : t('parentDash.yourChild'))
+    kidDisplayName(kid) || (kids.length > 1 ? t('parentDash.childN', { n: index + 1 }) : t('parentDash.yourChild'))
 
   const selectedIndex = kids.findIndex(k => k.id === kidId)
   const selectedLabel = selectedIndex >= 0 ? labelFor(kids[selectedIndex], selectedIndex) : undefined
@@ -58,13 +57,14 @@ export default function ParentDashboard() {
         {t('parentDash.title')}
       </h1>
 
-      {kids.length > 1 && (
-        <KidSwitcher kids={kids} selectedId={kidId} onSelect={setSelectedKidId} labelFor={labelFor} />
-      )}
+      <div className="flex items-center justify-between gap-4 flex-wrap">
+        <KidCard kidName={selectedLabel} />
+        {kids.length > 1 && (
+          <KidSwitcher kids={kids} selectedId={kidId} onSelect={setSelectedKidId} labelFor={labelFor} />
+        )}
+      </div>
 
-      <KidCard kidName={selectedLabel} />
-
-      <KidInsights kidId={kidId} stats={stats} statsLoading={statsLoading} />
+      <KidInsights kidId={kidId} kidName={selectedLabel} stats={stats} statsLoading={statsLoading} />
     </main>
   )
 }
