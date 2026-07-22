@@ -94,3 +94,23 @@
     scroll-behavior: auto !important;
   }
 }
+
+/* Print-only content (e.g. a report header shown only in the PDF export). */
+.print-only { display: none; }
+
+/* Export PDF */
+@media print {
+  body * { visibility: hidden; }
+  #insights-print, #insights-print * { visibility: visible; }
+  #insights-print {
+    position: absolute;
+    inset-inline-start: 0;
+    top: 0;
+    width: 100%;
+    padding: 0.5rem;
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+  .no-print { display: none !important; }
+  .print-only { display: block; }
+}

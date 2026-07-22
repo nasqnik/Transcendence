@@ -15,6 +15,7 @@ interface AuthStore {
   isAuthenticated: boolean
 
   login: (user: User, token: string, refreshToken: string) => void
+  updateUser: (partial: Partial<User>) => void
   logout: () => void
 }
 
@@ -32,6 +33,10 @@ const useAuthStore = create<AuthStore>()(
         refreshToken,
         isAuthenticated: true,
       }),
+
+      updateUser: (partial) => set((state) => ({
+        currentUser: state.currentUser ? { ...state.currentUser, ...partial } : state.currentUser,
+      })),
 
       logout: () => set({
         currentUser: null,
