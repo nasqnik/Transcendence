@@ -2,11 +2,11 @@
 
 @theme {
   /* Colors */
-  --color-primary-50: #EEEDFE;
-  --color-primary-100: #C4B5FD;
-  --color-primary-500: #7F77DD;
-  --color-primary-600: #534AB7;
-  --color-primary-700: #3C3489;
+  --color-primary-50: #F3F0FF;
+  --color-primary-100: #DDD6FE;
+  --color-primary-500: #8B5CF6;
+  --color-primary-600: #7C3AED;
+  --color-primary-700: #6D28D9;
 
   --color-blue-50: #EFF6FF;
   --color-blue-500: #3B82F6;
@@ -26,8 +26,19 @@
 
   --color-gray-50: #F1EFE8;
   --color-gray-200: #D3D1C7;
-  --color-gray-400: #B4B2A9;
-  --color-gray-500: #888780;
+  /* gray-300: dedicated form-control border shade — gray-200 (1.53:1 vs
+     white) fails WCAG 1.4.11's 3:1 non-text contrast minimum for UI
+     component boundaries. gray-200 stays unchanged for decorative section
+     dividers (sidebar/topbar/dropdown borders), which aren't form controls
+     and aren't subject to this rule. */
+  --color-gray-300: #8B897F;
+  /* gray-400/500 darkened to #6D6C66 — the lightest warm-gray that still
+     clears WCAG AA's 4.5:1 text contrast minimum against every light
+     background used in the app (white, gray-50, and all the category-tint
+     "-50" cards). Both tokens are text-color-only in this codebase (never
+     bg/border), so this is safe to change once at the source. */
+  --color-gray-400: #6D6C66;
+  --color-gray-500: #6D6C66;
   --color-gray-700: #5F5E5A;
   --color-gray-900: #444441;
 
@@ -56,14 +67,50 @@
   }
 
   .focus-ring {
-    @apply outline-none focus-visible:ring-2 focus-visible:ring-primary-100 focus-visible:ring-offset-2;
+    @apply outline-none focus-visible:ring-2 focus-visible:ring-primary-600 focus-visible:ring-offset-2;
   }
 
   .alert-error {
-    @apply text-danger-500 bg-danger-50;
+    /* danger-500 text fails 4.5:1 against danger-50 (3.41:1) — danger-700
+       passes comfortably (6.13:1) while keeping the same tint background. */
+    @apply text-danger-700 bg-danger-50;
   }
 
   .field-error {
     @apply font-body text-sm text-danger-700;
   }
+}
+
+/* Honor the OS "reduce motion" setting: neutralize non-essential animation and
+   transitions app-wide (progress-bar fills, skeleton pulses, toast, streaming
+   cursor). Kept as near-instant rather than 0 so state still settles. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  ::before,
+  ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Print-only content (e.g. a report header shown only in the PDF export). */
+.print-only { display: none; }
+
+/* Export PDF */
+@media print {
+  body * { visibility: hidden; }
+  #insights-print, #insights-print * { visibility: visible; }
+  #insights-print {
+    position: absolute;
+    inset-inline-start: 0;
+    top: 0;
+    width: 100%;
+    padding: 0.5rem;
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+  .no-print { display: none !important; }
+  .print-only { display: block; }
 }
