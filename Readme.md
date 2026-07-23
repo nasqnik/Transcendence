@@ -33,6 +33,7 @@ Open **https://localhost** (accept the self-signed certificate warning).
 | Analytics | [https://localhost/api/analytics/docs/](https://localhost/api/analytics/docs/) |
 | Notification | [https://localhost/api/notification/docs/](https://localhost/api/notification/docs/) |
 | Catalog | [https://localhost/api/catalog/docs/](https://localhost/api/catalog/docs/) |
+| Social | [https://localhost/api/social/docs/](https://localhost/api/social/docs/) |
 
 All traffic goes through nginx on ports **80** and **443** only.
 
