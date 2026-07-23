@@ -11,16 +11,18 @@ from openai import (
     RateLimitError,
 )
 
-from ..models import Task
+from ..models import ModerationLog, Task
 from .ai_evaluation import CLASSIFY_TASK_SYSTEM_PROMPT
 from .apply import apply_classification, compute_xp_reward
 from .errors import (
     AIAuthenticationError,
+    AIContentBlocked,
     AIError,
     AIInvalidResponse,
     AIRateLimited,
     AIServiceUnavailable,
 )
+from .moderation import enforce_task_moderation
 from .validation import validate_classification
 
 
@@ -103,6 +105,42 @@ def sse_error(*, code, message, **extra):
     return sse_event('error', {'code': code, 'message': message, **extra})
 
 
+def _log_moderation(kid_id, title, description, *, action, reason=''):
+    ModerationLog.objects.create(
+        kid_id=kid_id,
+        title=title,
+        description=description or '',
+        action=action,
+        reason=reason or '',
+    )
+
+
+def _run_moderation(kid_id, title, description):
+    """
+    Moderate task text and write an audit log.
+    Raises AIContentBlocked when unsafe (after logging blocked).
+    """
+    try:
+        result = enforce_task_moderation(title, description)
+    except AIContentBlocked as exc:
+        _log_moderation(
+            kid_id,
+            title,
+            description,
+            action=ModerationLog.Action.BLOCKED,
+            reason=exc.message,
+        )
+        raise
+    _log_moderation(
+        kid_id,
+        title,
+        description,
+        action=ModerationLog.Action.ALLOWED,
+        reason=result.get('reason', ''),
+    )
+    return result
+
+
 def _parse_classification_buffer(buffer):
     content = ''.join(buffer).strip()
     if not content:
@@ -140,11 +178,14 @@ def _done_payload(task, parsed):
 
 
 def stream_task_create_events(kid_id, *, title, description, due_date):
-    """Stream AI tokens, then save the same parsed result as a new Task."""
+    """Moderate, stream AI tokens, then save the same parsed result as a new Task."""
     text = task_classification_text(title, description)
     buffer = []
 
     try:
+        _run_moderation(kid_id, title, description)
+        yield sse_event('moderation', {'status': 'allowed'})
+
         # yield dont work as return, it like returning multiple values
         # so every time we are reseving a chunk, we are yielding it to the client
         # we call the chunck SSE event which is 
@@ -186,7 +227,7 @@ def stream_task_create_events(kid_id, *, title, description, due_date):
 
 
 def stream_task_update_events(task_id, validated_data):
-    """Stream AI tokens, then apply the same parsed result to an existing Task."""
+    """Moderate, stream AI tokens, then apply the same parsed result to an existing Task."""
     buffer = []
 
     try:
@@ -199,6 +240,9 @@ def stream_task_update_events(task_id, validated_data):
         new_title = validated_data.get('title', task.title)
         new_description = validated_data.get('description', task.description)
         text = task_classification_text(new_title, new_description)
+
+        _run_moderation(task.kid_id, new_title, new_description)
+        yield sse_event('moderation', {'status': 'allowed'})
 
         yield from _yield_token_events(text, buffer)
         parsed, error = _parse_classification_buffer(buffer)
