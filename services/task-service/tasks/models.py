@@ -89,3 +89,25 @@ class KidCategoryVisibility(models.Model):
     show_learning = models.BooleanField(default=True)
     show_responsibility = models.BooleanField(default=True)
     show_creativity = models.BooleanField(default=True)
+
+
+class ModerationLog(models.Model):
+    """Audit log for AI content moderation on task text."""
+
+    class Action(models.TextChoices):
+        ALLOWED = 'allowed', 'Allowed'
+        BLOCKED = 'blocked', 'Blocked'
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    kid_id = models.UUIDField(db_index=True)
+    title = models.TextField()
+    description = models.TextField(blank=True, default='')
+    action = models.CharField(max_length=16, choices=Action.choices)
+    reason = models.TextField(blank=True, default='')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f'{self.action} ({self.kid_id})'

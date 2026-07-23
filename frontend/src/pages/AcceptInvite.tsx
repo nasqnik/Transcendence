@@ -27,6 +27,8 @@ import {
   acceptInvitePath,
   clearPendingInviteToken,
   savePendingInviteToken,
+  markPendingInviteRegistered,
+  wasPendingInviteRegistered,
 } from '../utils/inviteToken'
 import { useAuthHydrated } from '../hooks/useAuthHydrated'
 import { useFormErrors } from '../hooks/useFormErrors'
@@ -61,6 +63,12 @@ export default function AcceptInvite() {
   const { fieldErrors, setFieldErrors, clearFieldError, resetFieldErrors } = useFormErrors()
   const [isSubmitting, setIsSubmitting] = useState(false)
   const autoAcceptTokenRef = useRef<string | null>(null)
+
+  // Move focus to the heading on every state transition so screen readers
+  // announce the new content without requiring the user to navigate manually.
+  useEffect(() => {
+    document.getElementById('invite-heading')?.focus()
+  }, [state.status])
 
   useEffect(() => {
     autoAcceptTokenRef.current = null
@@ -137,7 +145,7 @@ export default function AcceptInvite() {
     return () => {
       cancelled = true
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- intentionally omit `t` (language changes must not re-fetch)
+    // `t` intentionally omitted from deps — language changes must not re-fetch the invitation.
   }, [hydrated, inviteToken, isAuthenticated, currentUser?.email, currentUser?.role])
 
   // ── Accept the invitation ─────────────────────────────────────────────────
@@ -164,7 +172,7 @@ export default function AcceptInvite() {
 
     setFormErrorKey(null)
     const errs: Record<string, string> = {}
-    if (isEmpty(username)) errs.username = t('errors.required')
+    if (!wasPendingInviteRegistered() && isEmpty(username)) errs.username = t('errors.required')
     const passwordError = validatePasswordField(password, t, {
       username,
       email: state.invitation.invite_email,
@@ -187,6 +195,7 @@ export default function AcceptInvite() {
         // No account yet — register, then ask them to verify email before coming back
         try {
           await registerParent(invitation.invite_email, username, password)
+          markPendingInviteRegistered()
           setState({
             status: 'verify_email',
             email: invitation.invite_email,
@@ -258,7 +267,6 @@ export default function AcceptInvite() {
         title={t('invite.errorTitle')}
         alertMessage={t(state.messageKey)}
         statusMessage={t(state.messageKey)}
-        titleSize="md"
       >
         {isAuthenticated && currentUser?.role === 'kid' ? (
           <Button
@@ -320,18 +328,20 @@ export default function AcceptInvite() {
         >
           {formErrorKey && <FormAlert message={t(formErrorKey)} />}
 
-          <FormField
-            id="username"
-            label={t('auth.username')}
-            type="text"
-            dir="ltr"
-            value={username}
-            required
-            autoComplete="username"
-            disabled={isSubmitting}
-            error={fieldErrors.username}
-            onChange={e => { setUsername(e.target.value); clearFieldError('username') }}
-          />
+          {!wasPendingInviteRegistered() && (
+            <FormField
+              id="username"
+              label={t('auth.username')}
+              type="text"
+              dir="ltr"
+              value={username}
+              required
+              autoComplete="username"
+              disabled={isSubmitting}
+              error={fieldErrors.username}
+              onChange={e => { setUsername(e.target.value); clearFieldError('username') }}
+            />
+          )}
 
           <FormField
             id="password"
@@ -339,14 +349,16 @@ export default function AcceptInvite() {
             type="password"
             value={password}
             required
-            autoComplete="new-password"
+            autoComplete={wasPendingInviteRegistered() ? 'current-password' : 'new-password'}
             disabled={isSubmitting}
             error={fieldErrors.password}
             onChange={e => { setPassword(e.target.value); clearFieldError('password') }}
           />
 
           <Button variant="primary" type="submit" disabled={isSubmitting}>
-            {isSubmitting ? t('invite.accepting') : t('invite.accept')}
+            {isSubmitting
+              ? t('invite.accepting')
+              : wasPendingInviteRegistered() ? t('invite.loginToAccept') : t('invite.accept')}
           </Button>
         </form>
 
@@ -366,7 +378,6 @@ export default function AcceptInvite() {
         headingId="invite-heading"
         icon="⚠️"
         title={t('invite.title')}
-        titleSize="md"
       >
         <p className="font-body text-sm text-gray-700 text-center w-full">
           {t('invite.wrongAccount', {
@@ -397,7 +408,11 @@ export default function AcceptInvite() {
         headingId="invite-heading"
         title={t('invite.accepting')}
         statusMessage={t('invite.accepting')}
-      />
+      >
+        <Button variant="secondary" onClick={() => navigate('/')}>
+          {t('auth.backToHome')}
+        </Button>
+      </AuthMessageLayout>
     )
   }
 

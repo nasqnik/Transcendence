@@ -38,10 +38,11 @@ from .throttles import KidAIClassifyThrottle
     post=extend_schema(
         summary='Create a task (streaming AI)',
         description=(
-            'Kid creates a task. OpenRouter tokens stream as SSE (`token` events), '
-            'then a `done` event saves the same classification to the database and '
-            'returns the created task. On failure, an `error` event is sent and '
-            'nothing is saved.'
+            'Kid creates a task. First AI content moderation runs; if blocked, '
+            'an SSE `error` with code `content_blocked` is sent and nothing is saved. '
+            'If allowed, a `moderation` event is sent, then OpenRouter tokens stream '
+            'as SSE (`token` events), then a `done` event saves the classification. '
+            'On failure, an `error` event is sent and nothing is saved.'
         ),
         request=TaskCreateSerializer,
         responses={200: {'description': 'text/event-stream'}},
@@ -112,8 +113,9 @@ class TaskListCreateView(generics.ListCreateAPIView):
         summary='Edit a task',
         description=(
             'Kid edits one of their own tasks. Changing title or description '
-            'streams AI re-classification as SSE (same events as create), then '
-            'saves the result. Editing only due_date returns normal JSON immediately.'
+            'runs AI content moderation first (same as create), then streams '
+            'AI re-classification as SSE, then saves. Editing only due_date '
+            'returns normal JSON immediately.'
         ),
         request=TaskUpdateSerializer,
         responses={

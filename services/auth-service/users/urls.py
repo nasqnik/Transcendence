@@ -12,20 +12,31 @@ from .views import (
     InviteSecondParentView,
     KidGoogleLoginView,
     KidGoogleSignupView,
+    KidInternalDetailView,
     KidParentInternalView,
     KidSignupView,
     KidTokenObtainView,
     KidTokenRefreshView,
     KidTokenVerifyView,
     KidVerifyEmailView,
+    MeEmailChangeView,
+    MePasswordView,
+    MeView,
     ParentRegisterView,
     ParentVerifyEmailView,
+    VerifyEmailChangeView,
 )
 
 urlpatterns = [
     # Parent registration
     path("auth/register/", ParentRegisterView.as_view()),
     path("auth/verify-email/", ParentVerifyEmailView.as_view()),
+    path("auth/verify-email-change/", VerifyEmailChangeView.as_view()),
+
+    # Current user profile (parent or kid)
+    path("auth/me/", MeView.as_view()),
+    path("auth/me/password/", MePasswordView.as_view()),
+    path("auth/me/email/", MeEmailChangeView.as_view()),
 
     # Parent authentication
     path("auth/token/", TokenObtainPairView.as_view()),
@@ -59,6 +70,10 @@ urlpatterns = [
         "auth/internal/kids/<uuid:kid_id>/parent/",
         KidParentInternalView.as_view(),
     ),
+    path(
+        "auth/internal/kids/<uuid:kid_id>/",
+        KidInternalDetailView.as_view(),
+    ),
 ]
 
 
@@ -67,6 +82,9 @@ urlpatterns = [
 # Parent registration
 # - /auth/register/:       "register a parent and send a verification email"
 # - /auth/verify-email/:   "verify a parent's email"
+
+# Current user profile
+# - /auth/me/:              "GET/PATCH the logged-in parent or kid profile"
 
 # Parent authentication
 # - /auth/token/:           "log in a parent with email and password"

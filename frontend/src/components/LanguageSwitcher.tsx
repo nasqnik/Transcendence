@@ -22,7 +22,7 @@ export default function LanguageSwitcher() {
             aria-pressed={isActive}
             className={`font-body text-sm font-semibold px-3 py-1 rounded-lg focus-ring ${
               isActive
-                ? 'bg-primary-500 text-white'
+                ? 'bg-primary-600 text-white'
                 : 'text-gray-500'
             }`}
           >
