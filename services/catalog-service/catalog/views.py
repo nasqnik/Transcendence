@@ -4,9 +4,10 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from drf_spectacular.utils import extend_schema
-from common.permissions import IsKid
+from rest_framework.parsers import MultiPartParser
+from common.permissions import IsKid, IsParent
 from common.actors import KidActor
-from .models import AvatarItem, KidAvatar, RewardPurchase
+from .models import AvatarItem, KidAvatar, RewardPurchase, ParentProfile
 from .serializers import (
     AvatarItemSerializer, 
     KidAvatarSerializer, 
@@ -15,6 +16,8 @@ from .serializers import (
     EquipSerializer,
     UnequipSerializer,
     PurchaseResourceSerializer,
+    ParentProfileSerializer,
+    ParentProfileUploadSerializer,
 )
 
 class ShopListView(APIView):
@@ -198,3 +201,47 @@ class UnequipItemView(APIView):
         avatar.save()
 
         return Response(KidAvatarDetailSerializer(avatar).data)
+    
+class ParentAvatarUploadView(APIView):
+    permission_classes = [IsParent]
+    parser_classes = [MultiPartParser]
+
+    @extend_schema(
+        summary='Upload parent profile picture',
+        description='Parent uploads a profile picture. Replaces existing picture if one already exists. A default avatar is assigned if none is uploaded.',
+        request=ParentProfileUploadSerializer,
+        responses={
+            200: ParentProfileSerializer,
+            400: None,
+        },
+        auth=[{'BearerAuth': []}],
+        tags=['Parent Profile'],
+    )
+    def post(self, request):
+        serializer = ParentProfileUploadSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        profile, _ = ParentProfile.objects.get_or_create(
+            parent_id=request.user.user_id
+        )
+        profile.profile_picture = serializer.validated_data['profile_picture']
+        profile.save()
+
+        return Response(ParentProfileSerializer(profile, context={'request': request}).data)
+
+
+class ParentAvatarView(APIView):
+    permission_classes = [IsParent]
+
+    @extend_schema(
+        summary='Get parent profile picture',
+        description='Returns the parent profile picture URL. Returns default avatar URL if none uploaded.',
+        responses={200: ParentProfileSerializer},
+        auth=[{'BearerAuth': []}],
+        tags=['Parent Profile'],
+    )
+    def get(self, request):
+        profile, _ = ParentProfile.objects.get_or_create(
+            parent_id=request.user.user_id
+        )
+        return Response(ParentProfileSerializer(profile, context={'request': request}).data)

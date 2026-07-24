@@ -48,3 +48,16 @@ class RewardPurchase(models.Model):
 
     def __str__(self):
         return f"Kid{self.kid_id} purchased {self.item.name} for {self.coins_spent} coins"
+    
+class ParentProfile(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid4, editable=False)
+    parent_id = models.UUIDField(unique=True, db_index=True)
+    profile_picture = models.ImageField(
+        upload_to='parent_avatars/',
+        null=True,
+        blank=True,
+    )
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"ParentProfile for parent_id: {self.parent_id}"
