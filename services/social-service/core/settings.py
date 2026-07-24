@@ -119,6 +119,17 @@ AUTH_INTERNAL_URL = os.getenv('AUTH_INTERNAL_URL')
 if not AUTH_INTERNAL_URL:
     raise ImproperlyConfigured("AUTH_INTERNAL_URL environment variable is required.")
 
+# Docker-network defaults match .env.example so local stacks keep working
+# even if an older .env omits these keys.
+GAMIFICATION_INTERNAL_URL = os.getenv(
+    'GAMIFICATION_INTERNAL_URL',
+    'http://gamification-service:8000',
+)
+CATALOG_INTERNAL_URL = os.getenv(
+    'CATALOG_INTERNAL_URL',
+    'http://catalog-service:8000',
+)
+
 REDIS_URL = os.getenv('REDIS_URL', 'redis://redis:6379/0')
 
 # Presence WebSocket heartbeat (seconds)

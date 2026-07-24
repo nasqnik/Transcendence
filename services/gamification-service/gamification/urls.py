@@ -3,6 +3,7 @@ from django.urls import path
 from .views import (
     InternalCoinDeductView,
     InternalCompletionView,
+    InternalKidsProgressView,
     KidStatListView,
     KidProfileView,
     KidStatListViewParent,
@@ -12,6 +13,7 @@ from .views import (
 urlpatterns = [
     path('internal/completions/', InternalCompletionView.as_view(), name='internal-completions'),
     path('internal/coins/deduct/', InternalCoinDeductView.as_view(), name='internal-coins-deduct'),
+    path('internal/kids/progress/', InternalKidsProgressView.as_view(), name='internal-kids-progress'),
 
     # read endpoints
     path('stats/', KidStatListView.as_view(), name='kid-stat-list'),

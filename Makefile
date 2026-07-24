@@ -64,6 +64,8 @@ seed-dev:
 	@docker compose exec $(AUTH_SERVICE) python manage.py seed_dev_users
 
 seed-dev-friend:
+	@echo "==> migrate auth-service (bio columns required)"
+	@docker compose exec $(AUTH_SERVICE) python manage.py migrate users
 	@echo "==> seed two parent+kid pairs for friend testing (auth-service, not linked)"
 	@docker compose exec $(AUTH_SERVICE) python manage.py seed_dev_friend_users
 

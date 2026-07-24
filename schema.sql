@@ -23,6 +23,7 @@ CREATE TABLE users (
   email           TEXT          NOT NULL UNIQUE,
   password_hash   TEXT          NOT NULL,
   role            TEXT          NOT NULL DEFAULT 'parent' CHECK (role IN ('parent', 'admin')),
+  bio             TEXT          NOT NULL DEFAULT '',
   created_at      TIMESTAMPTZ   NOT NULL DEFAULT now()
 );
 
@@ -37,6 +38,7 @@ CREATE TABLE kids (
   email                 TEXT          UNIQUE,                 -- optional school email
   password_hash         TEXT,                                 -- if kid logs in themselves
   avatar_url            TEXT,
+  bio                   TEXT          NOT NULL DEFAULT '',
   created_at            TIMESTAMPTZ   NOT NULL DEFAULT now()
 );
 

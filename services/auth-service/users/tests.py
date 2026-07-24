@@ -892,6 +892,37 @@ class MeProfileTests(APITestCase):
         )
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
+    def test_parent_patch_bio(self):
+        self._register_and_login_parent()
+        response = self.client.patch(
+            "/api/auth/me/",
+            {"bio": "  Parent who loves outdoor adventures.  "},
+            format="json",
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["bio"], "Parent who loves outdoor adventures.")
+        parent = CustomUser.objects.get(email="parent@example.com")
+        self.assertEqual(parent.bio, "Parent who loves outdoor adventures.")
+
+    def test_kid_patch_bio(self):
+        kid = self._signup_activate_and_login_kid()
+        response = self.client.patch(
+            "/api/auth/me/",
+            {"bio": "I like robots and soccer."},
+            format="json",
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["bio"], "I like robots and soccer.")
+        kid.refresh_from_db()
+        self.assertEqual(kid.bio, "I like robots and soccer.")
+
+    def test_bio_can_be_cleared(self):
+        self._register_and_login_parent()
+        self.client.patch("/api/auth/me/", {"bio": "Something"}, format="json")
+        response = self.client.patch("/api/auth/me/", {"bio": ""}, format="json")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["bio"], "")
+
 
 @override_settings(
     EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend",
@@ -1018,6 +1049,7 @@ class KidInternalDetailTests(APITestCase):
             name="Alex",
             username="alex_internal",
             email="alex_internal@example.com",
+            bio="I like robots",
             registration_status=Kid.RegistrationStatus.ACTIVE,
             email_verified=True,
         )
@@ -1028,6 +1060,7 @@ class KidInternalDetailTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data["username"], "alex_internal")
         self.assertEqual(response.data["name"], "Alex")
+        self.assertEqual(response.data["bio"], "I like robots")
 
     def test_inactive_kid_not_found(self):
         kid = Kid.objects.create(
@@ -1042,3 +1075,36 @@ class KidInternalDetailTests(APITestCase):
             HTTP_X_INTERNAL_TOKEN="test-internal-token",
         )
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+    def test_batch_returns_active_kids_only(self):
+        active = Kid.objects.create(
+            name="Alex",
+            username="alex_batch",
+            email="alex_batch@example.com",
+            bio="Hello",
+            registration_status=Kid.RegistrationStatus.ACTIVE,
+            email_verified=True,
+        )
+        inactive = Kid.objects.create(
+            name="Sam",
+            username="sam_batch",
+            email="sam_batch@example.com",
+            registration_status=Kid.RegistrationStatus.AWAITING_PRIMARY_PARENT,
+            email_verified=True,
+        )
+        response = self.client.get(
+            f"/api/auth/internal/kids/?ids={active.id},{inactive.id}",
+            HTTP_X_INTERNAL_TOKEN="test-internal-token",
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 1)
+        self.assertEqual(response.data[0]["kid_id"], str(active.id))
+        self.assertEqual(response.data[0]["bio"], "Hello")
+
+    def test_batch_empty_ids_returns_empty_list(self):
+        response = self.client.get(
+            "/api/auth/internal/kids/",
+            HTTP_X_INTERNAL_TOKEN="test-internal-token",
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data, [])
