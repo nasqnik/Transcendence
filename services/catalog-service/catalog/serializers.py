@@ -76,5 +76,13 @@ class ParentProfileSerializer(serializers.ModelSerializer):
 
 class ParentProfileUploadSerializer(serializers.Serializer):
     profile_picture = serializers.ImageField(
-        help_text="Image file to upload as profile picture."
+        help_text="Image file to upload as profile picture. Max 2MB. Formats: JPEG, PNG, WebP."
     )
+
+    def validate_profile_picture(self, image):
+        if image.size > 2 * 1024 * 1024:
+            raise serializers.ValidationError("Image size should not exceed 2MB.")
+        allowed_types = ['image/jpeg', 'image/png', 'image/webp']
+        if image.content_type not in allowed_types:
+            raise serializers.ValidationError("Invalid image format. Allowed formats: JPEG, PNG, WebP.")
+        return image
