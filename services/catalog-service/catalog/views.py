@@ -236,6 +236,10 @@ class ParentAvatarUploadView(APIView):
         profile, _ = ParentProfile.objects.get_or_create(
             parent_id=request.user.user_id
         )
+
+        if profile.profile_picture:
+            profile.profile_picture.delete(save=False)
+            
         profile.profile_picture = serializer.validated_data['profile_picture']
         profile.save()
 
