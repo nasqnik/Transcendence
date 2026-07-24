@@ -25,6 +25,7 @@ class NotificationConsumer(AsyncWebsocketConsumer):
             self.channel_name,
         )
         await self.accept()
+        await self.send_unread_notifications()
         self._heartbeat_task = asyncio.ensure_future(self.heartbeat())
 
     async def disconnect(self, close_code):
@@ -51,6 +52,27 @@ class NotificationConsumer(AsyncWebsocketConsumer):
 
     async def send_notification(self, event):
         await self.send(text_data=json.dumps(event['data']))
+
+    async def send_unread_notifications(self):
+        notifications = await self.get_unread_notifications()
+        for notification in notifications:
+            await self.send(text_data=json.dumps({
+                'id': str(notification['id']),
+                'notification_type': str(notification['notification_type']),
+                'message': str(notification['message']),
+                'is_read': notification['is_read'],
+                'created_at': notification['created_at'].isoformat(),
+            }))
+
+    @database_sync_to_async
+    def get_unread_notifications(self):
+        from notification.models import Notification
+        return list(Notification.objects.filter(
+            recipient_id=self.user_id,
+            is_read=False,
+        ).values(
+            'id', 'notification_type', 'message', 'is_read', 'created_at'
+        ))
 
     def get_token_from_query_string(self):
         query_string = self.scope.get('query_string', b'').decode()
