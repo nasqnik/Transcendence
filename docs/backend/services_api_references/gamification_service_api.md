@@ -76,6 +76,25 @@ Returns `403` if `kid_id` is not in the parent's `kid_ids` JWT claim.
 | --- | --- | --- | --- |
 | POST | `/internal/completions/` | X-Internal-Token | Apply XP from a confirmed task completion. |
 | POST | `/internal/coins/deduct/` | X-Internal-Token | Deduct coins from a kid profile (shop purchase). |
+| GET | `/internal/kids/progress/?ids=<uuid>,<uuid>` | X-Internal-Token | Batch overall XP + per-category stats for friends enrichment. |
+
+**GET `/internal/kids/progress/` response**
+
+```json
+[
+  {
+    "kid_id": "<uuid>",
+    "main_level": 2,
+    "overall_xp": 150,
+    "stats": [
+      { "category": "health", "level": 1, "xp_percent": 40 },
+      { "category": "learning", "level": 2, "xp_percent": 10 }
+    ]
+  }
+]
+```
+
+Kids without a profile row still appear with `main_level`/`overall_xp` of `0` and empty `stats`.
 
 **POST `/internal/completions/` body**
 
