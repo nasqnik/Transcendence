@@ -209,7 +209,19 @@ class ParentAvatarUploadView(APIView):
     @extend_schema(
         summary='Upload parent profile picture',
         description='Parent uploads a profile picture. Replaces existing picture if one already exists. A default avatar is assigned if none is uploaded.',
-        request=ParentProfileUploadSerializer,
+        request={
+            'multipart/form-data': {
+                'type': 'object',
+                'properties': {
+                    'profile_picture': {
+                        'type': 'string',
+                        'format': 'binary',
+                        'description': 'Image file to upload (JPEG, PNG, WebP, max 2MB).',
+                    }
+                },
+                'required': ['profile_picture']
+            }
+        },
         responses={
             200: ParentProfileSerializer,
             400: None,
