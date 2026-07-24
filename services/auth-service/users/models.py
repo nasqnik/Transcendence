@@ -48,6 +48,8 @@ class CustomUser(AbstractUser):
 
     email_verification_sent_at = models.DateTimeField(null=True, blank=True)
 
+    bio = models.CharField(max_length=300, blank=True, default="")
+
     created_at = models.DateTimeField(auto_now_add=True)
 
     USERNAME_FIELD = "email"
@@ -118,6 +120,8 @@ class Kid(models.Model):
     password_hash = models.TextField(null=True, blank=True)
 
     avatar_url = models.TextField(null=True, blank=True)
+
+    bio = models.CharField(max_length=300, blank=True, default="")
 
     created_at = models.DateTimeField(auto_now_add=True)
 

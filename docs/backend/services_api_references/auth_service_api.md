@@ -87,8 +87,9 @@ Header: `X-Internal-Token`.
 
 | Method | Path | Purpose |
 | --- | --- | --- |
+| GET | `/auth/internal/kids/?ids=<uuid>,<uuid>` | Batch lookup. Returns active kids only: `{ kid_id, username, name, bio }[]`. |
 | GET | `/auth/internal/kids/{kid_id}/parent/` | Return `{ "parent_id" }` for a kid. |
-| GET | `/auth/internal/kids/{kid_id}/` | Return `{ "kid_id", "username", "name" }` if the kid is **active**. |
+| GET | `/auth/internal/kids/{kid_id}/` | Return `{ "kid_id", "username", "name", "bio" }` if the kid is **active**. |
 
 ## Misc
 
