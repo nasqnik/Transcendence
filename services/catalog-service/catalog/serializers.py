@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import AvatarItem, KidAvatar, RewardPurchase
+from .models import AvatarItem, KidAvatar, ParentProfile, RewardPurchase
 
 class AvatarItemSerializer(serializers.ModelSerializer):
     class Meta:
@@ -61,4 +61,20 @@ class PurchaseResourceSerializer(serializers.Serializer):
     )
     remaining_coins = serializers.IntegerField(
         help_text="Remaining coins after purchase."
+    )
+
+class ParentProfileSerializer(serializers.ModelSerializer):
+    profile_picture = serializers.ImageField(
+        required=False,
+        help_text="Parent's profile picture."
+    )
+
+    class Meta:
+        model = ParentProfile
+        fields = ['id', 'parent_id', 'profile_picture', 'updated_at']
+
+
+class ParentProfileUploadSerializer(serializers.Serializer):
+    profile_picture = serializers.ImageField(
+        help_text="Image file to upload as profile picture."
     )
