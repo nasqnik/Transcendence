@@ -91,6 +91,16 @@ Returns the full updated avatar object (same shape as GET `/avatar/`).
 Returns `404` if the item does not exist or is inactive.  
 Returns `400` if the kid does not own the item.
 
+## Internal (service-to-service)
+
+Header: `X-Internal-Token`.
+
+| Method | Path | Purpose |
+| --- | --- | --- |
+| GET | `/internal/avatars/?ids=<uuid>,<uuid>` | Batch catalog avatars. Kids without an avatar row are omitted. |
+
+Response items use the same public avatar fields as `GET /avatar/` (`kid_id`, `base_character`, equipped slots, etc.).
+
 ## Misc
 
 | Method | Path | Purpose |

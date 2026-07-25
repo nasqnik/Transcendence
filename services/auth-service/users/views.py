@@ -183,6 +183,15 @@ class KidParentInternalView(APIView):
         return Response({'parent_id': str(kid.parent_id)})
 
 
+def _serialize_internal_kid(kid):
+    return {
+        'kid_id': str(kid.id),
+        'username': kid.username,
+        'name': kid.name,
+        'bio': kid.bio or '',
+    }
+
+
 class KidInternalDetailView(APIView):
     """Service-to-service: confirm an active kid exists."""
 
@@ -200,11 +209,26 @@ class KidInternalDetailView(APIView):
                 {'detail': 'Not found.'},
                 status=status.HTTP_404_NOT_FOUND,
             )
-        return Response({
-            'kid_id': str(kid.id),
-            'username': kid.username,
-            'name': kid.name,
-        })
+        return Response(_serialize_internal_kid(kid))
+
+
+class KidInternalBatchView(APIView):
+    """Service-to-service: batch lookup of active kids by id."""
+
+    authentication_classes = []
+    permission_classes = [IsInternalService]
+
+    def get(self, request):
+        ids_raw = request.query_params.get('ids', '')
+        id_strings = [part.strip() for part in ids_raw.split(',') if part.strip()]
+        if not id_strings:
+            return Response([])
+
+        kids = Kid.objects.filter(
+            id__in=id_strings,
+            registration_status=Kid.RegistrationStatus.ACTIVE,
+        )
+        return Response([_serialize_internal_kid(kid) for kid in kids])
 
 
 class MeView(APIView):

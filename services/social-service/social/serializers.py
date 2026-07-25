@@ -1,7 +1,8 @@
 from django.db.models import Q
 from rest_framework import serializers
 
-from .auth_client import assert_active_kid_exists
+from .auth_client import assert_active_kid_exists, fetch_kids_by_ids
+from .enrichment_clients import fetch_avatars_by_ids, fetch_progress_by_ids
 from .models import Friendship
 from .presence import online_among
 
@@ -63,11 +64,32 @@ class FriendshipSerializer(serializers.ModelSerializer):
         read_only_fields = fields
 
 
+class FriendAvatarSerializer(serializers.Serializer):
+    base_character = serializers.CharField()
+    equipped_hat = serializers.UUIDField(allow_null=True)
+    equipped_outfit = serializers.UUIDField(allow_null=True)
+    equipped_accessory = serializers.UUIDField(allow_null=True)
+    equipped_background = serializers.UUIDField(allow_null=True)
+
+
+class FriendStatSerializer(serializers.Serializer):
+    category = serializers.CharField()
+    level = serializers.IntegerField()
+    xp_percent = serializers.IntegerField()
+
+
 class FriendListItemSerializer(serializers.Serializer):
     kid_id = serializers.UUIDField()
     friendship_id = serializers.UUIDField()
     is_online = serializers.BooleanField()
     friends_since = serializers.DateTimeField()
+    name = serializers.CharField()
+    username = serializers.CharField()
+    bio = serializers.CharField(allow_blank=True)
+    avatar = FriendAvatarSerializer(allow_null=True)
+    main_level = serializers.IntegerField()
+    overall_xp = serializers.IntegerField()
+    stats = FriendStatSerializer(many=True)
 
 
 def serialize_friends_for(kid_id):
@@ -85,8 +107,38 @@ def serialize_friends_for(kid_id):
             'friendship_id': row.id,
             'friends_since': row.responded_at or row.created_at,
             'is_online': False,
+            'name': '',
+            'username': '',
+            'bio': '',
+            'avatar': None,
+            'main_level': 0,
+            'overall_xp': 0,
+            'stats': [],
         })
+
     online = online_among(friend_ids)
+    identities = fetch_kids_by_ids(friend_ids)
+    progress = fetch_progress_by_ids(friend_ids)
+    avatars = fetch_avatars_by_ids(friend_ids)
+
     for item in items:
-        item['is_online'] = str(item['kid_id']) in online
+        kid_key = str(item['kid_id'])
+        item['is_online'] = kid_key in online
+
+        identity = identities.get(kid_key)
+        if identity:
+            item['name'] = identity['name']
+            item['username'] = identity['username']
+            item['bio'] = identity['bio']
+
+        prog = progress.get(kid_key)
+        if prog:
+            item['main_level'] = prog['main_level']
+            item['overall_xp'] = prog['overall_xp']
+            item['stats'] = prog['stats']
+
+        avatar = avatars.get(kid_key)
+        if avatar:
+            item['avatar'] = avatar
+
     return FriendListItemSerializer(items, many=True).data
