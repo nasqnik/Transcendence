@@ -3,8 +3,8 @@ from django.conf import settings
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-from drf_spectacular.utils import extend_schema
-from common.permissions import IsKid
+from drf_spectacular.utils import OpenApiParameter, extend_schema
+from common.permissions import IsInternalService, IsKid
 from common.actors import KidActor
 from .models import AvatarItem, KidAvatar, RewardPurchase
 from .serializers import (
@@ -150,3 +150,43 @@ class EquipItemView(APIView):
         avatar.save()
 
         return Response(KidAvatarSerializer(avatar).data)
+
+
+class InternalAvatarsBatchView(APIView):
+    authentication_classes = []
+    permission_classes = [IsInternalService]
+
+    @extend_schema(
+        summary='Batch kid avatars (internal)',
+        description=(
+            'Service-to-service read of catalog avatars for one or more kids. '
+            'Kids without an avatar row are omitted from the response.'
+        ),
+        parameters=[
+            OpenApiParameter(
+                name='X-Internal-Token',
+                type=str,
+                location=OpenApiParameter.HEADER,
+                required=True,
+                description='Shared internal-service secret.',
+            ),
+            OpenApiParameter(
+                name='ids',
+                type=str,
+                location=OpenApiParameter.QUERY,
+                required=False,
+                description='Comma-separated kid UUIDs.',
+            ),
+        ],
+        responses=KidAvatarSerializer(many=True),
+        auth=[],
+        tags=['Internal'],
+    )
+    def get(self, request):
+        ids_raw = request.query_params.get('ids', '')
+        id_strings = [part.strip() for part in ids_raw.split(',') if part.strip()]
+        if not id_strings:
+            return Response([])
+
+        avatars = KidAvatar.objects.filter(kid_id__in=id_strings)
+        return Response(KidAvatarSerializer(avatars, many=True).data)
