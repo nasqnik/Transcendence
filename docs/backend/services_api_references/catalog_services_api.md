@@ -3,7 +3,7 @@
 All paths are prefixed with `/api/catalog/`. Auth via `Authorization: Bearer <JWT>`.  
 Interactive docs: `/api/catalog/docs/`.
 
-Roles: **kid** only — the catalog is kid-facing.
+Roles: **kid** — the catalog is kid-facing **Parent** - For avatar upload
 
 ## Shop
 
@@ -110,6 +110,48 @@ slot must be one of: hat, outfit, accessory, background.
 Returns the full updated avatar object (same shape as GET `/avatar/`).
 Returns 400 if slot value is invalid.
 
+## Parent Profile
+
+| Method | Path | Role | Purpose | 
+| --- | --- | --- | ---- |
+| GET | `/parent/avatar` | Parent | Get Parent profile picture URL
+| POST | `/parent/avatar/upload/` | Parent | Upload or replace Parent profile picture
+
+**GET `/parent/avatar` response**
+
+```json
+{
+  "id": <uuid>,
+  "parent_id": <parent_id>,
+  "profile_picture":"<image_url>" ,
+  "updated_at": "2026-07-24T06:20:45.498060Z"
+}
+```
+Returns the current profile picture URL. Returns `null` for `profile_picture` if none uploaded yet — frontend handles default display.
+
+**POST `/parent/avatar/upload/` request**
+
+Send as `multipart/form-data` with field `profile_picture` containing the image file.
+
+- Allowed formats: JPEG, PNG, WebP
+- Max size: 2MB
+- Replaces existing picture if one already exists
+
+
+**POST `/parent/avatar/upload` response**
+
+```json
+{
+  "id": <uuid>,
+  "parent_id": <parent_id>,
+  "profile_picture":"picture url" ,
+  "updated_at": "2026-07-24T06:20:45.498060Z"
+}
+```
+
+Returns `400` if file format is invalid or file is empty.  
+Returns `413` if file exceeds 2MB (nginx-level rejection with JSON error).
+
 ## Misc
 
 | Method | Path | Purpose |
@@ -120,7 +162,7 @@ Returns 400 if slot value is invalid.
 
 ## Notes for frontend
 
-- The shop list is empty until an admin seeds items into the database.
+- The shop list is empty until an admin seeds items into the database through make seed-catalog.
 - Coin balance is owned by gamification-service — catalog-service calls it internally on purchase.
 - `unlocked_items` is a list of full item objects (id, name, type, image_url, coin_cost) the kid owns. Use this to render the kid's inventory directly without extra shop calls.
 - Equipped slots (`equipped_hat`, `equipped_outfit`, etc.) are UUIDs or `null` if nothing is equipped.
