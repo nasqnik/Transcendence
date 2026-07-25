@@ -5,7 +5,7 @@ Interactive docs: `/api/social/docs/`.
 
 Roles: **kid** only for friend endpoints (parents get `403`).
 
-Local testing: `make seed-dev-friend` creates two separate parent+kid pairs (not friends) and prints JWTs.
+Local testing: run `make migrate` first (auth migration must create `bio`), then `make seed-dev-friend` creates two separate parent+kid pairs (not friends) and prints JWTs.
 
 ## Friends
 
@@ -15,7 +15,7 @@ Local testing: `make seed-dev-friend` creates two separate parent+kid pairs (not
 | GET | `/friends/requests/` | kid | List incoming pending requests. |
 | POST | `/friends/requests/{id}/accept/` | kid | Accept a request (recipient only). |
 | POST | `/friends/requests/{id}/decline/` | kid | Decline a request (recipient only). |
-| GET | `/friends/` | kid | List accepted friends with online status. |
+| GET | `/friends/` | kid | List accepted friends with profile, avatar, XP, and online status. |
 | DELETE | `/friends/{kid_id}/` | kid | Remove an accepted friendship. |
 
 **POST `/friends/requests/` body**
@@ -81,10 +81,30 @@ Same shape as accept, with `"status": "declined"`.
     "kid_id": "<uuid>",
     "friendship_id": "<uuid>",
     "is_online": true,
-    "friends_since": "2026-07-18T12:05:00Z"
+    "friends_since": "2026-07-18T12:05:00Z",
+    "name": "Alex",
+    "username": "alex_me",
+    "bio": "I like robots",
+    "avatar": {
+      "base_character": "default",
+      "equipped_hat": null,
+      "equipped_outfit": null,
+      "equipped_accessory": null,
+      "equipped_background": null
+    },
+    "main_level": 2,
+    "overall_xp": 150,
+    "stats": [
+      { "category": "health", "level": 1, "xp_percent": 40 },
+      { "category": "learning", "level": 2, "xp_percent": 10 },
+      { "category": "responsibility", "level": 1, "xp_percent": 0 },
+      { "category": "creativity", "level": 1, "xp_percent": 0 }
+    ]
   }
 ]
 ```
+
+Enrichment comes from auth (name/username/bio), catalog (avatar), and gamification (XP/stats). If a downstream service is unavailable, friendship + online fields still return; missing enrichment uses empty defaults (`bio: ""`, `avatar: null`, `overall_xp: 0`, `stats: []`).
 
 **DELETE `/friends/{kid_id}/`**
 

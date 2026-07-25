@@ -94,6 +94,61 @@ class InternalCoinDeductView(APIView):
 
 
 @extend_schema(
+    summary='Batch kid progress (internal)',
+    description=(
+        'Service-to-service read of overall XP and per-category stats for '
+        'one or more kids. Query param ids is a comma-separated list of UUIDs.'
+    ),
+    parameters=[
+        OpenApiParameter(
+            name='X-Internal-Token',
+            type=str,
+            location=OpenApiParameter.HEADER,
+            required=True,
+            description='Shared internal-service secret.',
+        ),
+        OpenApiParameter(
+            name='ids',
+            type=str,
+            location=OpenApiParameter.QUERY,
+            required=False,
+            description='Comma-separated kid UUIDs.',
+        ),
+    ],
+    auth=[],
+)
+class InternalKidsProgressView(APIView):
+    authentication_classes = []
+    permission_classes = [IsInternalService]
+
+    def get(self, request):
+        ids_raw = request.query_params.get('ids', '')
+        id_strings = [part.strip() for part in ids_raw.split(',') if part.strip()]
+        if not id_strings:
+            return Response([])
+
+        profiles = {
+            str(p.kid_id): p
+            for p in KidProfile.objects.filter(kid_id__in=id_strings)
+        }
+        stats_by_kid = {}
+        for stat in KidStat.objects.filter(kid_id__in=id_strings):
+            stats_by_kid.setdefault(str(stat.kid_id), []).append(stat)
+
+        payload = []
+        for kid_id in id_strings:
+            profile = profiles.get(kid_id)
+            stats = stats_by_kid.get(kid_id, [])
+            payload.append({
+                'kid_id': kid_id,
+                'main_level': profile.main_level if profile else 0,
+                'overall_xp': profile.overall_xp if profile else 0,
+                'stats': KidStatSerializer(stats, many=True).data,
+            })
+        return Response(payload)
+
+
+@extend_schema(
     summary="List the kid's own stats",
     responses=KidStatSerializer(many=True),
 )
