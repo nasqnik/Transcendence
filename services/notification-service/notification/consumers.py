@@ -1,4 +1,5 @@
 import json
+import asyncio
 from channels.generic.websocket import  AsyncWebsocketConsumer
 from channels.db import database_sync_to_async
 from rest_framework_simplejwt.tokens import AccessToken
@@ -24,20 +25,54 @@ class NotificationConsumer(AsyncWebsocketConsumer):
             self.channel_name,
         )
         await self.accept()
+        await self.send_unread_notifications()
+        self._heartbeat_task = asyncio.ensure_future(self.heartbeat())
 
     async def disconnect(self, close_code):
+       if hasattr(self, '_heartbeat_task'):
+            self._heartbeat_task.cancel()
        if hasattr(self, 'group_name'):
             await self.channel_layer.group_discard(
                 self.group_name,
                 self.channel_name,
             )
 
+    async def heartbeat(self):
+        while True:
+            await asyncio.sleep(30)  # Send heartbeat every 30 seconds
+            try:
+                await self.send(text_data=json.dumps({'type': 'ping'}))
+            except Exception:
+                break
+
     async def receive(self, text_data):
-        # Handle incoming messages from the WebSocket if needed
-        pass
+        data = json.loads(text_data)
+        if data.get('type') == 'pong':
+            pass
 
     async def send_notification(self, event):
         await self.send(text_data=json.dumps(event['data']))
+
+    async def send_unread_notifications(self):
+        notifications = await self.get_unread_notifications()
+        for notification in notifications:
+            await self.send(text_data=json.dumps({
+                'id': str(notification['id']),
+                'notification_type': str(notification['notification_type']),
+                'message': str(notification['message']),
+                'is_read': notification['is_read'],
+                'created_at': notification['created_at'].isoformat(),
+            }))
+
+    @database_sync_to_async
+    def get_unread_notifications(self):
+        from notification.models import Notification
+        return list(Notification.objects.filter(
+            recipient_id=self.user_id,
+            is_read=False,
+        ).values(
+            'id', 'notification_type', 'message', 'is_read', 'created_at'
+        ))
 
     def get_token_from_query_string(self):
         query_string = self.scope.get('query_string', b'').decode()
