@@ -3,7 +3,7 @@
 All paths are prefixed with `/api/catalog/`. Auth via `Authorization: Bearer <JWT>`.  
 Interactive docs: `/api/catalog/docs/`.
 
-Roles: **kid** only — the catalog is kid-facing.
+Roles: **kid** — the catalog is kid-facing. **parent** — for avatar upload.
 
 ## Shop
 
@@ -61,6 +61,7 @@ Returns `503` if gamification-service is unavailable.
 | --- | --- | --- | --- |
 | GET | `/avatar/` | kid | Get the kid's current avatar state including owned and equipped items. |
 | PATCH | `/avatar/equip/` | kid | Equip an owned item to the correct slot. |
+| PATCH | `/avatar/unequip/` | kid | Unequip an item from a specific slot. |
 
 **GET `/avatar/` response**
 
@@ -69,12 +70,21 @@ Returns `503` if gamification-service is unavailable.
   "id": "<uuid>",
   "kid_id": "<uuid>",
   "base_character": "default",
-  "unlocked_items": ["<uuid>", "<uuid>"],
-  "equipped_hat": "<uuid>",
+  "unlocked_items": [
+    {
+      "id": "<uuid>",
+      "name": "Golden Star",
+      "type": "accessory",
+      "image_url": "https://api.dicebear.com/7.x/adventurer/svg?seed=golden-star",
+      "coin_cost": 30,
+      "is_active": true
+    }
+  ],
+  "equipped_hat": null,
   "equipped_outfit": null,
-  "equipped_accessory": null,
+  "equipped_accessory": "<uuid>",
   "equipped_background": null,
-  "updated_at": "2026-06-25T06:50:51.825394Z"
+  "updated_at": "2026-07-19T09:38:27.860072Z"
 }
 ```
 
@@ -91,6 +101,69 @@ Returns the full updated avatar object (same shape as GET `/avatar/`).
 Returns `404` if the item does not exist or is inactive.  
 Returns `400` if the kid does not own the item.
 
+**PATCH `/avatar/unequip/` body**
+
+```json
+{ "slot": "hat" }
+```
+
+`slot` must be one of: `hat`, `outfit`, `accessory`, `background`.
+
+Returns the full updated avatar object (same shape as GET `/avatar/`).  
+Returns `400` if slot value is invalid.
+
+## Parent Profile
+
+| Method | Path | Role | Purpose |
+| --- | --- | --- | --- |
+| GET | `/parent/avatar/` | parent | Get parent profile picture URL. |
+| POST | `/parent/avatar/upload/` | parent | Upload or replace parent profile picture. |
+
+**GET `/parent/avatar/` response**
+
+```json
+{
+  "id": "<uuid>",
+  "parent_id": "<uuid>",
+  "profile_picture": "<image_url>",
+  "updated_at": "2026-07-24T06:20:45.498060Z"
+}
+```
+
+Returns the current profile picture URL. Returns `null` for `profile_picture` if none uploaded yet — frontend handles default display.
+
+**POST `/parent/avatar/upload/` request**
+
+Send as `multipart/form-data` with field `profile_picture` containing the image file.
+
+- Allowed formats: JPEG, PNG, WebP
+- Max size: 2MB
+- Replaces existing picture if one already exists
+
+**POST `/parent/avatar/upload/` response**
+
+```json
+{
+  "id": "<uuid>",
+  "parent_id": "<uuid>",
+  "profile_picture": "<image_url>",
+  "updated_at": "2026-07-24T06:20:45.498060Z"
+}
+```
+
+Returns `400` if file format is invalid or file is empty.  
+Returns `413` if file exceeds 2MB (nginx-level rejection with JSON error).
+
+## Internal (Service-to-Service)
+
+Header: `X-Internal-Token`.
+
+| Method | Path | Purpose |
+| --- | --- | --- |
+| GET | `/internal/avatars/?ids=<uuid>,<uuid>` | Batch catalog avatars. Kids without an avatar row are omitted. |
+
+Response items use the same public avatar fields as `GET /avatar/` (`kid_id`, `base_character`, equipped slots, etc.).
+
 ## Misc
 
 | Method | Path | Purpose |
@@ -101,7 +174,8 @@ Returns `400` if the kid does not own the item.
 
 ## Notes for frontend
 
-- The shop list is empty until an admin seeds items into the database.
+- The shop list is empty until an admin seeds items into the database through `make seed-catalog`.
 - Coin balance is owned by gamification-service — catalog-service calls it internally on purchase.
-- `unlocked_items` is a list of item UUIDs the kid owns. Use this to show lock/unlock state in the shop UI.
+- `unlocked_items` is a list of full item objects (id, name, type, image_url, coin_cost) the kid owns. Use this to render the kid's inventory directly without extra shop calls.
 - Equipped slots (`equipped_hat`, `equipped_outfit`, etc.) are UUIDs or `null` if nothing is equipped.
+- `profile_picture` can be `null` if parent hasn't uploaded — handle default display on frontend side.

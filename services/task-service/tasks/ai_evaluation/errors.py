@@ -22,3 +22,9 @@ class AIAuthenticationError(AIError):
 
 class AIInvalidResponse(AIError):
     code = 'invalid_response'
+
+
+class AIContentBlocked(AIError):
+    """Task text failed content moderation (auto-block / warning)."""
+
+    code = 'content_blocked'
