@@ -633,6 +633,7 @@ class ParentProfileSerializer(serializers.ModelSerializer):
             "email",
             "pending_email",
             "username",
+            "bio",
             "role",
             "email_verified",
             "has_password",
@@ -662,6 +663,9 @@ class ParentProfileSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError(USERNAME_ALREADY_TAKEN)
         return username
 
+    def validate_bio(self, value):
+        return (value or "").strip()
+
 
 class KidProfileSerializer(serializers.ModelSerializer):
     has_password = serializers.SerializerMethodField()
@@ -672,6 +676,7 @@ class KidProfileSerializer(serializers.ModelSerializer):
             "id",
             "name",
             "username",
+            "bio",
             "email",
             "pending_email",
             "email_verified",
@@ -711,6 +716,8 @@ class KidProfileSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError(USERNAME_ALREADY_TAKEN)
         return username
 
+    def validate_bio(self, value):
+        return (value or "").strip()
 
 class MePasswordSerializer(serializers.Serializer):
     current_password = serializers.CharField(
