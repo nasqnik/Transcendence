@@ -9,7 +9,7 @@ Roles: **kid** and **parent** (decided by the JWT).
 
 | Method | Path | Role | Purpose |
 | --- | --- | --- | --- |
-| GET | `/notifications/` | kid / parent | List all unread notifications for the logged-in user. |
+| GET | `/notifications/` | kid / parent | List all notifications (read or unread) for the logged-in user. Use the is_read flag to filter on client side. |
 | GET | `/notifications/unread-count/` | kid / parent | Get the count of unread notifications. Used for badge display. |
 | PATCH | `/notifications/{notification_id}/read/` | kid / parent | Mark a specific notification as read. |
 
@@ -108,6 +108,8 @@ ws.onclose = (e) => console.log("Disconnected:", e.code);
 - Connection stays open until the client disconnects or the token expires
 - Disconnection is handled gracefully — reconnect by opening a new WebSocket connection
 - Both kids and parents can connect — each user only receives their own notifications
+- Sever sends `{"type" : "ping"}` every 30 seconds as a heartbeat - client must respond with `{"type": "pong"}` and ignore ping messages (do not display any notifications) 
+- On connect, all unread notificationsare pushed immediately - no need to call REST on connect
 
 ## Misc
 
