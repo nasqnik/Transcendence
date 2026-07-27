@@ -44,3 +44,7 @@ EMAIL_CHANGE_PENDING = "A confirmation email was sent to the new address."
 
 # Guardians
 MAX_GUARDIANS_REACHED = "This kid already has the maximum number of guardians."
+PARENT_HAS_LINKED_KIDS = (
+    "You can't delete this account while you're the only guardian. "
+    "Link each child to another parent first."
+)
