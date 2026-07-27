@@ -1,12 +1,15 @@
-from drf_spectacular.utils import extend_schema
+from django.db.models import Q
+from drf_spectacular.utils import OpenApiParameter, extend_schema
 from rest_framework import generics, status
-from rest_framework.exceptions import NotFound
+from rest_framework.exceptions import NotFound, ValidationError
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from rest_framework.pagination import PageNumberPagination
 
 from .permissions import IsAuthenticatedKid, IsInternalService
 from .models import CustomUser, Kid
+from .messages import PARENT_HAS_LINKED_KIDS
 from .serializers import (
     AcceptGuardianInviteSerializer,
     GoogleLoginSerializer,
@@ -27,7 +30,12 @@ from .serializers import (
     ParentVerifyEmailSerializer,
     VerifyEmailChangeSerializer,
 )
-from .services import InvitationNotFound, get_guardian_invitation_by_token, mark_expired_if_needed
+from .services import (
+    InvitationNotFound,
+    delete_parent_account,
+    get_guardian_invitation_by_token,
+    mark_expired_if_needed,
+)
 
 # views vs serializers
 # views are the logic of the API
@@ -231,8 +239,71 @@ class KidInternalBatchView(APIView):
         return Response([_serialize_internal_kid(kid) for kid in kids])
 
 
+ALLOWED_KID_ORDERINGS = {'username', '-username', 'name', '-name'}
+
+
+class KidSearchPagination(PageNumberPagination):
+    page_size = 20
+    page_size_query_param = 'page_size'
+    max_page_size = 50
+
+
+class KidInternalSearchView(APIView):
+    """Service-to-service: search active kids by username/name with sort + pagination."""
+
+    authentication_classes = []
+    permission_classes = [IsInternalService]
+    pagination_class = KidSearchPagination
+
+    def get(self, request):
+        q = (request.query_params.get('q') or '').strip()
+        if len(q) < 2:
+            raise ValidationError({'q': ['Query must be at least 2 characters.']})
+
+        ordering = (request.query_params.get('ordering') or 'username').strip()
+        if ordering not in ALLOWED_KID_ORDERINGS:
+            raise ValidationError({
+                'ordering': [
+                    'Must be one of: username, -username, name, -name.'
+                ],
+            })
+
+        qs = Kid.objects.filter(
+            registration_status=Kid.RegistrationStatus.ACTIVE,
+        ).filter(
+            Q(username__icontains=q) | Q(name__icontains=q),
+        )
+
+        exclude_raw = request.query_params.get('exclude_ids')
+        if exclude_raw is not None:
+            exclude_ids = [
+                part.strip() for part in exclude_raw.split(',') if part.strip()
+            ]
+            if exclude_ids:
+                qs = qs.exclude(id__in=exclude_ids)
+
+        # Present (even empty) means restrict to this set — used for friends/pending filters.
+        if 'include_ids' in request.query_params:
+            include_raw = request.query_params.get('include_ids') or ''
+            include_ids = [
+                part.strip() for part in include_raw.split(',') if part.strip()
+            ]
+            if not include_ids:
+                paginator = self.pagination_class()
+                paginator.paginate_queryset(Kid.objects.none(), request, view=self)
+                return paginator.get_paginated_response([])
+            qs = qs.filter(id__in=include_ids)
+
+        qs = qs.order_by(ordering)
+
+        paginator = self.pagination_class()
+        page = paginator.paginate_queryset(qs, request, view=self)
+        data = [_serialize_internal_kid(kid) for kid in page]
+        return paginator.get_paginated_response(data)
+
+
 class MeView(APIView):
-    """Return or update the authenticated parent's or kid's own profile."""
+    """Return, update, or delete the authenticated parent's or kid's own profile."""
 
     permission_classes = [IsAuthenticated]
 
@@ -260,6 +331,27 @@ class MeView(APIView):
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response(serializer.data)
+
+    def delete(self, request):
+        user = request.user
+        if not isinstance(user, (Kid, CustomUser)):
+            return Response(
+                {"detail": "Authentication credentials were not provided."},
+                status=status.HTTP_401_UNAUTHORIZED,
+            )
+
+        if isinstance(user, CustomUser):
+            try:
+                delete_parent_account(user)
+            except ValueError:
+                return Response(
+                    {"detail": PARENT_HAS_LINKED_KIDS},
+                    status=status.HTTP_409_CONFLICT,
+                )
+            return Response(status=status.HTTP_204_NO_CONTENT)
+
+        user.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 @extend_schema(request=MePasswordSerializer)

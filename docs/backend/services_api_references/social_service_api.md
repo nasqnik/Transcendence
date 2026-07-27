@@ -11,12 +11,45 @@ Local testing: run `make migrate` first (auth migration must create `bio`), then
 
 | Method | Path | Role | Purpose |
 | --- | --- | --- | --- |
+| GET | `/kids/search/` | kid | Search kids by username/name with filters, sorting, and pagination. |
 | POST | `/friends/requests/` | kid | Send a friend request. |
 | GET | `/friends/requests/` | kid | List incoming pending requests. |
 | POST | `/friends/requests/{id}/accept/` | kid | Accept a request (recipient only). |
 | POST | `/friends/requests/{id}/decline/` | kid | Decline a request (recipient only). |
 | GET | `/friends/` | kid | List accepted friends with profile, avatar, XP, and online status. |
 | DELETE | `/friends/{kid_id}/` | kid | Remove an accepted friendship. |
+
+**GET `/kids/search/` query**
+
+- `q` (required, min 2 chars) — username and name
+- `status` — `not_friends` (default) \| `pending` \| `friends` \| `all`
+- `online` — optional `true` / `false`
+- `ordering` — `username` (default) \| `-username` \| `name` \| `-name`
+- `page`, `page_size` (default 20, max 50)
+
+**GET `/kids/search/` response**
+
+```json
+{
+  "count": 1,
+  "next": null,
+  "previous": null,
+  "results": [
+    {
+      "kid_id": "<uuid>",
+      "username": "alex_me",
+      "name": "Alex",
+      "bio": "",
+      "is_online": false,
+      "friendship_status": "none"
+    }
+  ]
+}
+```
+
+`friendship_status`: `none` \| `pending_sent` \| `pending_received` \| `friends`.
+
+Identity search runs in auth-service; social applies friendship filters and presence. Use `POST /friends/requests/` to send a request after searching.
 
 **POST `/friends/requests/` body**
 

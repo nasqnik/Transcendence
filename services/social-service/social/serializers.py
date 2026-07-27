@@ -92,6 +92,15 @@ class FriendListItemSerializer(serializers.Serializer):
     stats = FriendStatSerializer(many=True)
 
 
+class KidSearchResultSerializer(serializers.Serializer):
+    kid_id = serializers.UUIDField()
+    username = serializers.CharField()
+    name = serializers.CharField()
+    bio = serializers.CharField(allow_blank=True)
+    is_online = serializers.BooleanField()
+    friendship_status = serializers.CharField()
+
+
 def serialize_friends_for(kid_id):
     rows = Friendship.objects.filter(
         involving_kid_q(kid_id),

@@ -14,6 +14,7 @@ from .views import (
     KidGoogleSignupView,
     KidInternalBatchView,
     KidInternalDetailView,
+    KidInternalSearchView,
     KidParentInternalView,
     KidSignupView,
     KidTokenObtainView,
@@ -70,6 +71,10 @@ urlpatterns = [
     path(
         "auth/internal/kids/<uuid:kid_id>/parent/",
         KidParentInternalView.as_view(),
+    ),
+    path(
+        "auth/internal/kids/search/",
+        KidInternalSearchView.as_view(),
     ),
     path(
         "auth/internal/kids/",
