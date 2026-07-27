@@ -923,6 +923,77 @@ class MeProfileTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data["bio"], "")
 
+    def test_unauthenticated_delete_me_returns_401(self):
+        response = self.client.delete("/api/auth/me/")
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_kid_delete_me(self):
+        kid = self._signup_activate_and_login_kid()
+        kid_id = kid.id
+        response = self.client.delete("/api/auth/me/")
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+        self.assertFalse(Kid.objects.filter(pk=kid_id).exists())
+
+    def test_parent_delete_me_without_kids(self):
+        parent = self._register_and_login_parent()
+        parent_id = parent.id
+        response = self.client.delete("/api/auth/me/")
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+        self.assertFalse(CustomUser.objects.filter(pk=parent_id).exists())
+
+    def test_parent_delete_me_blocked_when_sole_guardian(self):
+        parent = self._register_and_login_parent()
+        Kid.objects.create(
+            name="Linked",
+            username="linked_kid",
+            email="linked_kid@example.com",
+            parent=parent,
+            registration_status=Kid.RegistrationStatus.ACTIVE,
+            email_verified=True,
+        )
+        response = self.client.delete("/api/auth/me/")
+        self.assertEqual(response.status_code, status.HTTP_409_CONFLICT)
+        self.assertIn("only guardian", response.data["detail"])
+        self.assertTrue(CustomUser.objects.filter(pk=parent.id).exists())
+
+    def test_parent_delete_me_allowed_when_another_guardian_exists(self):
+        parent = self._register_and_login_parent()
+        other = CustomUser.objects.create_user(
+            email="other_parent@example.com",
+            username="other_parent",
+            password="secure-pass-1",
+            role="parent",
+            email_verified=True,
+        )
+        kid = Kid.objects.create(
+            name="Shared",
+            username="shared_kid",
+            email="shared_kid@example.com",
+            parent=parent,
+            registration_status=Kid.RegistrationStatus.ACTIVE,
+            email_verified=True,
+        )
+        GuardianInvitation.objects.create(
+            kid=kid,
+            parent=parent,
+            invite_email=parent.email,
+            role="primary",
+            status="accepted",
+        )
+        GuardianInvitation.objects.create(
+            kid=kid,
+            parent=other,
+            invite_email=other.email,
+            role="secondary",
+            status="accepted",
+        )
+        parent_id = parent.id
+        response = self.client.delete("/api/auth/me/")
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+        self.assertFalse(CustomUser.objects.filter(pk=parent_id).exists())
+        kid.refresh_from_db()
+        self.assertEqual(kid.parent_id, other.id)
+
 
 @override_settings(
     EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend",
@@ -1108,3 +1179,75 @@ class KidInternalDetailTests(APITestCase):
         )
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data, [])
+
+    def _active_kid(self, name, username, email):
+        return Kid.objects.create(
+            name=name,
+            username=username,
+            email=email,
+            registration_status=Kid.RegistrationStatus.ACTIVE,
+            email_verified=True,
+        )
+
+    def test_search_requires_q_min_length(self):
+        response = self.client.get(
+            "/api/auth/internal/kids/search/?q=a",
+            HTTP_X_INTERNAL_TOKEN="test-internal-token",
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_search_by_username_and_name(self):
+        self._active_kid("Alex", "alex_search", "alex_search@example.com")
+        self._active_kid("Sam Robot", "sammy", "sam_search@example.com")
+        self._active_kid("Other", "zzz", "other_search@example.com")
+
+        by_username = self.client.get(
+            "/api/auth/internal/kids/search/?q=alex",
+            HTTP_X_INTERNAL_TOKEN="test-internal-token",
+        )
+        self.assertEqual(by_username.status_code, status.HTTP_200_OK)
+        self.assertEqual(by_username.data["count"], 1)
+        self.assertEqual(by_username.data["results"][0]["username"], "alex_search")
+
+        by_name = self.client.get(
+            "/api/auth/internal/kids/search/?q=robot",
+            HTTP_X_INTERNAL_TOKEN="test-internal-token",
+        )
+        self.assertEqual(by_name.data["count"], 1)
+        self.assertEqual(by_name.data["results"][0]["username"], "sammy")
+
+    def test_search_ordering_and_pagination(self):
+        self._active_kid("A", "alpha_kid", "alpha@example.com")
+        self._active_kid("B", "beta_kid", "beta@example.com")
+        self._active_kid("C", "gamma_kid", "gamma@example.com")
+
+        response = self.client.get(
+            "/api/auth/internal/kids/search/?q=kid&ordering=-username&page_size=2",
+            HTTP_X_INTERNAL_TOKEN="test-internal-token",
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["count"], 3)
+        self.assertEqual(len(response.data["results"]), 2)
+        self.assertEqual(response.data["results"][0]["username"], "gamma_kid")
+        self.assertIsNotNone(response.data["next"])
+
+    def test_search_exclude_ids(self):
+        keep = self._active_kid("Keep", "keep_me", "keep@example.com")
+        drop = self._active_kid("Drop", "drop_me", "drop@example.com")
+        response = self.client.get(
+            f"/api/auth/internal/kids/search/?q=me&exclude_ids={drop.id}",
+            HTTP_X_INTERNAL_TOKEN="test-internal-token",
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["count"], 1)
+        self.assertEqual(response.data["results"][0]["kid_id"], str(keep.id))
+
+    def test_search_include_ids_empty_returns_empty(self):
+        self._active_kid("Alex", "alex_inc", "alex_inc@example.com")
+        response = self.client.get(
+            "/api/auth/internal/kids/search/?q=alex&include_ids=",
+            HTTP_X_INTERNAL_TOKEN="test-internal-token",
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["count"], 0)
+        self.assertEqual(response.data["results"], [])

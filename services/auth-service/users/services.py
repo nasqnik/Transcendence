@@ -95,6 +95,71 @@ def count_active_guardians(kid: Kid) -> int:
     ).count()
 
 
+def kids_linked_to_parent(parent: CustomUser):
+    """Kids linked via primary FK or an accepted guardian invitation."""
+    kid_ids = set(
+        Kid.objects.filter(parent=parent).values_list("id", flat=True)
+    )
+    kid_ids.update(
+        GuardianInvitation.objects.filter(
+            parent=parent,
+            status="accepted",
+        ).values_list("kid_id", flat=True)
+    )
+    return Kid.objects.filter(id__in=kid_ids)
+
+
+def parent_is_sole_guardian_of_any_kid(parent: CustomUser) -> bool:
+    """
+    True if this parent is linked to any kid that does not have
+    another accepted guardian besides this parent.
+    """
+    for kid in kids_linked_to_parent(parent):
+        other_guardians = (
+            kid.guardian_invitations.filter(status="accepted")
+            .exclude(parent=parent)
+            .exclude(parent__isnull=True)
+            .count()
+        )
+        if other_guardians < 1:
+            return True
+    return False
+
+
+def detach_parent_from_kids(parent: CustomUser) -> None:
+    """
+    Remove this parent as guardian. Kids must already have another accepted
+    guardian (caller must check). Reassign Kid.parent when needed.
+    """
+    for kid in list(kids_linked_to_parent(parent)):
+        other_invite = (
+            kid.guardian_invitations.filter(status="accepted")
+            .exclude(parent=parent)
+            .exclude(parent__isnull=True)
+            .select_related("parent")
+            .first()
+        )
+        if kid.parent_id == parent.id:
+            kid.parent = other_invite.parent if other_invite else None
+            kid.save(update_fields=["parent"])
+
+    GuardianInvitation.objects.filter(
+        parent=parent,
+        status="accepted",
+    ).update(status="revoked")
+
+
+def delete_parent_account(parent: CustomUser) -> None:
+    """
+    Delete parent if not sole guardian of any kid.
+    Raises ValueError("sole_guardian") if blocked.
+    """
+    if parent_is_sole_guardian_of_any_kid(parent):
+        raise ValueError("sole_guardian")
+    detach_parent_from_kids(parent)
+    parent.delete()
+
+
 def create_secondary_guardian_invitation(
     kid: Kid,
     parent_email: str,

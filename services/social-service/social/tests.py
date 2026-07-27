@@ -243,3 +243,126 @@ class FriendshipApiTests(APITestCase):
         self.assertEqual(friend['main_level'], 0)
         self.assertEqual(friend['overall_xp'], 0)
         self.assertEqual(friend['stats'], [])
+
+
+@override_settings(
+    PRESENCE_BACKEND='memory',
+    AUTH_INTERNAL_URL='http://auth-service:8000',
+    GAMIFICATION_INTERNAL_URL='http://gamification-service:8000',
+    CATALOG_INTERNAL_URL='http://catalog-service:8000',
+    INTERNAL_SERVICE_TOKEN='test-internal-token',
+    CHANNEL_LAYERS={
+        'default': {'BACKEND': 'channels.layers.InMemoryChannelLayer'},
+    },
+)
+@patch('social.views.search_kids')
+class KidSearchApiTests(APITestCase):
+    def setUp(self):
+        self.me = uuid4()
+        self.other = uuid4()
+        self.friend = uuid4()
+
+    def auth_as(self, kid_id):
+        self.client.credentials(
+            HTTP_AUTHORIZATION=f'Bearer {kid_access_token(kid_id)}'
+        )
+
+    def test_search_requires_q(self, _mock_search):
+        self.auth_as(self.me)
+        response = self.client.get('/api/social/kids/search/?q=a')
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        _mock_search.assert_not_called()
+
+    def test_search_enriches_friendship_and_online(self, mock_search):
+        mock_search.return_value = {
+            'count': 1,
+            'next': None,
+            'previous': None,
+            'results': [
+                {
+                    'kid_id': str(self.other),
+                    'username': 'alex_me',
+                    'name': 'Alex',
+                    'bio': 'hi',
+                }
+            ],
+        }
+        Friendship.objects.create(
+            from_kid_id=self.me,
+            to_kid_id=self.other,
+            status=Friendship.Status.PENDING,
+        )
+        mark_online(self.other)
+        self.auth_as(self.me)
+
+        response = self.client.get(
+            '/api/social/kids/search/?q=al&status=all&ordering=username'
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['count'], 1)
+        row = response.data['results'][0]
+        self.assertEqual(row['username'], 'alex_me')
+        self.assertEqual(row['friendship_status'], 'pending_sent')
+        self.assertTrue(row['is_online'])
+        mock_search.assert_called_once()
+        kwargs = mock_search.call_args.kwargs
+        self.assertEqual(kwargs['q'], 'al')
+        self.assertIn(str(self.me), [str(x) for x in kwargs['exclude_ids']])
+
+    def test_search_not_friends_excludes_related(self, mock_search):
+        mock_search.return_value = {
+            'count': 0,
+            'next': None,
+            'previous': None,
+            'results': [],
+        }
+        Friendship.objects.create(
+            from_kid_id=self.me,
+            to_kid_id=self.friend,
+            status=Friendship.Status.ACCEPTED,
+        )
+        self.auth_as(self.me)
+        response = self.client.get('/api/social/kids/search/?q=ab')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        exclude_ids = {str(x) for x in mock_search.call_args.kwargs['exclude_ids']}
+        self.assertIn(str(self.me), exclude_ids)
+        self.assertIn(str(self.friend), exclude_ids)
+
+    def test_search_friends_empty_without_auth_call(self, mock_search):
+        self.auth_as(self.me)
+        response = self.client.get(
+            '/api/social/kids/search/?q=ab&status=friends'
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['results'], [])
+        mock_search.assert_not_called()
+
+    def test_search_online_filter(self, mock_search):
+        mock_search.return_value = {
+            'count': 2,
+            'next': None,
+            'previous': None,
+            'results': [
+                {
+                    'kid_id': str(self.other),
+                    'username': 'online_kid',
+                    'name': 'On',
+                    'bio': '',
+                },
+                {
+                    'kid_id': str(self.friend),
+                    'username': 'offline_kid',
+                    'name': 'Off',
+                    'bio': '',
+                },
+            ],
+        }
+        mark_online(self.other)
+        mark_offline(self.friend)
+        self.auth_as(self.me)
+        response = self.client.get(
+            '/api/social/kids/search/?q=kid&status=all&online=true'
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data['results']), 1)
+        self.assertEqual(response.data['results'][0]['username'], 'online_kid')
