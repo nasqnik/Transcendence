@@ -100,7 +100,7 @@ class Command(BaseCommand):
     # Glasses (30 coins each)
     {
         'name': 'Sunglasses',
-        'type': 'accessory',
+        'type': 'glasses',
         'image_url': 'https://api.dicebear.com/10.x/adventurer/svg?seed=test&glassesProbability=100&glassesVariant=variant01',
         'coin_cost': 30,
         'param_key': 'glassesVariant',
@@ -108,7 +108,7 @@ class Command(BaseCommand):
     },
     {
         'name': 'Round Glasses',
-        'type': 'accessory',
+        'type': 'glasses',
         'image_url': 'https://api.dicebear.com/10.x/adventurer/svg?seed=test&glassesProbability=100&glassesVariant=variant02',
         'coin_cost': 30,
         'param_key': 'glassesVariant',
@@ -116,7 +116,7 @@ class Command(BaseCommand):
     },
     {
         'name': 'Square Glasses',
-        'type': 'accessory',
+        'type': 'glasses',
         'image_url': 'https://api.dicebear.com/10.x/adventurer/svg?seed=test&glassesProbability=100&glassesVariant=variant04',
         'coin_cost': 30,
         'param_key': 'glassesVariant',
@@ -124,7 +124,7 @@ class Command(BaseCommand):
     },
     {
         'name': 'Cool Glasses',
-        'type': 'accessory',
+        'type': 'glasses',
         'image_url': 'https://api.dicebear.com/10.x/adventurer/svg?seed=test&glassesProbability=100&glassesVariant=variant05',
         'coin_cost': 30,
         'param_key': 'glassesVariant',
@@ -134,7 +134,7 @@ class Command(BaseCommand):
     # Earrings (25 coins each)
     {
         'name': 'Stud Earrings',
-        'type': 'accessory',
+        'type': 'earrings',
         'image_url': 'https://api.dicebear.com/10.x/adventurer/svg?seed=test&earringsProbability=100&earringsVariant=variant01',
         'coin_cost': 25,
         'param_key': 'earringsVariant',
@@ -142,7 +142,7 @@ class Command(BaseCommand):
     },
     {
         'name': 'Hoop Earrings',
-        'type': 'accessory',
+        'type': 'earrings',
         'image_url': 'https://api.dicebear.com/10.x/adventurer/svg?seed=test&earringsProbability=100&earringsVariant=variant02',
         'coin_cost': 25,
         'param_key': 'earringsVariant',
@@ -150,7 +150,7 @@ class Command(BaseCommand):
     },
     {
         'name': 'Drop Earrings',
-        'type': 'accessory',
+        'type': 'earrings',
         'image_url': 'https://api.dicebear.com/10.x/adventurer/svg?seed=test&earringsProbability=100&earringsVariant=variant04',
         'coin_cost': 25,
         'param_key': 'earringsVariant',
@@ -158,7 +158,7 @@ class Command(BaseCommand):
     },
     {
         'name': 'Crystal Earrings',
-        'type': 'accessory',
+        'type': 'earrings',
         'image_url': 'https://api.dicebear.com/10.x/adventurer/svg?seed=test&earringsProbability=100&earringsVariant=variant06',
         'coin_cost': 25,
         'param_key': 'earringsVariant',

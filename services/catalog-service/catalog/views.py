@@ -24,38 +24,36 @@ from .serializers import (
 
 def build_avatar_url(avatar):
     base_url = f"https://api.dicebear.com/10.x/adventurer/svg?seed={avatar.base_character}"
-    
     params = {}
-    
-    if avatar.equipped_hair:
-        try:
-            item = AvatarItem.objects.get(id=avatar.equipped_hair)
-            params[item.param_key] = item.param_value
-        except AvatarItem.DoesNotExist:
-            pass
+    needs_save = False
 
-    if avatar.equipped_accessory:
-        try:
-            item = AvatarItem.objects.get(id=avatar.equipped_accessory)
-            params[item.param_key] = item.param_value
-            if 'glassesVariant' in params:
-                params['glassesProbability'] = '100'
-            if 'earringsVariant' in params:
-                params['earringsProbability'] = '100'
-        except AvatarItem.DoesNotExist:
-            pass
+    slots = [
+        ('equipped_hair', None),
+        ('equipped_glasses', 'glassesProbability'),
+        ('equipped_earrings', 'earringsProbability'),
+        ('equipped_background', None),
+    ]
 
-    if avatar.equipped_background:
-        try:
-            item = AvatarItem.objects.get(id=avatar.equipped_background)
-            params[item.param_key] = item.param_value
-        except AvatarItem.DoesNotExist:
-            pass
+    for slot_field, probability_key in slots:
+        item_id = getattr(avatar, slot_field)
+        if item_id:
+            try:
+                item = AvatarItem.objects.get(id=item_id)
+                params[item.param_key] = item.param_value
+                if probability_key:
+                    params[probability_key] = '100'
+            except AvatarItem.DoesNotExist:
+                # item was deleted — auto-unequip
+                setattr(avatar, slot_field, None)
+                needs_save = True
+
+    if needs_save:
+        avatar.save()
 
     if params:
         query = '&'.join(f"{k}={v}" for k, v in params.items())
         return f"{base_url}&{query}"
-    
+
     return base_url
 
 BASE_CHARACTERS = [

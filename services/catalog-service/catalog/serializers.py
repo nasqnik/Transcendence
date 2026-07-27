@@ -11,7 +11,7 @@ class KidAvatarSerializer(serializers.ModelSerializer):
         model = KidAvatar
         fields = [
             'id', 'kid_id', 'base_character', 'unlocked_items',
-            'equipped_accessory', 'equipped_background', 'equipped_hair',
+            'equipped_glasses', 'equipped_earrings', 'equipped_background', 'equipped_hair',
             'updated_at',
         ]
 
@@ -23,7 +23,7 @@ class KidAvatarDetailSerializer(serializers.ModelSerializer):
         model = KidAvatar
         fields = [
             'id', 'kid_id', 'base_character', 'avatar_url', 'unlocked_items',
-            'equipped_hair', 'equipped_accessory', 'equipped_background',
+            'equipped_hair', 'equipped_glasses', 'equipped_earrings', 'equipped_background',
             'updated_at',
         ]
 
@@ -54,8 +54,8 @@ class EquipSerializer(serializers.Serializer):
 
 class UnequipSerializer(serializers.Serializer):
     slot = serializers.ChoiceField(
-        choices=['hair', 'accessory', 'background'],
-        help_text='Avatar slot to unequip (hair, accessory, background).'
+        choices=['hair', 'glasses', 'earrings', 'background'],
+        help_text='Avatar slot to unequip (hair, glasses, earrings, background).'
     )
 
 class PurchaseResourceSerializer(serializers.Serializer):
