@@ -3,7 +3,8 @@ from uuid import uuid4
 
 SLOT_CHOICES = [
     ('hair', 'Hair'),
-    ('accessory', 'Accessory'),
+    ('glasses', 'Glasses'),
+    ('earrings', 'Earrings'),
     ('background', 'Background'),
 ]
 
@@ -29,7 +30,8 @@ class KidAvatar(models.Model):
     base_character = models.CharField(max_length=50, default='default')
     unlocked_items = models.JSONField(default=list)
     equipped_hair = models.UUIDField(null=True, blank=True)
-    equipped_accessory = models.UUIDField(null=True, blank=True)
+    equipped_glasses = models.UUIDField(null=True, blank=True)
+    equipped_earrings = models.UUIDField(null=True, blank=True)
     equipped_background = models.UUIDField(null=True, blank=True)
     updated_at = models.DateTimeField(auto_now=True)
 
