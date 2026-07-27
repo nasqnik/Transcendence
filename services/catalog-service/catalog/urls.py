@@ -1,5 +1,6 @@
 from django.urls import path
 from .views import (
+    BaseCharacterView,
     ShopListView,
     PurchaseView,
     AvatarView,
@@ -19,4 +20,5 @@ urlpatterns = [
     path('parent/avatar/', ParentAvatarView.as_view(), name='parent-avatar'),
     path('parent/avatar/upload/', ParentAvatarUploadView.as_view(), name='parent-avatar-upload'),
     path('internal/avatars/', InternalAvatarsBatchView.as_view(), name='internal-avatars'),
+    path('avatar/base/', BaseCharacterView.as_view(), name='avatar-base'),
 ]
