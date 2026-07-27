@@ -10,6 +10,7 @@ from .views import (
     InternalAvatarsBatchView,
     BaseCharacterView,
     BaseCharacterListView,
+    ParentKidsAvatarsView,
 )
 
 urlpatterns = [
@@ -22,5 +23,6 @@ urlpatterns = [
     path('avatar/unequip/', UnequipItemView.as_view(), name='unequip-item'),
     path('parent/avatar/', ParentAvatarView.as_view(), name='parent-avatar'),
     path('parent/avatar/upload/', ParentAvatarUploadView.as_view(), name='parent-avatar-upload'),
+    path('parent/kids/avatars/', ParentKidsAvatarsView.as_view(), name='parent-kids-avatars'),
     path('internal/avatars/', InternalAvatarsBatchView.as_view(), name='internal-avatars'),
 ]

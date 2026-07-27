@@ -20,6 +20,7 @@ from .serializers import (
     ParentProfileSerializer,
     ParentProfileUploadSerializer,
     BaseCharacterOptionSerializer,
+    KidAvatarSummarySerializer,
 )
 
 def build_avatar_url(avatar):
@@ -320,6 +321,23 @@ class ParentAvatarView(APIView):
         )
         return Response(ParentProfileSerializer(profile, context={'request': request}).data)
     
+    @extend_schema(
+        summary='Delete parent profile picture',
+        description='Deletes the parent profile picture. Returns null for profile_picture after deletion.',
+        responses={200: ParentProfileSerializer},
+        auth=[{'BearerAuth': []}],
+        tags=['Parent Profile'],
+    )
+    def delete(self, request):
+        profile, _ = ParentProfile.objects.get_or_create(
+            parent_id=request.user.user_id
+        )
+        if profile.profile_picture:
+            profile.profile_picture.delete(save=False)
+        profile.profile_picture = None
+        profile.save()
+        return Response(ParentProfileSerializer(profile, context={'request': request}).data)
+    
 class BaseCharacterView(APIView):
     permission_classes = [IsKid]
 
@@ -356,7 +374,27 @@ class BaseCharacterListView(APIView):
     )
     def get(self, request):
         return Response(BASE_CHARACTERS)
+    
+class ParentKidsAvatarsView(APIView):
+    permission_classes = [IsParent]
 
+    @extend_schema(
+        summary='Get all kids avatars for parent',
+        description='Parent gets composed avatar URLs for all their guarded kids. Returns one avatar_url per kid ready to display.',
+        responses={200: KidAvatarSummarySerializer(many=True)},
+        auth=[{'BearerAuth': []}],
+        tags=['Parent Profile'],
+    )
+    def get(self, request):
+        kid_ids = request.user.kid_ids
+        result = []
+        for kid_id in kid_ids:
+            avatar, _ = KidAvatar.objects.get_or_create(kid_id=kid_id)
+            result.append({
+                'kid_id': str(kid_id),
+                'avatar_url': build_avatar_url(avatar),
+            })
+        return Response(result)
 
 class InternalAvatarsBatchView(APIView):
     authentication_classes = []
