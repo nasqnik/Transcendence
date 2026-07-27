@@ -17,11 +17,12 @@ class KidAvatarSerializer(serializers.ModelSerializer):
 
 class KidAvatarDetailSerializer(serializers.ModelSerializer):
     unlocked_items = serializers.SerializerMethodField()
+    avatar_url = serializers.SerializerMethodField()
 
     class Meta:
         model = KidAvatar
         fields = [
-            'id', 'kid_id', 'base_character', 'unlocked_items',
+            'id', 'kid_id', 'base_character', 'avatar_url', 'unlocked_items',
             'equipped_hair', 'equipped_accessory', 'equipped_background',
             'updated_at',
         ]
@@ -30,6 +31,10 @@ class KidAvatarDetailSerializer(serializers.ModelSerializer):
         from .models import AvatarItem
         items = AvatarItem.objects.filter(id__in=obj.unlocked_items)
         return AvatarItemSerializer(items, many=True).data
+    
+    def get_avatar_url(self, obj):
+        from .views import build_avatar_url
+        return build_avatar_url(obj)
 
 
 class RewardPurchaseSerializer(serializers.ModelSerializer):
@@ -59,6 +64,12 @@ class PurchaseResourceSerializer(serializers.Serializer):
     )
     remaining_coins = serializers.IntegerField(
         help_text="Remaining coins after purchase."
+    )
+
+class BaseCharacterSerializer(serializers.Serializer):
+    base_character = serializers.ChoiceField(
+        choices=['5dko0f0w', 'kwiay0te'],
+        help_text="Base character seed: '5dko0f0w' for male, 'kwiay0te' for female."
     )
 
 class ParentProfileSerializer(serializers.ModelSerializer):

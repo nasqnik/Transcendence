@@ -10,6 +10,7 @@ from common.actors import KidActor
 from .models import AvatarItem, KidAvatar, RewardPurchase, ParentProfile
 from .serializers import (
     AvatarItemSerializer,
+    BaseCharacterSerializer,
     KidAvatarSerializer,
     KidAvatarDetailSerializer,
     PurchaseSerializer,
@@ -19,6 +20,42 @@ from .serializers import (
     ParentProfileSerializer,
     ParentProfileUploadSerializer,
 )
+
+def build_avatar_url(avatar):
+    base_url = f"https://api.dicebear.com/10.x/adventurer/svg?seed={avatar.base_character}"
+    
+    params = {}
+    
+    if avatar.equipped_hair:
+        try:
+            item = AvatarItem.objects.get(id=avatar.equipped_hair)
+            params[item.param_key] = item.param_value
+        except AvatarItem.DoesNotExist:
+            pass
+
+    if avatar.equipped_accessory:
+        try:
+            item = AvatarItem.objects.get(id=avatar.equipped_accessory)
+            params[item.param_key] = item.param_value
+            if 'glassesVariant' in params:
+                params['glassesProbability'] = '100'
+            if 'earringsVariant' in params:
+                params['earringsProbability'] = '100'
+        except AvatarItem.DoesNotExist:
+            pass
+
+    if avatar.equipped_background:
+        try:
+            item = AvatarItem.objects.get(id=avatar.equipped_background)
+            params[item.param_key] = item.param_value
+        except AvatarItem.DoesNotExist:
+            pass
+
+    if params:
+        query = '&'.join(f"{k}={v}" for k, v in params.items())
+        return f"{base_url}&{query}"
+    
+    return base_url
 
 class ShopListView(APIView):
     permission_classes = [IsKid]
@@ -270,6 +307,30 @@ class ParentAvatarView(APIView):
             parent_id=request.user.user_id
         )
         return Response(ParentProfileSerializer(profile, context={'request': request}).data)
+    
+class BaseCharacterView(APIView):
+    permission_classes = [IsKid]
+
+    @extend_schema(
+        summary='Set base character',
+        description='Kid selects their base character (male or female). Free — no coins required.',
+        request=BaseCharacterSerializer,
+        responses={
+            200: KidAvatarDetailSerializer,
+            400: None,
+        },
+        auth=[{'BearerAuth': []}],
+        tags=['Avatar'],
+    )
+    def patch(self, request):
+        serializer = BaseCharacterSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        avatar, _ = KidAvatar.objects.get_or_create(kid_id=request.user.kid_id)
+        avatar.base_character = serializer.validated_data['base_character']
+        avatar.save()
+
+        return Response(KidAvatarDetailSerializer(avatar).data)
 
 
 class InternalAvatarsBatchView(APIView):
