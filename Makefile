@@ -14,7 +14,7 @@ SOCIAL_SERVICE := social-service
 SERVICES := $(AUTH_SERVICE) $(TASK_SERVICE) $(GAMIFICATION_SERVICE) $(ANALYTICS_SERVICE) $(NOTIFICATION_SERVICE) $(CATALOG_SERVICE) $(SOCIAL_SERVICE)
 
 .PHONY: all up down build build-all restart logs ps shell clean fclean ssl ssl-if-missing migrate init-dbs seed-dev \
-        seed-dev-friend \
+        seed-dev-friend seed-custom-friend seed-dual-parent \
         up-front build-front restart-front logs-front shell-front \
         logs-auth shell-auth logs-task shell-task restart-task seed-catalog
 
@@ -69,6 +69,28 @@ seed-dev-friend:
 	@docker compose exec $(AUTH_SERVICE) python manage.py migrate users
 	@echo "==> seed two parent+kid pairs for friend testing (auth-service, not linked)"
 	@docker compose exec $(AUTH_SERVICE) python manage.py seed_dev_friend_users
+
+# Custom two kid pairs for friend testing.
+# Preferred: pass usernames as args.
+#   make seed-custom-friend KID1=alice KID2=bob
+# Optional display names:
+#   make seed-custom-friend KID1=alice KID2=bob NAME1="Alice" NAME2="Bob"
+# If KID1/KID2 are omitted, the command prompts interactively (-it).
+seed-custom-friend:
+	@echo "==> migrate auth-service (bio columns required)"
+	@docker compose exec $(AUTH_SERVICE) python manage.py migrate users
+	@echo "==> seed custom parent+kid pairs for friend testing"
+	@docker compose exec -it $(AUTH_SERVICE) python manage.py seed_custom_friend_users \
+		$(if $(KID1),--kid1 $(KID1),) \
+		$(if $(KID2),--kid2 $(KID2),) \
+		$(if $(NAME1),--name1 "$(NAME1)",) \
+		$(if $(NAME2),--name2 "$(NAME2)",)
+
+seed-dual-parent:
+	@echo "==> migrate auth-service (bio columns required)"
+	@docker compose exec $(AUTH_SERVICE) python manage.py migrate users
+	@echo "==> seed one kid with two parents (auth-service)"
+	@docker compose exec $(AUTH_SERVICE) python manage.py seed_dual_parent_users
 
 seed-catalog:
 	@echo "==> seed catalog items (catalog-service)"

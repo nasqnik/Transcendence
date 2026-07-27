@@ -10,15 +10,25 @@ Two account types: **parent** and **kid**. Most endpoints return JWT access/refr
 | --- | --- | --- |
 | GET | `/auth/me/` | Return the logged-in parent or kid profile. |
 | PATCH | `/auth/me/` | Update editable profile fields for the logged-in actor. |
+| DELETE | `/auth/me/` | Delete the logged-in parent or kid account. |
 | POST | `/auth/me/password/` | Set or change the app password. |
 | POST | `/auth/me/email/` | Request an email change (confirmation sent to the new address). |
 | POST | `/auth/verify-email-change/` | Confirm a pending email change with the token (public). |
 
 Editable profile fields:
-- **Parent:** `username`
-- **Kid:** `name`, `username`
+- **Parent:** `username`, `bio`
+- **Kid:** `name`, `username`, `bio`
 
 Read-only on GET `/auth/me/`: `id`, `email`, `pending_email`, `role` (parent), `registration_status` / `avatar_url` (kid), `email_verified`, `has_password`, `created_at`.
+
+### Delete account (`DELETE /auth/me/`)
+
+- **Kid:** hard-deletes the kid account → `204`.
+- **Parent with no linked kids:** hard-deletes the parent account → `204`.
+- **Parent who is the only guardian of any child:** rejected → `409`
+  (`"You can't delete this account while you're the only guardian. Link each child to another parent first."`).
+- **Parent when every linked child already has another accepted guardian:** detaches this parent (revokes their guardian invites, reassigns `Kid.parent` if needed) then deletes → `204`.
+- No request body. Clients should discard JWTs after `204`.
 
 ### Password (`POST /auth/me/password/`)
 
@@ -87,9 +97,18 @@ Header: `X-Internal-Token`.
 
 | Method | Path | Purpose |
 | --- | --- | --- |
+| GET | `/auth/internal/kids/search/?q=&ordering=&page=&page_size=&exclude_ids=&include_ids=` | Search active kids by username/name with sort + pagination. |
 | GET | `/auth/internal/kids/?ids=<uuid>,<uuid>` | Batch lookup. Returns active kids only: `{ kid_id, username, name, bio }[]`. |
 | GET | `/auth/internal/kids/{kid_id}/parent/` | Return `{ "parent_id" }` for a kid. |
 | GET | `/auth/internal/kids/{kid_id}/` | Return `{ "kid_id", "username", "name", "bio" }` if the kid is **active**. |
+
+**GET `/auth/internal/kids/search/` notes**
+
+- `q` required, min 2 characters (`icontains` on username and name).
+- `ordering`: `username` (default), `-username`, `name`, `-name`.
+- `exclude_ids`: optional comma-separated UUIDs removed before pagination.
+- `include_ids`: if the param is present, restrict to those UUIDs (empty → empty page).
+- Pagination: `page`, `page_size` (default 20, max 50). Response: `{ count, next, previous, results }`.
 
 ## Misc
 
