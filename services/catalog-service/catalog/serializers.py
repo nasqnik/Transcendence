@@ -100,3 +100,7 @@ class ParentProfileUploadSerializer(serializers.Serializer):
         if image.content_type not in allowed_types:
             raise serializers.ValidationError("Invalid image format. Allowed formats: JPEG, PNG, WebP.")
         return image
+    
+class KidAvatarSummarySerializer(serializers.Serializer):
+    kid_id = serializers.UUIDField(help_text="ID of the kid.")
+    avatar_url = serializers.CharField(help_text="Composed avatar URL ready to display.")
