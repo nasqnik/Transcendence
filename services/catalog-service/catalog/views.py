@@ -19,6 +19,7 @@ from .serializers import (
     PurchaseResourceSerializer,
     ParentProfileSerializer,
     ParentProfileUploadSerializer,
+    BaseCharacterOptionSerializer,
 )
 
 def build_avatar_url(avatar):
@@ -56,6 +57,19 @@ def build_avatar_url(avatar):
         return f"{base_url}&{query}"
     
     return base_url
+
+BASE_CHARACTERS = [
+    {
+        'seed': '5dko0f0w',
+        'name': 'Male',
+        'avatar_url': 'https://api.dicebear.com/10.x/adventurer/svg?seed=5dko0f0w',
+    },
+    {
+        'seed': 'kwiay0te',
+        'name': 'Female',
+        'avatar_url': 'https://api.dicebear.com/10.x/adventurer/svg?seed=kwiay0te',
+    },
+]
 
 class ShopListView(APIView):
     permission_classes = [IsKid]
@@ -331,6 +345,19 @@ class BaseCharacterView(APIView):
         avatar.save()
 
         return Response(KidAvatarDetailSerializer(avatar).data)
+    
+class BaseCharacterListView(APIView):
+    permission_classes = [IsKid]
+
+    @extend_schema(
+        summary='List available base characters',
+        description='Returns available base character options (male and female). Free to select — no coins required.',
+        responses={200: BaseCharacterOptionSerializer(many=True)},
+        auth=[{'BearerAuth': []}],
+        tags=['Avatar'],
+    )
+    def get(self, request):
+        return Response(BASE_CHARACTERS)
 
 
 class InternalAvatarsBatchView(APIView):

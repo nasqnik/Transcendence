@@ -4,7 +4,7 @@ from .models import AvatarItem, KidAvatar, ParentProfile, RewardPurchase
 class AvatarItemSerializer(serializers.ModelSerializer):
     class Meta:
         model = AvatarItem
-        fields = ['id', 'name', 'type', 'image_url', 'coin_cost', 'is_active']
+        fields = ['id', 'name', 'type', 'image_url', 'coin_cost', 'is_active', 'param_key', 'param_value']
 
 class KidAvatarSerializer(serializers.ModelSerializer):
     class Meta:
@@ -71,6 +71,11 @@ class BaseCharacterSerializer(serializers.Serializer):
         choices=['5dko0f0w', 'kwiay0te'],
         help_text="Base character seed: '5dko0f0w' for male, 'kwiay0te' for female."
     )
+
+class BaseCharacterOptionSerializer(serializers.Serializer):
+    seed = serializers.CharField(help_text="Dicebear seed for this character.")
+    name = serializers.CharField(help_text="Display name for this character.")
+    avatar_url = serializers.CharField(help_text="Preview URL for this character.")
 
 class ParentProfileSerializer(serializers.ModelSerializer):
     profile_picture = serializers.ImageField(
