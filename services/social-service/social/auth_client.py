@@ -82,3 +82,72 @@ def fetch_kids_by_ids(kid_ids):
         for row in rows
         if isinstance(row, dict) and row.get('kid_id')
     }
+
+
+def search_kids(
+    *,
+    q,
+    ordering='username',
+    page=1,
+    page_size=20,
+    exclude_ids=None,
+    include_ids=None,
+    include_ids_set=False,
+):
+    """
+    Call auth internal kid search. Returns the paginated JSON dict.
+    Raises AuthServiceUnavailable on transport / 5xx errors.
+    Raises ValidationError on 400 from auth.
+    """
+    url = f"{settings.AUTH_INTERNAL_URL.rstrip('/')}/api/auth/internal/kids/search/"
+    params = {
+        'q': q,
+        'ordering': ordering,
+        'page': page,
+        'page_size': page_size,
+    }
+    if exclude_ids is not None:
+        params['exclude_ids'] = ','.join(str(i) for i in exclude_ids)
+    if include_ids_set:
+        params['include_ids'] = ','.join(str(i) for i in (include_ids or []))
+
+    try:
+        resp = requests.get(
+            url,
+            params=params,
+            headers=_internal_headers(),
+            timeout=LOOKUP_TIMEOUT_SECONDS,
+        )
+    except requests.RequestException as exc:
+        logger.warning('Auth kids search failed: %s', exc)
+        raise AuthServiceUnavailable() from exc
+
+    if resp.status_code == 400:
+        try:
+            detail = resp.json()
+        except ValueError:
+            detail = 'Invalid search request.'
+        raise ValidationError(detail)
+
+    if resp.status_code >= 500:
+        logger.warning(
+            'Auth kids search error: status=%s',
+            resp.status_code,
+        )
+        raise AuthServiceUnavailable()
+
+    if resp.status_code != 200:
+        logger.warning(
+            'Auth kids search unexpected status=%s',
+            resp.status_code,
+        )
+        raise AuthServiceUnavailable()
+
+    try:
+        data = resp.json()
+    except ValueError as exc:
+        raise AuthServiceUnavailable() from exc
+
+    if not isinstance(data, dict):
+        raise AuthServiceUnavailable()
+    return data
