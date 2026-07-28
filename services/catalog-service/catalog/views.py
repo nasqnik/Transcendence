@@ -10,6 +10,7 @@ from common.actors import KidActor
 from .models import AvatarItem, KidAvatar, RewardPurchase, ParentProfile
 from .serializers import (
     AvatarItemSerializer,
+    BaseCharacterSerializer,
     KidAvatarSerializer,
     KidAvatarDetailSerializer,
     PurchaseSerializer,
@@ -18,7 +19,59 @@ from .serializers import (
     PurchaseResourceSerializer,
     ParentProfileSerializer,
     ParentProfileUploadSerializer,
+    BaseCharacterOptionSerializer,
+    KidAvatarSummarySerializer,
 )
+
+def build_avatar_url(avatar):
+    base_url = f"https://api.dicebear.com/10.x/adventurer/svg?seed={avatar.base_character}"
+    if avatar.base_character in ['5dko0f0w', 'kwiay0te']:
+        base_url += "&hairColor=2c1b18"
+
+    params = {}
+    needs_save = False
+
+    slots = [
+        ('equipped_hair', None),
+        ('equipped_glasses', 'glassesProbability'),
+        ('equipped_earrings', 'earringsProbability'),
+        ('equipped_background', None),
+    ]
+
+    for slot_field, probability_key in slots:
+        item_id = getattr(avatar, slot_field)
+        if item_id:
+            try:
+                item = AvatarItem.objects.get(id=item_id)
+                params[item.param_key] = item.param_value
+                if probability_key:
+                    params[probability_key] = '100'
+            except AvatarItem.DoesNotExist:
+                # item was deleted — auto-unequip
+                setattr(avatar, slot_field, None)
+                needs_save = True
+
+    if needs_save:
+        avatar.save()
+
+    if params:
+        query = '&'.join(f"{k}={v}" for k, v in params.items())
+        return f"{base_url}&{query}"
+
+    return base_url
+
+BASE_CHARACTERS = [
+    {
+        'seed': '5dko0f0w',
+        'name': 'Male',
+        'avatar_url': 'https://api.dicebear.com/10.x/adventurer/svg?seed=5dko0f0w&hairColor=2c1b18',
+    },
+    {
+        'seed': 'kwiay0te',
+        'name': 'Female',
+        'avatar_url': 'https://api.dicebear.com/10.x/adventurer/svg?seed=kwiay0te&hairColor=2c1b18',
+    },
+]
 
 class ShopListView(APIView):
     permission_classes = [IsKid]
@@ -270,7 +323,81 @@ class ParentAvatarView(APIView):
             parent_id=request.user.user_id
         )
         return Response(ParentProfileSerializer(profile, context={'request': request}).data)
+    
+    @extend_schema(
+        summary='Delete parent profile picture',
+        description='Deletes the parent profile picture. Returns null for profile_picture after deletion.',
+        responses={200: ParentProfileSerializer},
+        auth=[{'BearerAuth': []}],
+        tags=['Parent Profile'],
+    )
+    def delete(self, request):
+        profile, _ = ParentProfile.objects.get_or_create(
+            parent_id=request.user.user_id
+        )
+        if profile.profile_picture:
+            profile.profile_picture.delete(save=False)
+        profile.profile_picture = None
+        profile.save()
+        return Response(ParentProfileSerializer(profile, context={'request': request}).data)
+    
+class BaseCharacterView(APIView):
+    permission_classes = [IsKid]
 
+    @extend_schema(
+        summary='Set base character',
+        description='Kid selects their base character (male or female). Free — no coins required.',
+        request=BaseCharacterSerializer,
+        responses={
+            200: KidAvatarDetailSerializer,
+            400: None,
+        },
+        auth=[{'BearerAuth': []}],
+        tags=['Avatar'],
+    )
+    def patch(self, request):
+        serializer = BaseCharacterSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        avatar, _ = KidAvatar.objects.get_or_create(kid_id=request.user.kid_id)
+        avatar.base_character = serializer.validated_data['base_character']
+        avatar.save()
+
+        return Response(KidAvatarDetailSerializer(avatar).data)
+    
+class BaseCharacterListView(APIView):
+    permission_classes = [IsKid]
+
+    @extend_schema(
+        summary='List available base characters',
+        description='Returns available base character options (male and female). Free to select — no coins required.',
+        responses={200: BaseCharacterOptionSerializer(many=True)},
+        auth=[{'BearerAuth': []}],
+        tags=['Avatar'],
+    )
+    def get(self, request):
+        return Response(BASE_CHARACTERS)
+    
+class ParentKidsAvatarsView(APIView):
+    permission_classes = [IsParent]
+
+    @extend_schema(
+        summary='Get all kids avatars for parent',
+        description='Parent gets composed avatar URLs for all their guarded kids. Returns one avatar_url per kid ready to display.',
+        responses={200: KidAvatarSummarySerializer(many=True)},
+        auth=[{'BearerAuth': []}],
+        tags=['Parent Profile'],
+    )
+    def get(self, request):
+        kid_ids = request.user.kid_ids
+        result = []
+        for kid_id in kid_ids:
+            avatar, _ = KidAvatar.objects.get_or_create(kid_id=kid_id)
+            result.append({
+                'kid_id': str(kid_id),
+                'avatar_url': build_avatar_url(avatar),
+            })
+        return Response(result)
 
 class InternalAvatarsBatchView(APIView):
     authentication_classes = []
