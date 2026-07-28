@@ -18,6 +18,7 @@ import VerifyKidEmail from './pages/VerifyKidEmail'
 import KidLayout from './components/kid/KidLayout'
 import ParentLayout from './components/parent/ParentLayout'
 import ChildDashboard from './pages/ChildDashboard'
+import KidTasks from './pages/KidTasks'
 import KidSettings from './pages/KidSettings'
 import ParentDashboard from './pages/ParentDashboard'
 import ParentApprovals from './pages/ParentApprovals'
@@ -83,6 +84,7 @@ export default function App() {
         <Route element={<ProtectedRoute role="kid" />}>
           <Route element={<KidLayout />}>
             <Route path="/dashboard" element={<ChildDashboard />} />
+            <Route path="/tasks" element={<KidTasks />} />
             <Route path="/settings" element={<KidSettings />} />
           </Route>
           <Route path="/character" element={<CharacterCreation />} />

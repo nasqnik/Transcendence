@@ -2,6 +2,7 @@ import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import Button from '../components/Button'
 import LanguageSwitcher from '../components/LanguageSwitcher'
+import LegalLinks from '../components/LegalLinks'
 import { usePageTitle } from '../hooks/usePageTitle'
 
 export default function NotFound() {
@@ -23,7 +24,10 @@ export default function NotFound() {
       <Button variant="primary" onClick={() => navigate('/')}>
         {t('notFound.backHome')}
       </Button>
-      <LanguageSwitcher />
+      <footer className="flex flex-col items-center gap-3">
+        <LanguageSwitcher />
+        <LegalLinks />
+      </footer>
     </main>
   )
 }

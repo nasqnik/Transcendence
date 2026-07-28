@@ -2,6 +2,7 @@ import { Outlet } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import KidSidebar from './KidSidebar'
 import KidTopbar from './KidTopbar'
+import LegalLinks from '../LegalLinks'
 
 export default function KidLayout() {
   const { t } = useTranslation()
@@ -18,6 +19,9 @@ export default function KidLayout() {
       <div className="flex-1 flex flex-col min-w-0">
         <KidTopbar />
         <Outlet />
+        <footer className="border-t border-gray-200 bg-white px-4 sm:px-8 py-3 flex justify-center sm:justify-end shrink-0">
+          <LegalLinks />
+        </footer>
       </div>
     </div>
   )
