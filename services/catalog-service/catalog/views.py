@@ -25,6 +25,9 @@ from .serializers import (
 
 def build_avatar_url(avatar):
     base_url = f"https://api.dicebear.com/10.x/adventurer/svg?seed={avatar.base_character}"
+    if avatar.base_character in ['5dko0f0w', 'kwiay0te']:
+        base_url += "&hairColor=2c1b18"
+
     params = {}
     needs_save = False
 
@@ -61,12 +64,12 @@ BASE_CHARACTERS = [
     {
         'seed': '5dko0f0w',
         'name': 'Male',
-        'avatar_url': 'https://api.dicebear.com/10.x/adventurer/svg?seed=5dko0f0w',
+        'avatar_url': 'https://api.dicebear.com/10.x/adventurer/svg?seed=5dko0f0w&hairColor=2c1b18',
     },
     {
         'seed': 'kwiay0te',
         'name': 'Female',
-        'avatar_url': 'https://api.dicebear.com/10.x/adventurer/svg?seed=kwiay0te',
+        'avatar_url': 'https://api.dicebear.com/10.x/adventurer/svg?seed=kwiay0te&hairColor=2c1b18',
     },
 ]
 
