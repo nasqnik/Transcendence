@@ -4,27 +4,26 @@ from .models import AvatarItem, KidAvatar, ParentProfile, RewardPurchase
 class AvatarItemSerializer(serializers.ModelSerializer):
     class Meta:
         model = AvatarItem
-        fields = ['id', 'name', 'type', 'image_url', 'coin_cost', 'is_active']
+        fields = ['id', 'name', 'type', 'image_url', 'coin_cost', 'is_active', 'param_key', 'param_value']
 
 class KidAvatarSerializer(serializers.ModelSerializer):
     class Meta:
         model = KidAvatar
         fields = [
             'id', 'kid_id', 'base_character', 'unlocked_items',
-            'equipped_hat', 'equipped_outfit',
-            'equipped_accessory', 'equipped_background',
+            'equipped_glasses', 'equipped_earrings', 'equipped_background', 'equipped_hair',
             'updated_at',
         ]
 
 class KidAvatarDetailSerializer(serializers.ModelSerializer):
     unlocked_items = serializers.SerializerMethodField()
+    avatar_url = serializers.SerializerMethodField()
 
     class Meta:
         model = KidAvatar
         fields = [
-            'id', 'kid_id', 'base_character', 'unlocked_items',
-            'equipped_hat', 'equipped_outfit',
-            'equipped_accessory', 'equipped_background',
+            'id', 'kid_id', 'base_character', 'avatar_url', 'unlocked_items',
+            'equipped_hair', 'equipped_glasses', 'equipped_earrings', 'equipped_background',
             'updated_at',
         ]
 
@@ -32,6 +31,10 @@ class KidAvatarDetailSerializer(serializers.ModelSerializer):
         from .models import AvatarItem
         items = AvatarItem.objects.filter(id__in=obj.unlocked_items)
         return AvatarItemSerializer(items, many=True).data
+    
+    def get_avatar_url(self, obj):
+        from .views import build_avatar_url
+        return build_avatar_url(obj)
 
 
 class RewardPurchaseSerializer(serializers.ModelSerializer):
@@ -51,8 +54,8 @@ class EquipSerializer(serializers.Serializer):
 
 class UnequipSerializer(serializers.Serializer):
     slot = serializers.ChoiceField(
-        choices=['hat', 'outfit', 'accessory', 'background'],
-        help_text='Avatar slot to unequip (hat, outfit, accessory, background).'
+        choices=['hair', 'glasses', 'earrings', 'background'],
+        help_text='Avatar slot to unequip (hair, glasses, earrings, background).'
     )
 
 class PurchaseResourceSerializer(serializers.Serializer):
@@ -62,6 +65,17 @@ class PurchaseResourceSerializer(serializers.Serializer):
     remaining_coins = serializers.IntegerField(
         help_text="Remaining coins after purchase."
     )
+
+class BaseCharacterSerializer(serializers.Serializer):
+    base_character = serializers.ChoiceField(
+        choices=['5dko0f0w', 'kwiay0te'],
+        help_text="Base character seed: '5dko0f0w' for male, 'kwiay0te' for female."
+    )
+
+class BaseCharacterOptionSerializer(serializers.Serializer):
+    seed = serializers.CharField(help_text="Dicebear seed for this character.")
+    name = serializers.CharField(help_text="Display name for this character.")
+    avatar_url = serializers.CharField(help_text="Preview URL for this character.")
 
 class ParentProfileSerializer(serializers.ModelSerializer):
     profile_picture = serializers.ImageField(
@@ -86,3 +100,7 @@ class ParentProfileUploadSerializer(serializers.Serializer):
         if image.content_type not in allowed_types:
             raise serializers.ValidationError("Invalid image format. Allowed formats: JPEG, PNG, WebP.")
         return image
+    
+class KidAvatarSummarySerializer(serializers.Serializer):
+    kid_id = serializers.UUIDField(help_text="ID of the kid.")
+    avatar_url = serializers.CharField(help_text="Composed avatar URL ready to display.")
