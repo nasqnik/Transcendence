@@ -5,10 +5,12 @@ from .views import (
     FriendRequestAcceptView,
     FriendRequestDeclineView,
     FriendRequestListCreateView,
+    KidSearchView,
     UnfriendView,
 )
 
 urlpatterns = [
+    path('kids/search/', KidSearchView.as_view()),
     path('friends/requests/', FriendRequestListCreateView.as_view()),
     path(
         'friends/requests/<uuid:request_id>/accept/',
