@@ -1,17 +1,22 @@
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { type TaskCategory, CATEGORY_STYLE } from '../constants/categories'
 import { getCategorySettings, updateCategorySettings, type CategorySettings } from '../api/tasks'
+import { getKidMe, updateKidProfile } from '../api/kidAccount'
 import { inviteParent } from '../api/auth'
 import { getApiErrorKey } from '../api/errors'
 import { useFormErrors } from '../hooks/useFormErrors'
+import { useKidLevel } from '../hooks/useKidLevel'
 import { isValidEmail, isEmpty } from '../utils/validation'
+import useAuthStore from '../store/authStore'
 import FormField from '../components/FormField'
 import FormAlert from '../components/FormAlert'
 import Button from '../components/Button'
 import LanguageSwitcher from '../components/LanguageSwitcher'
+import KidAccountRow from '../components/kid/KidAccountRow'
+import KidEmailRow from '../components/kid/KidEmailRow'
+import KidPasswordSection from '../components/kid/KidPasswordSection'
 import { usePageTitle } from '../hooks/usePageTitle'
 
 // ─── Category → settings key map ─────────────────────────────────────────────
@@ -22,6 +27,27 @@ const ROWS: Array<{ category: TaskCategory; key: keyof CategorySettings }> = [
   { category: 'responsibility', key: 'show_responsibility' },
   { category: 'creativity',     key: 'show_creativity'     },
 ]
+
+// ─── Section shell ────────────────────────────────────────────────────────────
+
+interface SectionProps {
+  id: string
+  icon: string
+  title: string
+  children: React.ReactNode
+}
+
+/** White card with an emoji + heading, matching the parent settings layout. */
+function Section({ id, icon, title, children }: SectionProps) {
+  return (
+    <section aria-labelledby={id} className="bg-white rounded-2xl p-6">
+      <h2 id={id} className="font-heading text-lg font-bold text-gray-900 mb-4">
+        <span aria-hidden="true">{icon}</span> {title}
+      </h2>
+      {children}
+    </section>
+  )
+}
 
 // ─── Toggle ───────────────────────────────────────────────────────────────────
 
@@ -61,6 +87,15 @@ export default function KidSettings() {
   const queryClient = useQueryClient()
   usePageTitle(t('kidDash.settings'))
 
+  const currentUser = useAuthStore(s => s.currentUser)
+  const updateUser = useAuthStore(s => s.updateUser)
+  const { level, isLoading: levelLoading } = useKidLevel()
+
+  const { data: profile, isLoading: profileLoading } = useQuery({
+    queryKey: ['kidMe'],
+    queryFn: getKidMe,
+  })
+
   const { data: serverSettings } = useQuery({
     queryKey: ['categorySettings'],
     queryFn: getCategorySettings,
@@ -76,6 +111,7 @@ export default function KidSettings() {
   const [usernameHint, setUsernameHint]     = useState('')
   const [inviteErrorKey, setInviteErrorKey] = useState<string | null>(null)
   const [inviteLoading, setInviteLoading]   = useState(false)
+  const [inviteOpen, setInviteOpen]         = useState(false)
   const [sentTo, setSentTo]                 = useState<string | null>(null)
   const { fieldErrors, setFieldErrors, clearFieldError, resetFieldErrors } = useFormErrors()
 
@@ -123,204 +159,221 @@ export default function KidSettings() {
   }
 
   const displaySettings = settings ?? serverSettings
+  const displayName = profile?.name || profile?.username || currentUser?.username
+  const initial = displayName?.[0]?.toUpperCase() ?? '?'
 
   return (
     <main
       id="main-content"
       aria-labelledby="settings-heading"
-      className="flex-1 p-6 max-w-lg mx-auto overflow-auto"
+      className="flex-1 w-full flex flex-col gap-4 sm:gap-6 p-4 sm:p-6 overflow-auto"
     >
-      {/* Hero header */}
-      <div className="relative overflow-hidden bg-gradient-to-br from-primary-600 to-primary-500 rounded-2xl p-5 mb-6">
-        <div className="absolute -top-8 -right-8 w-28 h-28 rounded-full bg-white/10 pointer-events-none" aria-hidden="true" />
-        <div className="absolute -bottom-6 left-1/4 w-20 h-20 rounded-full bg-white/5 pointer-events-none" aria-hidden="true" />
-        <div className="relative flex items-center gap-4">
-          <span className="text-4xl shrink-0" aria-hidden="true">⚙️</span>
-          <div>
-            <h1 id="settings-heading" className="font-heading text-xl font-bold text-white">
-              {t('kidDash.settings')}
-            </h1>
-            <p className="font-body text-sm text-white">{t('kidDash.settingsHint')}</p>
+      <h1 id="settings-heading" className="sr-only">{t('kidDash.settings')}</h1>
+
+      {/* ── Identity ──────────────────────────────────────────────────────────── */}
+      <section className="bg-white rounded-2xl p-6 flex items-center gap-4">
+        <div
+          className="w-16 h-16 rounded-2xl bg-primary-100 flex items-center justify-center font-heading font-bold text-2xl text-primary-700 shrink-0"
+          aria-hidden="true"
+        >
+          {initial}
+        </div>
+        <div className="min-w-0">
+          <p className="font-heading text-xl font-bold text-gray-900 truncate">{displayName}</p>
+          <div className="flex flex-wrap items-center gap-2 mt-1">
+            <span className="inline-flex items-center gap-1 bg-primary-50 text-primary-700 rounded-full px-2.5 py-0.5 font-body text-xs font-semibold">
+              <span aria-hidden="true">🧒</span> {t('auth.child')}
+            </span>
+            {!levelLoading && (
+              <span className="inline-flex items-center gap-1 bg-amber-50 text-amber-700 rounded-full px-2.5 py-0.5 font-body text-xs font-semibold">
+                <span aria-hidden="true">⭐</span> {t('kidDash.level', { level })}
+              </span>
+            )}
           </div>
         </div>
-      </div>
+      </section>
 
-      {/* ── App settings ──────────────────────────────────────────────────────── */}
-      <section className="bg-white rounded-2xl overflow-hidden">
-        <div className="flex items-center gap-3 px-6 pt-5 pb-4">
-          <div className="w-9 h-9 rounded-xl bg-primary-50 flex items-center justify-center text-lg shrink-0" aria-hidden="true">
-            🌍
-          </div>
-          <h2 className="font-heading text-base font-bold text-gray-900">
-            {t('kidDash.appSettings')}
-          </h2>
+      {/* Account chores on the left, everything else on the right. The
+          identity card above spans the full width. */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 items-start">
+
+        <div className="flex flex-col gap-4 sm:gap-6">
+          {/* ── Account details ───────────────────────────────────────────────────── */}
+          <Section id="account-heading" icon="👤" title={t('parentDash.accountDetails')}>
+            {profileLoading || !profile ? (
+              <div className="flex flex-col gap-3 py-2">
+                <div className="h-10 rounded-xl bg-gray-100 animate-pulse" />
+                <div className="h-10 rounded-xl bg-gray-100 animate-pulse" />
+                <div className="h-10 rounded-xl bg-gray-100 animate-pulse" />
+              </div>
+            ) : (
+              <div className="flex flex-col divide-y divide-gray-100">
+                <KidAccountRow
+                  id="kid-name"
+                  label={t('auth.name')}
+                  value={profile.name}
+                  fieldKey="name"
+                  autoComplete="name"
+                  save={(name) => updateKidProfile({ name })}
+                />
+                <KidAccountRow
+                  id="kid-username"
+                  label={t('auth.username')}
+                  value={profile.username}
+                  fieldKey="username"
+                  autoComplete="username"
+                  save={(username) => updateKidProfile({ username })}
+                  onSaved={(username) => updateUser({ username })}
+                />
+                <KidEmailRow
+                  email={profile.email}
+                  pendingEmail={profile.pending_email}
+                  emailVerified={profile.email_verified}
+                />
+              </div>
+            )}
+          </Section>
+
+          {/* ── Security ──────────────────────────────────────────────────────────── */}
+          {profile && (
+            <Section id="security-heading" icon="🔒" title={t('parentDash.security')}>
+              <KidPasswordSection hasPassword={profile.has_password} />
+            </Section>
+          )}
+
+          {/* ── Preferences ─────────────────────────────────────────────────────── */}
+          <Section id="prefs-heading" icon="🌍" title={t('parentDash.preferences')}>
+            <div className="flex items-center justify-between gap-4">
+              <span className="font-body text-sm text-gray-500">{t('parentDash.language')}</span>
+              <LanguageSwitcher />
+            </div>
+          </Section>
         </div>
 
-        <div className="px-6 pb-6">
-          <span className="font-heading text-sm font-semibold text-gray-700 mb-3 block">
-            {t('a11y.languageSwitcher')}
-          </span>
-          <LanguageSwitcher />
+        <div className="flex flex-col gap-4 sm:gap-6">
+          {/* ── Category visibility ───────────────────────────────────────────────── */}
+          <Section id="categories-heading" icon="🎯" title={t('kidDash.categoryVisibility')}>
+            <div className="flex items-center justify-between mb-1">
+              <p className="font-body text-sm text-gray-500">{t('kidDash.categoryVisibilityHint')}</p>
+              <span className="font-body text-xs text-gray-400 h-4 shrink-0 ms-3" role="status">
+                {isPending && t('kidDash.settingsSaving')}
+                {savedRecently && !isPending && (
+                  <>
+                    <span aria-hidden="true">✓</span> {t('kidDash.settingsSaved')}
+                  </>
+                )}
+              </span>
+            </div>
 
-          <div className="border-t border-gray-100 my-5" />
-
-          <div className="flex items-center justify-between mb-1">
-            <span className="font-heading text-sm font-semibold text-gray-700">
-              {t('kidDash.categoryVisibility')}
-            </span>
-            <span className="font-body text-xs text-gray-400 h-4" role="status">
-              {isPending && t('kidDash.settingsSaving')}
-              {savedRecently && !isPending && (
-                <>
-                  <span aria-hidden="true">✓</span> {t('kidDash.settingsSaved')}
-                </>
-              )}
-            </span>
-          </div>
-          <p className="font-body text-sm text-gray-400 mb-4">
-            {t('kidDash.categoryVisibilityHint')}
-          </p>
-
-          {!displaySettings ? (
-            <p className="font-body text-sm text-gray-400">{t('tasks.loading')}</p>
-          ) : (
-            <div className="flex flex-col gap-3">
-              {ROWS.map(({ category, key }) => {
-                const style = CATEGORY_STYLE[category]
-                return (
-                  <div
-                    key={category}
-                    className="flex items-center justify-between px-4 py-3 rounded-xl bg-gray-50"
-                  >
-                    <div className="flex items-center gap-3">
-                      <div
-                        className={`w-9 h-9 rounded-xl ${style.bg} flex items-center justify-center text-base shrink-0`}
-                        aria-hidden="true"
-                      >
-                        {style.icon}
-                      </div>
-                      <span className={`font-body text-sm font-semibold ${style.text}`}>
+            {!displaySettings ? (
+              <p className="font-body text-sm text-gray-400 mt-4">{t('tasks.loading')}</p>
+            ) : (
+              <div className="flex flex-col divide-y divide-gray-100 mt-2">
+                {ROWS.map(({ category, key }) => {
+                  const style = CATEGORY_STYLE[category]
+                  return (
+                    <div key={category} className="flex items-center justify-between gap-4 py-3">
+                      <span className="flex items-center gap-2 font-body text-sm font-semibold text-gray-700">
+                        <span aria-hidden="true">{style.icon}</span>
                         {t(`kidDash.categories.${category}` as `kidDash.categories.${TaskCategory}`)}
                       </span>
+                      <Toggle
+                        checked={displaySettings[key]}
+                        onChange={value => handleToggle(key, value)}
+                        label={t(`kidDash.categories.${category}` as `kidDash.categories.${TaskCategory}`)}
+                        disabled={isPending}
+                      />
                     </div>
-                    <Toggle
-                      checked={displaySettings[key]}
-                      onChange={value => handleToggle(key, value)}
-                      label={t(`kidDash.categories.${category}` as `kidDash.categories.${TaskCategory}`)}
-                      disabled={isPending}
-                    />
-                  </div>
-                )
-              })}
-            </div>
-          )}
+                  )
+                })}
+              </div>
+            )}
 
-          {isError && (
-            <p role="alert" className="font-body text-sm text-danger-700 mt-4">
-              {t('errors.generic')}
-            </p>
-          )}
-        </div>
-      </section>
-
-      {/* ── Invite a parent ───────────────────────────────────────────────────── */}
-      <section className="bg-white rounded-2xl mt-4 overflow-hidden">
-        <div className="flex items-start gap-3 px-6 pt-5 pb-4">
-          <div className="w-9 h-9 rounded-xl bg-teal-50 flex items-center justify-center text-lg shrink-0 mt-0.5" aria-hidden="true">
-            👨‍👩‍👧
-          </div>
-          <div>
-            <h2 className="font-heading text-base font-bold text-gray-900">
-              {t('inviteParent.title')}
-            </h2>
-            <p className="font-body text-sm text-gray-400 mt-0.5">
-              {t('inviteParent.hint')}
-            </p>
-          </div>
-        </div>
-
-        <div className="px-6 pb-6">
-          {sentTo ? (
-            <div className="flex flex-col items-center gap-3 py-4 text-center">
-              <div className="text-3xl" aria-hidden="true">📬</div>
-              <p className="font-body text-sm font-semibold text-primary-700">
-                {t('inviteParent.success', { email: sentTo })}
+            {isError && (
+              <p role="alert" className="font-body text-sm text-danger-700 mt-4">
+                {t('errors.generic')}
               </p>
-              <p className="font-body text-xs text-gray-400">{t('inviteParent.successHint')}</p>
-              <Button variant="secondary" onClick={() => setSentTo(null)}>
-                {t('inviteParent.sendAnother')}
-              </Button>
-            </div>
-          ) : (
-            <form
-              noValidate
-              onSubmit={handleInvite}
-              className="flex flex-col gap-3"
-              aria-label={t('inviteParent.title')}
-              aria-busy={inviteLoading}
-            >
-              {inviteErrorKey && <FormAlert message={t(inviteErrorKey)} />}
-              <FormField
-                id="invite-email"
-                label={t('inviteParent.email')}
-                type="email"
-                value={inviteEmail}
-                required
-                autoComplete="off"
-                disabled={inviteLoading}
-                error={fieldErrors.email}
-                onChange={e => { setInviteEmail(e.target.value); clearFieldError('email') }}
-              />
-              <FormField
-                id="invite-username-hint"
-                label={t('inviteParent.usernameHint')}
-                type="text"
-                dir="ltr"
-                value={usernameHint}
-                autoComplete="off"
-                disabled={inviteLoading}
-                onChange={e => setUsernameHint(e.target.value)}
-              />
-              <Button variant="primary" type="submit" disabled={inviteLoading}>
-                {inviteLoading ? t('inviteParent.sending') : t('inviteParent.submit')}
-              </Button>
-            </form>
-          )}
-        </div>
-      </section>
+            )}
+          </Section>
 
-      {/* ── Legal ─────────────────────────────────────────────────────────────── */}
-      <section className="bg-white rounded-2xl mt-4 overflow-hidden">
-        <div className="flex items-center gap-3 px-6 pt-5 pb-4">
-          <div className="w-9 h-9 rounded-xl bg-blue-50 flex items-center justify-center text-lg shrink-0" aria-hidden="true">
-            📄
-          </div>
-          <h2 className="font-heading text-base font-bold text-gray-900">
-            {t('legal.sectionTitle')}
-          </h2>
+          {/* ── Invite a parent ───────────────────────────────────────────────────── */}
+          <Section id="invite-heading" icon="👨‍👩‍👧" title={t('inviteParent.title')}>
+            {sentTo ? (
+              <div className="flex flex-col items-center gap-3 py-4 text-center">
+                <div className="text-3xl" aria-hidden="true">📬</div>
+                <p className="font-body text-sm font-semibold text-primary-700">
+                  {t('inviteParent.success', { email: sentTo })}
+                </p>
+                <p className="font-body text-xs text-gray-400">{t('inviteParent.successHint')}</p>
+                <Button variant="secondary" onClick={() => { setSentTo(null); setInviteOpen(true) }}>
+                  {t('inviteParent.sendAnother')}
+                </Button>
+              </div>
+            ) : !inviteOpen ? (
+              // Collapsed until asked for, like the password section: inviting
+              // a second guardian is a one-off, not something to keep a form
+              // open for.
+              <div className="flex items-center justify-between gap-4">
+                <p className="font-body text-sm text-gray-500">{t('inviteParent.hint')}</p>
+                <button
+                  type="button"
+                  onClick={() => { resetFieldErrors(); setInviteErrorKey(null); setInviteOpen(true) }}
+                  className="shrink-0 font-body text-sm font-semibold text-primary-600 hover:text-primary-700 focus-ring rounded"
+                >
+                  {t('kidDash.inviteNow')}
+                </button>
+              </div>
+            ) : (
+              <form
+                noValidate
+                onSubmit={handleInvite}
+                className="flex flex-col gap-3"
+                aria-label={t('inviteParent.title')}
+                aria-busy={inviteLoading}
+              >
+                {inviteErrorKey && <FormAlert message={t(inviteErrorKey)} />}
+                <FormField
+                  id="invite-email"
+                  label={t('inviteParent.email')}
+                  type="email"
+                  value={inviteEmail}
+                  required
+                  autoComplete="off"
+                  disabled={inviteLoading}
+                  error={fieldErrors.email}
+                  onChange={e => { setInviteEmail(e.target.value); clearFieldError('email') }}
+                />
+                <FormField
+                  id="invite-username-hint"
+                  label={t('inviteParent.usernameHint')}
+                  type="text"
+                  dir="ltr"
+                  value={usernameHint}
+                  autoComplete="off"
+                  disabled={inviteLoading}
+                  onChange={e => setUsernameHint(e.target.value)}
+                />
+                <div className="flex gap-2">
+                  <Button variant="primary" type="submit" disabled={inviteLoading} className="px-4 py-2 text-sm">
+                    {inviteLoading ? t('inviteParent.sending') : t('inviteParent.submit')}
+                  </Button>
+                  <Button
+                    variant="secondary"
+                    type="button"
+                    onClick={() => { setInviteOpen(false); resetFieldErrors(); setInviteErrorKey(null) }}
+                    disabled={inviteLoading}
+                    className="px-4 py-2 text-sm"
+                  >
+                    {t('common.cancel')}
+                  </Button>
+                </div>
+              </form>
+            )}
+          </Section>
         </div>
 
-        <nav aria-label={t('a11y.legalNav')} className="px-4 pb-4 flex flex-col gap-1">
-          <Link
-            to="/privacy"
-            className="flex items-center justify-between px-3 py-3 rounded-xl hover:bg-gray-50 focus-ring transition-colors"
-          >
-            <span className="font-body text-sm font-semibold text-gray-700">
-              {t('legal.privacy')}
-            </span>
-            <span aria-hidden="true" className="text-gray-300 text-xl leading-none">›</span>
-          </Link>
-          <Link
-            to="/terms"
-            className="flex items-center justify-between px-3 py-3 rounded-xl hover:bg-gray-50 focus-ring transition-colors"
-          >
-            <span className="font-body text-sm font-semibold text-gray-700">
-              {t('legal.terms')}
-            </span>
-            <span aria-hidden="true" className="text-gray-300 text-xl leading-none">›</span>
-          </Link>
-        </nav>
-      </section>
+      </div>
+
     </main>
   )
 }

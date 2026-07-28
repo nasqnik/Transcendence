@@ -106,9 +106,18 @@ export default function KidStats() {
                 </div>
                 <div className="ms-10 mt-1 flex items-center justify-between">
                   <span className="font-body text-xs text-gray-400">{xp_percent} / 100</span>
+                  {/* XP already earned but not yet approved — matches the
+                      faded segment on the bar above. Was a bare "+10 ⏳" with
+                      nothing saying what it meant. */}
                   {pending > 0 && (
-                    <span className="font-body text-xs font-semibold text-amber-700">
-                      +{pending} <span aria-hidden="true">⏳</span>
+                    <span
+                      className="font-body text-xs font-semibold text-amber-700"
+                      title={t('kidDash.taskPending')}
+                    >
+                      <span aria-hidden="true">⏳ +{pending}</span>
+                      <span className="sr-only">
+                        {t('tasks.xpReward', { xp: pending })} — {t('kidDash.taskPending')}
+                      </span>
                     </span>
                   )}
                 </div>
