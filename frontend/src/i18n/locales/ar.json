@@ -175,12 +175,26 @@
     "appSettings": "إعدادات التطبيق",
     "nav": {
       "home": "الرئيسية",
-      "settings": "الإعدادات"
+      "settings": "الإعدادات",
+      "avatar": "الشخصية"
     },
     "welcomeModalTitle": "مرحباً بك في KiddoPath! 🌟",
     "welcomeModalBody": "يمكنك إضافة المهام بنفسك أو طلب من أحد والديك إضافتها لك.",
     "welcomeAddTask": "أضف مهمتي الأولى",
-    "welcomeAskParent": "اطلب من أحد والديك"
+    "welcomeAskParent": "اطلب من أحد والديك",
+    "avatarTitle": "تخصيص الشخصية",
+    "yourCharacter": "شخصيتك",
+    "baseCharacter": "الشخصية الأساسية",
+    "shop": "المتجر",
+    "buy": "شراء",
+    "equip": "ارتداء",
+    "equipped": "مُرتدى",
+    "shopEmpty": "المتجر فارغ — عد قريباً!",
+    "purchaseFailed": "تعذّر الشراء — حاول مرة أخرى.",
+    "slotHair": "الشعر",
+    "slotGlasses": "النظارات",
+    "slotEarrings": "الأقراط",
+    "slotBackground": "الخلفية"
   },
   "inviteParent": {
     "title": "دعوة ولي أمر",
@@ -250,6 +264,9 @@
     "settings": "الإعدادات",
     "preferences": "التفضيلات",
     "language": "اللغة",
+    "changePhoto": "تغيير الصورة",
+    "uploadPhoto": "رفع صورة",
+    "removePhoto": "إزالة الصورة",
     "accountDetails": "تفاصيل الحساب",
     "linkedChildren": "الأطفال المرتبطون",
     "cancel": "إلغاء",
