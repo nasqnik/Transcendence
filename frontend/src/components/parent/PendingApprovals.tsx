@@ -8,11 +8,13 @@ import ReviewModal from './ReviewModal'
 interface PendingApprovalsProps {
   /** Maps a kid_id to a display label for the per-item tag. */
   kidLabelFor: (kidId: string) => string
+  /** Maps a kid_id to their avatar URL for the per-item tag. */
+  kidAvatarFor?: (kidId: string) => string | undefined
   /** Show the per-item kid tag (only useful with more than one kid). */
   showKidLabel: boolean
 }
 
-export default function PendingApprovals({ kidLabelFor, showKidLabel }: PendingApprovalsProps) {
+export default function PendingApprovals({ kidLabelFor, kidAvatarFor, showKidLabel }: PendingApprovalsProps) {
   const { t, i18n } = useTranslation()
   const [reviewing, setReviewing] = useState<Completion | null>(null)
 
@@ -67,9 +69,18 @@ export default function PendingApprovals({ kidLabelFor, showKidLabel }: PendingA
                 key={c.id}
                 className="flex items-center gap-3 px-3 py-3 rounded-xl bg-amber-50"
               >
-                <div className="w-10 h-10 rounded-xl bg-amber-100 flex items-center justify-center text-lg shrink-0" aria-hidden="true">
-                  📋
-                </div>
+                {kidAvatarFor?.(c.kid_id) ? (
+                  <img
+                    src={kidAvatarFor(c.kid_id)}
+                    alt=""
+                    aria-hidden="true"
+                    className="w-10 h-10 rounded-xl object-cover bg-primary-50 shrink-0"
+                  />
+                ) : (
+                  <div className="w-10 h-10 rounded-xl bg-amber-100 flex items-center justify-center text-lg shrink-0" aria-hidden="true">
+                    📋
+                  </div>
+                )}
                 <div className="flex-1 min-w-0">
                   <p className="font-body text-sm font-semibold text-gray-900 truncate">
                     {c.task_title || t('parentDash.untitledTask')}
