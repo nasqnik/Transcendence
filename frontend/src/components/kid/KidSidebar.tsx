@@ -1,18 +1,30 @@
 import { NavLink } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-
-// ─── Nav items ────────────────────────────────────────────────────────────────
-
-const NAV_ITEMS = [
-  { icon: '🏠', labelKey: 'kidDash.nav.home',     path: '/dashboard' },
-  { icon: '🎨', labelKey: 'kidDash.nav.avatar',   path: '/avatar'    },
-  { icon: '⚙️', labelKey: 'kidDash.nav.settings', path: '/settings'  },
-] as const
+import { useQuery } from '@tanstack/react-query'
+import { getTasks, getCompletions } from '../../api/tasks'
+import { groupTasks } from '../../utils/taskGroups'
+import { todayStr } from '../../utils/date'
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export default function KidSidebar() {
   const { t } = useTranslation()
+
+  // Both are already in the cache from the dashboard/tasks page — no extra requests.
+  const { data: tasks = [] } = useQuery({ queryKey: ['tasks'], queryFn: getTasks })
+  const { data: completions = [] } = useQuery({ queryKey: ['completions'], queryFn: getCompletions })
+
+  // What needs doing now. Upcoming and undated tasks are left out on purpose:
+  // they would sit in the badge forever instead of clearing as work gets done.
+  const groups = groupTasks(tasks, completions, todayStr())
+  const todoCount = groups.overdue.length + groups.today.length
+
+  const NAV_ITEMS = [
+    { icon: '🏠', labelKey: 'kidDash.nav.home',     path: '/dashboard', badge: 0 },
+    { icon: '📋', labelKey: 'tasks.allTasks',       path: '/tasks',     badge: todoCount },
+    { icon: '🎨', labelKey: 'kidDash.nav.avatar',   path: '/avatar',    badge: 0 },
+    { icon: '⚙️', labelKey: 'kidDash.nav.settings', path: '/settings',  badge: 0 },
+  ] as const
 
   return (
     <aside className="w-14 lg:w-56 shrink-0 bg-white border-r border-gray-200 flex flex-col">
@@ -39,9 +51,13 @@ export default function KidSidebar() {
             key={item.path}
             to={item.path}
             end={item.path === '/dashboard'}
-            aria-label={t(item.labelKey)}
+            aria-label={
+              item.badge > 0
+                ? `${t(item.labelKey)} (${item.badge})`
+                : t(item.labelKey)
+            }
             className={({ isActive }) =>
-              `flex items-center gap-3 px-3 lg:px-4 py-3 rounded-xl font-body font-semibold text-sm transition-colors focus-ring ${
+              `relative flex items-center gap-3 px-3 lg:px-4 py-3 rounded-xl font-body font-semibold text-sm transition-colors focus-ring ${
                 isActive
                   ? 'bg-primary-50 text-primary-700'
                   : 'text-gray-500 hover:bg-gray-50 hover:text-gray-700'
@@ -49,7 +65,15 @@ export default function KidSidebar() {
             }
           >
             <span aria-hidden="true">{item.icon}</span>
-            <span className="hidden lg:inline">{t(item.labelKey)}</span>
+            <span className="hidden lg:inline flex-1">{t(item.labelKey)}</span>
+            {item.badge > 0 && (
+              <span
+                aria-hidden="true"
+                className="absolute top-1 end-1 lg:static lg:ms-auto min-w-5 h-5 px-1 rounded-full bg-primary-600 text-white font-body font-bold text-[10px] flex items-center justify-center"
+              >
+                {item.badge}
+              </span>
+            )}
           </NavLink>
         ))}
       </nav>
