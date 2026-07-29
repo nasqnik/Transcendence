@@ -79,8 +79,18 @@ export function groupTasks(
     else byDueDate(task) // never submitted, or sent back to be redone
   }
 
+  // Dated buckets read forwards in time: oldest due date first, so the list
+  // runs from today onwards.
   groups.upcoming.sort((a, b) => a.due_date!.localeCompare(b.due_date!))
   groups.overdue.sort((a, b) => a.due_date!.localeCompare(b.due_date!))
+
+  // Same-day and undated tasks share a due date, so they fall back to when they
+  // were made — oldest first. The API hands them back newest-first, which made
+  // a task you just added jump to the top of the list instead of joining the
+  // end of it.
+  const oldestFirst = (a: Task, b: Task) => a.created_at.localeCompare(b.created_at)
+  groups.today.sort(oldestFirst)
+  groups.anytime.sort(oldestFirst)
 
   return groups
 }
