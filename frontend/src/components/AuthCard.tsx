@@ -1,6 +1,7 @@
 import { type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import LanguageSwitcher from './LanguageSwitcher'
+import LegalLinks from './LegalLinks'
 
 interface AuthCardProps {
   /** id for the <h1>; the surrounding <main> is labelled by it. */
@@ -72,9 +73,10 @@ export default function AuthCard({
           </div>
         </div>
 
-        <div className="flex justify-center">
+        <footer className="flex flex-col items-center gap-3">
           <LanguageSwitcher />
-        </div>
+          <LegalLinks />
+        </footer>
       </div>
     </main>
   )

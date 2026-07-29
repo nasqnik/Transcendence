@@ -3,7 +3,6 @@ import { useTranslation } from 'react-i18next'
 import { useEffect, useState } from 'react'
 import AuthCard from '../components/AuthCard'
 import GoogleSignInSection from '../components/GoogleSignInSection'
-import LegalLinks from '../components/LegalLinks'
 import Button from '../components/Button'
 import FormAlert from '../components/FormAlert'
 import FormField from '../components/FormField'
@@ -208,7 +207,6 @@ export default function Signup() {
             {t('nav.login')}
           </Link>
         </p>
-        <LegalLinks />
       </div>
 
     </AuthCard>

@@ -5,7 +5,6 @@ import { attemptDualRoleLogin } from '../auth/loginFlow'
 import AuthCard from '../components/AuthCard'
 import AuthMessageLayout from '../components/AuthMessageLayout'
 import GoogleSignInSection from '../components/GoogleSignInSection'
-import LegalLinks from '../components/LegalLinks'
 import Button from '../components/Button'
 import FormAlert from '../components/FormAlert'
 import FormField from '../components/FormField'
@@ -132,7 +131,6 @@ export default function Login() {
             {t('nav.signup')}
           </Link>
         </p>
-        <LegalLinks />
       </div>
     </AuthCard>
   )
