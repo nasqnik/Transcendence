@@ -2,9 +2,12 @@ import { useRef, useState, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import useAuthStore from '../../store/authStore'
+import { useQuery } from '@tanstack/react-query'
 import { useDismissable } from '../../hooks/useDismissable'
+import { getParentAvatar } from '../../api/avatar'
 import LanguageSwitcher from '../LanguageSwitcher'
 import NotificationBell from '../NotificationBell'
+import Avatar from './Avatar'
 
 export default function ParentTopbar() {
   const { t } = useTranslation()
@@ -16,6 +19,8 @@ export default function ParentTopbar() {
   const triggerRef = useRef<HTMLButtonElement>(null)
   const closeMenu = useCallback(() => { setMenuOpen(false); triggerRef.current?.focus() }, [])
   useDismissable(menuRef, closeMenu, { enabled: menuOpen })
+
+  const { data: avatar } = useQuery({ queryKey: ['parentAvatar'], queryFn: getParentAvatar })
 
   return (
     <header className="bg-white border-b border-gray-200 px-4 sm:px-8 py-3 sm:py-4 flex items-center justify-between gap-3">
@@ -40,9 +45,9 @@ export default function ParentTopbar() {
             aria-label={currentUser?.username ?? 'Menu'}
             aria-expanded={menuOpen}
             aria-haspopup="menu"
-            className="w-10 h-10 rounded-full bg-primary-100 flex items-center justify-center font-heading font-bold text-primary-700 hover:bg-primary-200 focus-ring transition-colors"
+            className="rounded-full focus-ring hover:opacity-90 transition-opacity"
           >
-            {currentUser?.username?.[0]?.toUpperCase() ?? '?'}
+            <Avatar src={avatar?.profile_picture} name={currentUser?.username} className="w-10 h-10 rounded-full" textClassName="text-base" />
           </button>
 
           {menuOpen && (

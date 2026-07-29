@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import useAuthStore from '../store/authStore'
@@ -6,12 +6,14 @@ import { kidsFromToken } from '../api/parent'
 import {
   getMe, updateUsername, changePassword, requestEmailChange, type MeProfile,
 } from '../api/account'
+import { getParentAvatar, uploadParentAvatar, deleteParentAvatar } from '../api/avatar'
 import { getFieldErrors } from '../api/errors'
 import { usePageTitle } from '../hooks/usePageTitle'
 import { useFormErrors } from '../hooks/useFormErrors'
 import FormField from '../components/FormField'
 import Button from '../components/Button'
 import LanguageSwitcher from '../components/LanguageSwitcher'
+import Avatar from '../components/parent/Avatar'
 
 // Username 
 
@@ -257,6 +259,85 @@ function PasswordSection({ profile }: { profile: MeProfile }) {
   )
 }
 
+// Identity + avatar
+
+function IdentityCard({ displayName }: { displayName?: string }) {
+  const { t } = useTranslation()
+  const qc = useQueryClient()
+  const fileRef = useRef<HTMLInputElement>(null)
+  const { fieldErrors, setFieldErrors, resetFieldErrors } = useFormErrors()
+
+  const { data: avatar } = useQuery({ queryKey: ['parentAvatar'], queryFn: getParentAvatar })
+  const hasPhoto = !!avatar?.profile_picture
+
+  const { mutate: upload, isPending: uploading } = useMutation({
+    mutationFn: (file: File) => uploadParentAvatar(file),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['parentAvatar'] }),
+    onError: (err) => setFieldErrors(getFieldErrors(err)),
+  })
+
+  const { mutate: remove, isPending: removing } = useMutation({
+    mutationFn: deleteParentAvatar,
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['parentAvatar'] }),
+    onError: (err) => setFieldErrors(getFieldErrors(err)),
+  })
+
+  const busy = uploading || removing
+
+  function onPick(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    e.target.value = ''  // allow re-picking the same file
+    if (file) { resetFieldErrors(); upload(file) }
+  }
+
+  return (
+    <section className="bg-white rounded-2xl p-6 flex items-center gap-4">
+      <Avatar
+        src={avatar?.profile_picture}
+        name={displayName}
+        className="w-16 h-16 rounded-2xl"
+        textClassName="text-2xl"
+      />
+      <div className="min-w-0">
+        <p className="font-heading text-xl font-bold text-gray-900 truncate">{displayName}</p>
+        <span className="inline-flex items-center mt-1 bg-primary-50 text-primary-700 rounded-full px-2.5 py-0.5 font-body text-xs font-semibold">
+          {t('auth.parent')}
+        </span>
+        <div className="mt-2 flex items-center gap-4">
+          <button
+            type="button"
+            onClick={() => fileRef.current?.click()}
+            disabled={busy}
+            className="font-body text-sm font-semibold text-primary-600 hover:text-primary-700 focus-ring rounded disabled:opacity-50"
+          >
+            {uploading ? t('kidDash.settingsSaving') : hasPhoto ? t('parentDash.changePhoto') : t('parentDash.uploadPhoto')}
+          </button>
+          {hasPhoto && (
+            <button
+              type="button"
+              onClick={() => { resetFieldErrors(); remove() }}
+              disabled={busy}
+              className="font-body text-sm font-semibold text-danger-700 hover:opacity-80 focus-ring rounded disabled:opacity-50"
+            >
+              {removing ? t('kidDash.settingsSaving') : t('parentDash.removePhoto')}
+            </button>
+          )}
+          <input
+            ref={fileRef}
+            type="file"
+            accept="image/jpeg,image/png,image/webp"
+            onChange={onPick}
+            className="hidden"
+          />
+        </div>
+        {fieldErrors.profile_picture && (
+          <p className="field-error mt-1">{fieldErrors.profile_picture}</p>
+        )}
+      </div>
+    </section>
+  )
+}
+
 // Page
 
 export default function ParentSettings() {
@@ -268,7 +349,6 @@ export default function ParentSettings() {
   const { data: profile, isLoading } = useQuery({ queryKey: ['me'], queryFn: getMe })
 
   const displayName = profile?.username ?? currentUser?.username
-  const initial = displayName?.[0]?.toUpperCase() ?? '?'
 
   return (
     <main
@@ -278,18 +358,7 @@ export default function ParentSettings() {
     >
       <h1 id="settings-heading" className="sr-only">{t('parentDash.settings')}</h1>
 
-      {/* Identity */}
-      <section className="bg-white rounded-2xl p-6 flex items-center gap-4">
-        <div className="w-16 h-16 rounded-2xl bg-primary-100 flex items-center justify-center font-heading font-bold text-2xl text-primary-700 shrink-0" aria-hidden="true">
-          {initial}
-        </div>
-        <div className="min-w-0">
-          <p className="font-heading text-xl font-bold text-gray-900 truncate">{displayName}</p>
-          <span className="inline-flex items-center mt-1 bg-primary-50 text-primary-700 rounded-full px-2.5 py-0.5 font-body text-xs font-semibold">
-            {t('auth.parent')}
-          </span>
-        </div>
-      </section>
+      <IdentityCard displayName={displayName} />
 
       {/* Account */}
       <section aria-labelledby="account-heading" className="bg-white rounded-2xl p-6">
