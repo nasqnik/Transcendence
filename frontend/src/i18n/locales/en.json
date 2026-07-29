@@ -182,12 +182,26 @@
     "appSettings": "App settings",
     "nav": {
       "home": "Home",
-      "settings": "Settings"
+      "settings": "Settings",
+      "avatar": "Avatar"
     },
     "welcomeModalTitle": "Welcome to KiddoPath! 🌟",
     "welcomeModalBody": "You can add tasks yourself, or ask your parent to add some for you.",
     "welcomeAddTask": "Add my first task",
-    "welcomeAskParent": "Ask my parent"
+    "welcomeAskParent": "Ask my parent",
+    "avatarTitle": "Customize Character",
+    "yourCharacter": "Your Character",
+    "baseCharacter": "Base Character",
+    "shop": "Shop",
+    "buy": "Buy",
+    "equip": "Equip",
+    "equipped": "Equipped",
+    "shopEmpty": "The shop is empty — check back soon!",
+    "purchaseFailed": "Couldn’t buy that — try again.",
+    "slotHair": "Hair",
+    "slotGlasses": "Glasses",
+    "slotEarrings": "Earrings",
+    "slotBackground": "Background"
   },
   "inviteParent": {
     "title": "Invite a parent",
@@ -257,6 +271,9 @@
     "settings": "Settings",
     "preferences": "Preferences",
     "language": "Language",
+    "changePhoto": "Change photo",
+    "uploadPhoto": "Upload photo",
+    "removePhoto": "Remove photo",
     "accountDetails": "Account Details",
     "linkedChildren": "Linked children",
     "cancel": "Cancel",

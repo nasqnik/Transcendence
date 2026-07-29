@@ -176,12 +176,26 @@
     "appSettings": "Настройки приложения",
     "nav": {
       "home": "Главная",
-      "settings": "Настройки"
+      "settings": "Настройки",
+      "avatar": "Аватар"
     },
     "welcomeModalTitle": "Добро пожаловать в KiddoPath! 🌟",
     "welcomeModalBody": "Ты можешь добавить задания сам или попросить родителя.",
     "welcomeAddTask": "Добавить первое задание",
-    "welcomeAskParent": "Попросить родителя"
+    "welcomeAskParent": "Попросить родителя",
+    "avatarTitle": "Настройка персонажа",
+    "yourCharacter": "Твой персонаж",
+    "baseCharacter": "Базовый персонаж",
+    "shop": "Магазин",
+    "buy": "Купить",
+    "equip": "Надеть",
+    "equipped": "Надето",
+    "shopEmpty": "Магазин пуст — загляни позже!",
+    "purchaseFailed": "Не удалось купить — попробуй ещё раз.",
+    "slotHair": "Волосы",
+    "slotGlasses": "Очки",
+    "slotEarrings": "Серьги",
+    "slotBackground": "Фон"
   },
   "inviteParent": {
     "title": "Пригласить родителя",
@@ -251,6 +265,9 @@
     "settings": "Настройки",
     "preferences": "Предпочтения",
     "language": "Язык",
+    "changePhoto": "Изменить фото",
+    "uploadPhoto": "Загрузить фото",
+    "removePhoto": "Удалить фото",
     "accountDetails": "Данные аккаунта",
     "linkedChildren": "Привязанные дети",
     "cancel": "Отмена",

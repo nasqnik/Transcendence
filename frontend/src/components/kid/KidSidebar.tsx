@@ -22,6 +22,7 @@ export default function KidSidebar() {
   const NAV_ITEMS = [
     { icon: '🏠', labelKey: 'kidDash.nav.home',     path: '/dashboard', badge: 0 },
     { icon: '📋', labelKey: 'tasks.allTasks',       path: '/tasks',     badge: todoCount },
+    { icon: '🎨', labelKey: 'kidDash.nav.avatar',   path: '/avatar',    badge: 0 },
     { icon: '⚙️', labelKey: 'kidDash.nav.settings', path: '/settings',  badge: 0 },
   ] as const
 

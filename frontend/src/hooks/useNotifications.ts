@@ -38,10 +38,24 @@ export function useNotifications() {
 
       socket.onmessage = (e) => {
         try {
-          const notification = JSON.parse(e.data) as Notification
-          queryClient.setQueryData<Notification[]>(KEY, (prev = []) =>
-            [notification, ...prev.filter(n => n.id !== notification.id)]
-          )
+          const data = JSON.parse(e.data) as Partial<Notification> & { type?: string }
+          // Heartbeat: server pings every ~30s to detect dead connections.
+          // Reply so it knows we're alive, and never render it as a notification.
+          if (data.type === 'ping') {
+            socket.send(JSON.stringify({ type: 'pong' }))
+            return
+          }
+          // Only real notifications (which always have an id) enter the list —
+          // guards against ping and any other future control frame.
+          if (!data.id) return
+          const notification = data as Notification
+          queryClient.setQueryData<Notification[]>(KEY, (prev = []) => {
+            const next = [notification, ...prev.filter(n => n.id !== notification.id)]
+            // The server replays unread notifications unordered on connect, so
+            // keep the list newest-first regardless of arrival order.
+            return next.sort((a, b) =>
+              new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+          })
           if (notification.notification_type === 'task_confirmed' ||
               notification.notification_type === 'task_rejected') {
             queryClient.invalidateQueries({ queryKey: ['completions'] })
