@@ -19,6 +19,7 @@ import KidLayout from './components/kid/KidLayout'
 import ParentLayout from './components/parent/ParentLayout'
 import ChildDashboard from './pages/ChildDashboard'
 import KidSettings from './pages/KidSettings'
+import AvatarStudio from './pages/AvatarStudio'
 import ParentDashboard from './pages/ParentDashboard'
 import ParentApprovals from './pages/ParentApprovals'
 import CharacterCreation from './pages/CharacterCreation'
@@ -83,6 +84,7 @@ export default function App() {
         <Route element={<ProtectedRoute role="kid" />}>
           <Route element={<KidLayout />}>
             <Route path="/dashboard" element={<ChildDashboard />} />
+            <Route path="/avatar" element={<AvatarStudio />} />
             <Route path="/settings" element={<KidSettings />} />
           </Route>
           <Route path="/character" element={<CharacterCreation />} />

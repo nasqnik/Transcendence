@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next'
 
 const NAV_ITEMS = [
   { icon: '🏠', labelKey: 'kidDash.nav.home',     path: '/dashboard' },
+  { icon: '🎨', labelKey: 'kidDash.nav.avatar',   path: '/avatar'    },
   { icon: '⚙️', labelKey: 'kidDash.nav.settings', path: '/settings'  },
 ] as const
 
