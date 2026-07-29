@@ -59,12 +59,17 @@ export default function StatsLog({ onClose }: Props) {
             return (
               <li key={completion.id} className="flex items-center gap-3 px-6 py-3">
 
-                {/* Title + date */}
+                {/* Title + date + the parent's note, if they left one */}
                 <div className="flex-1 min-w-0">
                   <p className="font-body font-semibold text-sm text-gray-900 truncate">
                     {task.title}
                   </p>
                   <p className="font-body text-xs text-gray-400 mt-0.5">{date}</p>
+                  {completion.review_note && (
+                    <p className="font-body text-xs text-gray-500 italic mt-1">
+                      &ldquo;{completion.review_note}&rdquo;
+                    </p>
+                  )}
                 </div>
 
                 {/* Points breakdown per category */}
