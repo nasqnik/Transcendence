@@ -19,6 +19,7 @@ import KidLayout from './components/kid/KidLayout'
 import ParentLayout from './components/parent/ParentLayout'
 import ChildDashboard from './pages/ChildDashboard'
 import KidTasks from './pages/KidTasks'
+import KidFriends from './pages/KidFriends'
 import KidSettings from './pages/KidSettings'
 import AvatarStudio from './pages/AvatarStudio'
 import ParentDashboard from './pages/ParentDashboard'
@@ -87,6 +88,7 @@ export default function App() {
             <Route path="/dashboard" element={<ChildDashboard />} />
             <Route path="/avatar" element={<AvatarStudio />} />
             <Route path="/tasks" element={<KidTasks />} />
+            <Route path="/friends" element={<KidFriends />} />
             <Route path="/settings" element={<KidSettings />} />
           </Route>
           <Route path="/character" element={<CharacterCreation />} />

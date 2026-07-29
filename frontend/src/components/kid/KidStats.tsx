@@ -53,15 +53,15 @@ export default function KidStats() {
           </button>
         </div>
 
-        <div className="flex flex-col gap-5">
+        <div className="flex flex-col gap-3">
           {isLoading ? CATEGORIES.map(cat => (
-            <div key={cat} className="animate-pulse">
-              <div className="flex items-center gap-2.5 mb-2">
-                <div className="w-8 h-8 rounded-xl bg-gray-100 shrink-0" />
+            <div key={cat} className="animate-pulse rounded-2xl bg-gray-50 p-3">
+              <div className="flex items-center gap-3 mb-2">
+                <div className="w-10 h-10 rounded-xl bg-gray-100 shrink-0" />
                 <div className="h-3.5 w-20 rounded-full bg-gray-100 flex-1" />
                 <div className="h-3 w-12 rounded-full bg-gray-100" />
               </div>
-              <div className="h-3 rounded-full bg-gray-100 ms-10" />
+              <div className="h-3 rounded-full bg-gray-100" />
             </div>
           )) : CATEGORIES.map(category => {
             const style      = CATEGORY_STYLE[category]
@@ -70,15 +70,20 @@ export default function KidStats() {
             const pendingWidth = Math.min(pending, 100 - xp_percent)
 
             return (
-              <div key={category}>
-                <div className="flex items-center gap-2.5 mb-2">
+              // Each category gets its own tinted card. The colours already
+              // existed but only as a thin bar and a small icon, so the panel
+              // read as four grey rows — the flattest block on a page meant
+              // for a child. The tint is what makes a category recognisable
+              // at a glance before the label is even read.
+              <div key={category} className={`${style.bg} rounded-2xl p-3`}>
+                <div className="flex items-center gap-3 mb-2">
                   <div
-                    className={`w-8 h-8 rounded-xl ${style.bg} flex items-center justify-center text-sm shrink-0`}
+                    className="w-10 h-10 rounded-xl bg-white/70 flex items-center justify-center text-xl shrink-0"
                     aria-hidden="true"
                   >
                     {style.icon}
                   </div>
-                  <span className="font-body text-sm font-semibold text-gray-700 flex-1">
+                  <span className="font-body text-sm font-semibold text-gray-900 flex-1">
                     {t(`kidDash.categories.${category}` as `kidDash.categories.${TaskCategory}`)}
                   </span>
                   <span className={`font-body text-xs font-bold ${style.text}`}>
@@ -91,7 +96,9 @@ export default function KidStats() {
                   aria-valuenow={xp_percent}
                   aria-valuemin={0}
                   aria-valuemax={100}
-                  className="relative h-3 bg-gray-100 rounded-full overflow-hidden ms-10"
+                  // White track, not gray-100: on a tinted card the grey track
+                  // muddies against the tint and the fill loses its edge.
+                  className="relative h-3 bg-white rounded-full overflow-hidden"
                 >
                   <div
                     className={`absolute inset-y-0 start-0 ${style.bar} rounded-full transition-all duration-500`}
@@ -104,8 +111,11 @@ export default function KidStats() {
                     />
                   )}
                 </div>
-                <div className="ms-10 mt-1 flex items-center justify-between">
-                  <span className="font-body text-xs text-gray-400">{xp_percent} / 100</span>
+                <div className="mt-1 flex items-center justify-between">
+                  {/* gray-700, not gray-400: on the amber tint gray-400 lands
+                      at 4.59:1, close enough to the 4.5 floor that a nudge to
+                      the palette would break it. */}
+                  <span className="font-body text-xs text-gray-700">{xp_percent} / 100</span>
                   {/* XP already earned but not yet approved — matches the
                       faded segment on the bar above. Was a bare "+10 ⏳" with
                       nothing saying what it meant. */}

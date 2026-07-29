@@ -4,13 +4,14 @@ import type { Task, Completion } from '../../constants/categories'
 
 const TODAY = '2026-07-28'
 
-function task(id: string, dueDate: string | null): Task {
+function task(id: string, dueDate: string | null, createdAt = '2026-01-01T00:00:00Z'): Task {
   return {
     id,
     title: `task ${id}`,
     description: '',
     due_date: dueDate,
     xp_reward: 10,
+    created_at: createdAt,
     category_rewards: [],
   } as unknown as Task
 }
@@ -137,6 +138,33 @@ describe('groupTasks', () => {
     )
     expect(groups.today.map(t => t.id)).toEqual(['open'])
     expect(groups.pending.map(t => t.id)).toEqual(['ticked'])
+  })
+
+  it('puts a newly added task at the end of today, not the top', () => {
+    // The API returns tasks newest-created first, so without this the task you
+    // just made would jump above the ones already on the list.
+    const groups = groupTasks(
+      [
+        task('just-added', TODAY, '2026-07-28T18:00:00Z'),
+        task('added-earlier', TODAY, '2026-07-28T08:00:00Z'),
+        task('added-first', TODAY, '2026-07-27T09:00:00Z'),
+      ],
+      [],
+      TODAY,
+    )
+    expect(groups.today.map(t => t.id)).toEqual(['added-first', 'added-earlier', 'just-added'])
+  })
+
+  it('orders undated tasks oldest first too', () => {
+    const groups = groupTasks(
+      [
+        task('newer', null, '2026-07-28T18:00:00Z'),
+        task('older', null, '2026-07-20T08:00:00Z'),
+      ],
+      [],
+      TODAY,
+    )
+    expect(groups.anytime.map(t => t.id)).toEqual(['older', 'newer'])
   })
 
   it('sorts dated buckets chronologically', () => {
