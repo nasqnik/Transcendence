@@ -6,6 +6,7 @@ NOTIFICATION_TYPES = [
     ('task_rejected', 'Task Rejected'),
     ('task_submitted', 'Task Submitted'),
     ('level_up', 'Level Up'),
+    ('friend_request', 'Friend Request'),
 ]
 
 class Notification(models.Model):
