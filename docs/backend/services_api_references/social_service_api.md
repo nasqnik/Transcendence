@@ -82,10 +82,15 @@ Returns `400` if you friend yourself, or if a pending/accepted friendship alread
     "to_kid_id": "<uuid>",
     "status": "pending",
     "created_at": "2026-07-18T12:00:00Z",
-    "responded_at": null
+    "responded_at": null,
+    "from_name": "Alex",
+    "from_username": "alex_me",
+    "from_bio": "I like robots"
   }
 ]
 ```
+
+Sender identity (`from_name`, `from_username`, `from_bio`) is enriched from auth-service. If auth is unreachable, those fields are empty strings and the request row is still returned.
 
 **POST `/friends/requests/{id}/accept/` response**
 
@@ -138,6 +143,8 @@ Same shape as accept, with `"status": "declined"`.
 ```
 
 Enrichment comes from auth (name/username/bio), catalog (avatar), and gamification (XP/stats). If a downstream service is unavailable, friendship + online fields still return; missing enrichment uses empty defaults (`bio: ""`, `avatar: null`, `overall_xp: 0`, `stats: []`).
+
+Sending a friend request (`POST /friends/requests/`) also notifies the recipient via notification-service (`friend_request`). Notify failures do not block creating the request.
 
 **DELETE `/friends/{kid_id}/`**
 
