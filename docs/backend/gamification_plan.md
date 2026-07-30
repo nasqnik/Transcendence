@@ -47,10 +47,11 @@ No FKs to other services - `kid_id` stored as plain `UUIDField(db_index=True)`, 
 
 ## Tunable constants (in `core/settings.py`)
 
-- `STAT_XP_PER_LEVEL = 100` (points to fill a stat 0 -> 100%).
+- `STAT_XP_PER_LEVEL = 50` (points to fill a stat toward the next level).
 - `OVERALL_XP_PER_STAT_LEVEL = 50` (overall XP granted per stat level completed).
-- `MAIN_XP_PER_LEVEL = 200` (overall XP to gain a main level).
-- `COINS_PER_MAIN_LEVEL = 25` (coins granted per main level gained).
+- `MAIN_XP_PER_LEVEL = 100` (overall XP to gain a main level).
+- `COINS_PER_MAIN_LEVEL = 50` (coins granted per main level gained).
+- `STARTER_COINS = 50` (coins on first profile create; env override).
 
 ## Plan
 

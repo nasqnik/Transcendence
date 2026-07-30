@@ -129,6 +129,10 @@ CATALOG_INTERNAL_URL = os.getenv(
     'CATALOG_INTERNAL_URL',
     'http://catalog-service:8000',
 )
+NOTIFICATION_INTERNAL_URL = os.getenv(
+    'NOTIFICATION_INTERNAL_URL',
+    'http://notification-service:8000',
+)
 
 REDIS_URL = os.getenv('REDIS_URL', 'redis://redis:6379/0')
 
