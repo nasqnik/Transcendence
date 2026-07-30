@@ -64,6 +64,18 @@ class FriendshipSerializer(serializers.ModelSerializer):
         read_only_fields = fields
 
 
+class FriendRequestListItemSerializer(serializers.Serializer):
+    id = serializers.UUIDField()
+    from_kid_id = serializers.UUIDField()
+    to_kid_id = serializers.UUIDField()
+    status = serializers.CharField()
+    created_at = serializers.DateTimeField()
+    responded_at = serializers.DateTimeField(allow_null=True)
+    from_name = serializers.CharField()
+    from_username = serializers.CharField()
+    from_bio = serializers.CharField(allow_blank=True)
+
+
 class FriendAvatarSerializer(serializers.Serializer):
     base_character = serializers.CharField()
     equipped_hat = serializers.UUIDField(allow_null=True)
@@ -99,6 +111,39 @@ class KidSearchResultSerializer(serializers.Serializer):
     bio = serializers.CharField(allow_blank=True)
     is_online = serializers.BooleanField()
     friendship_status = serializers.CharField()
+
+
+def serialize_incoming_requests_for(kid_id):
+    rows = Friendship.objects.filter(
+        to_kid_id=kid_id,
+        status=Friendship.Status.PENDING,
+    ).order_by('-created_at')
+
+    items = []
+    sender_ids = []
+    for row in rows:
+        sender_ids.append(row.from_kid_id)
+        items.append({
+            'id': row.id,
+            'from_kid_id': row.from_kid_id,
+            'to_kid_id': row.to_kid_id,
+            'status': row.status,
+            'created_at': row.created_at,
+            'responded_at': row.responded_at,
+            'from_name': '',
+            'from_username': '',
+            'from_bio': '',
+        })
+
+    identities = fetch_kids_by_ids(sender_ids)
+    for item in items:
+        identity = identities.get(str(item['from_kid_id']))
+        if identity:
+            item['from_name'] = identity['name']
+            item['from_username'] = identity['username']
+            item['from_bio'] = identity['bio']
+
+    return FriendRequestListItemSerializer(items, many=True).data
 
 
 def serialize_friends_for(kid_id):
