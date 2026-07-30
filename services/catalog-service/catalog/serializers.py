@@ -7,13 +7,18 @@ class AvatarItemSerializer(serializers.ModelSerializer):
         fields = ['id', 'name', 'type', 'image_url', 'coin_cost', 'is_active', 'param_key', 'param_value']
 
 class KidAvatarSerializer(serializers.ModelSerializer):
+    avatar_url = serializers.SerializerMethodField()
     class Meta:
         model = KidAvatar
         fields = [
-            'id', 'kid_id', 'base_character', 'unlocked_items',
-            'equipped_glasses', 'equipped_earrings', 'equipped_background', 'equipped_hair',
+            'id', 'kid_id', 'base_character', 'avatar_url', 'unlocked_items',
+            'equipped_hair', 'equipped_glasses', 'equipped_earrings', 'equipped_background',
             'updated_at',
         ]
+
+    def get_avatar_url(self, obj):
+        from .views import build_avatar_url
+        return build_avatar_url(obj)
 
 class KidAvatarDetailSerializer(serializers.ModelSerializer):
     unlocked_items = serializers.SerializerMethodField()
