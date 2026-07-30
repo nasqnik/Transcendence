@@ -22,6 +22,7 @@ all: ssl-if-missing
 	docker compose up -d --build
 	$(MAKE) init-dbs
 	$(MAKE) migrate
+	$(MAKE) seed-catalog
 
 init-dbs: init-auth-db init-task-db init-gamification-db init-analytics-db init-notification-db init-catalog-db init-social-db
 
