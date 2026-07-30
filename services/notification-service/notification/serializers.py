@@ -7,7 +7,7 @@ class NotificationCreateSerializer(serializers.Serializer):
         help_text="ID of the user (kid or parent) to notify."
     )
     notification_type = serializers.ChoiceField(
-        choices=['task_confirmed', 'task_rejected', 'task_submitted', 'level_up'],
+        choices=['task_confirmed', 'task_rejected', 'task_submitted', 'level_up', 'friend_request'],
         help_text="Type of notification event.",
     )
     message = serializers.CharField(

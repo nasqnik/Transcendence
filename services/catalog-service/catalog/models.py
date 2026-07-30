@@ -2,9 +2,9 @@ from django.db import models
 from uuid import uuid4
 
 SLOT_CHOICES = [
-    ('hat', 'Hat'),
-    ('outfit', 'Outfit'),
-    ('accessory', 'Accessory'),
+    ('hair', 'Hair'),
+    ('glasses', 'Glasses'),
+    ('earrings', 'Earrings'),
     ('background', 'Background'),
 ]
 
@@ -15,6 +15,8 @@ class AvatarItem(models.Model):
     image_url = models.TextField()
     coin_cost = models.PositiveIntegerField()
     is_active = models.BooleanField(default=True)
+    param_key = models.CharField(max_length=50, default='')
+    param_value = models.CharField(max_length=100, default='')
 
     class Meta:
         ordering = ['type', 'name']
@@ -27,9 +29,9 @@ class KidAvatar(models.Model):
     kid_id = models.UUIDField(unique=True, db_index=True)
     base_character = models.CharField(max_length=50, default='default')
     unlocked_items = models.JSONField(default=list)
-    equipped_hat = models.UUIDField(null=True, blank=True)
-    equipped_outfit = models.UUIDField(null=True, blank=True)
-    equipped_accessory = models.UUIDField(null=True, blank=True)
+    equipped_hair = models.UUIDField(null=True, blank=True)
+    equipped_glasses = models.UUIDField(null=True, blank=True)
+    equipped_earrings = models.UUIDField(null=True, blank=True)
     equipped_background = models.UUIDField(null=True, blank=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -48,3 +50,16 @@ class RewardPurchase(models.Model):
 
     def __str__(self):
         return f"Kid{self.kid_id} purchased {self.item.name} for {self.coins_spent} coins"
+    
+class ParentProfile(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid4, editable=False)
+    parent_id = models.UUIDField(unique=True, db_index=True)
+    profile_picture = models.ImageField(
+        upload_to='parent_avatars/',
+        null=True,
+        blank=True,
+    )
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"ParentProfile for parent_id: {self.parent_id}"
