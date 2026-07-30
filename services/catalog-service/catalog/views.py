@@ -24,10 +24,11 @@ from .serializers import (
 )
 
 def build_avatar_url(avatar):
-    base_url = f"https://api.dicebear.com/10.x/adventurer/svg?seed={avatar.base_character}"
-    if avatar.base_character == '5dko0f0w':
+    seed = avatar.base_character if avatar.base_character in ['5dko0f0w', 'kwiay0te'] else '5dko0f0w'
+    base_url = f"https://api.dicebear.com/10.x/adventurer/svg?seed={seed}"
+    if seed == '5dko0f0w':
         base_url += "&hairColor=2c1b18"
-    elif avatar.base_character == 'kwiay0te':
+    elif seed == 'kwiay0te':
         base_url += "&hairColor=2c1b18&skinColor=e8a87c"
 
     params = {}
