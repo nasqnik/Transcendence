@@ -1,25 +1,28 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { getNotifications, markNotificationRead, type Notification } from '../api/notifications'
 import useAuthStore from '../store/authStore'
-
-const WS_BASE = (import.meta.env.VITE_API_URL ?? 'https://localhost/api')
-  .replace('https://', 'wss://')
-  .replace('/api', '')
+import { closeSocket } from '../utils/closeSocket'
+import { WS_BASE } from '../utils/wsBase'
 
 const KEY = ['notifications'] as const
 
 export function useNotifications() {
   const token = useAuthStore(s => s.token)
   const queryClient = useQueryClient()
+  // The message of the most recent socket push, for a live region. Set from
+  // the socket handler rather than derived in render: only genuinely new
+  // arrivals should be announced, and the initial backlog should not be.
+  const [pushedMessage, setPushedMessage] = useState('')
 
   // The server returns every notification (read + unread) newest-first, so its
   // response is the complete list — no client-side merge or persistence needed.
-  const { data: notifications = [] } = useQuery({
+  const notificationsQuery = useQuery({
     queryKey: KEY,
     queryFn: getNotifications,
     enabled: !!token,
   })
+  const { data: notifications = [] } = notificationsQuery
 
   // Live updates over WebSocket, prepended straight into the query cache.
   useEffect(() => {
@@ -60,6 +63,15 @@ export function useNotifications() {
               notification.notification_type === 'task_rejected') {
             queryClient.invalidateQueries({ queryKey: ['completions'] })
           }
+          // A friend request arrives over this socket and nowhere else — the
+          // presence socket only carries friend_online/friend_offline. Without
+          // this the bell would ping while the sidebar badge and the friends
+          // page kept showing the old count until something happened to
+          // refetch them. Inert until social-service starts sending the type.
+          if (notification.notification_type === 'friend_request') {
+            queryClient.invalidateQueries({ queryKey: ['friendRequests'] })
+          }
+          setPushedMessage(notification.message)
         } catch { /* ignore malformed message */ }
       }
 
@@ -81,14 +93,7 @@ export function useNotifications() {
       if (timer) clearTimeout(timer)
       const socket = ws
       ws = null
-      if (!socket) return
-      // Detach handlers so teardown can't trigger a reconnect or a cache write.
-      socket.onopen = socket.onmessage = socket.onerror = socket.onclose = null
-      // Closing a still-CONNECTING socket logs a noisy "closed before the
-      // connection is established" warning (happens on every StrictMode remount
-      // in dev), so defer the close until it has actually opened.
-      if (socket.readyState === WebSocket.CONNECTING) socket.onopen = () => socket.close()
-      else socket.close()
+      closeSocket(socket)
     }
   }, [token, queryClient])
 
@@ -110,5 +115,15 @@ export function useNotifications() {
 
   const unreadCount = notifications.filter(n => !n.is_read).length
 
-  return { notifications, unreadCount, markRead }
+  return {
+    notifications,
+    unreadCount,
+    markRead,
+    // Without this the list falls back to [] and the panel says "no
+    // notifications" — the same empty-vs-error confusion LoadError fixed on
+    // every other surface.
+    pushedMessage,
+    isError: notificationsQuery.isError,
+    refetch: () => { notificationsQuery.refetch() },
+  }
 }

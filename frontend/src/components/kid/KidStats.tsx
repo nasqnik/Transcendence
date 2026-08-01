@@ -2,17 +2,22 @@ import { useState, useEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { type TaskCategory, CATEGORY_STYLE } from '../../constants/categories'
 import { useKidLevel } from '../../hooks/useKidLevel'
+import LoadError from '../LoadError'
 import StatsLog from './StatsLog'
 import LevelUpModal from './LevelUpModal'
+import { levelUpsBetween, type LevelUp } from '../../utils/levelUps'
 
 const CATEGORIES: TaskCategory[] = ['health', 'learning', 'responsibility', 'creativity']
 
 export default function KidStats() {
   const { t } = useTranslation()
   const [logOpen, setLogOpen] = useState(false)
-  const [levelUp, setLevelUp] = useState<{ category: TaskCategory; level: number } | null>(null)
+  // A queue, not a single value: finishing one task can raise two categories
+  // at once, and `break` after the first meant the kid was congratulated for
+  // one and never told about the other.
+  const [levelUps, setLevelUps] = useState<LevelUp[]>([])
 
-  const { stats, pendingXpByCategory, isLoading } = useKidLevel()
+  const { stats, pendingXpByCategory, isLoading, isError, refetch } = useKidLevel()
 
   // Detect level-ups by comparing category levels before and after each refetch
   const prevLevelsRef = useRef<Record<TaskCategory, number> | null>(null)
@@ -24,12 +29,8 @@ export default function KidStats() {
     ) as Record<TaskCategory, number>
 
     if (prevLevelsRef.current) {
-      for (const cat of CATEGORIES) {
-        if (currentLevels[cat] > prevLevelsRef.current[cat]) {
-          setLevelUp({ category: cat, level: currentLevels[cat] })
-          break
-        }
-      }
+      const gained = levelUpsBetween(prevLevelsRef.current, currentLevels)
+      if (gained.length > 0) setLevelUps(queue => [...queue, ...gained])
     }
 
     prevLevelsRef.current = currentLevels
@@ -46,13 +47,14 @@ export default function KidStats() {
             type="button"
             aria-haspopup="dialog"
             aria-expanded={logOpen}
-            className="font-body text-xs font-semibold text-primary-600 hover:text-primary-700 focus-ring rounded"
+            className="min-h-11 -my-2 px-2 flex items-center font-body text-xs font-semibold text-primary-600 hover:text-primary-700 focus-ring rounded"
             onClick={() => setLogOpen(true)}
           >
             {t('kidDash.details')}
           </button>
         </div>
 
+        {isError ? <LoadError onRetry={refetch} /> : (
         <div className="flex flex-col gap-3">
           {isLoading ? CATEGORIES.map(cat => (
             <div key={cat} className="animate-pulse rounded-2xl bg-gray-50 p-3">
@@ -135,15 +137,19 @@ export default function KidStats() {
             )
           })}
         </div>
+        )}
       </section>
 
       {logOpen && <StatsLog onClose={() => setLogOpen(false)} />}
 
-      {levelUp && (
+      {/* One at a time; closing reveals the next so a double level-up is two
+          celebrations rather than one silently dropped. */}
+      {levelUps.length > 0 && (
         <LevelUpModal
-          category={levelUp.category}
-          level={levelUp.level}
-          onClose={() => setLevelUp(null)}
+          key={`${levelUps[0].category}-${levelUps[0].level}`}
+          category={levelUps[0].category}
+          level={levelUps[0].level}
+          onClose={() => setLevelUps(queue => queue.slice(1))}
         />
       )}
     </>

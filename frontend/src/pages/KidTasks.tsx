@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { getTasks, getCompletions, deleteTask } from '../api/tasks'
@@ -7,7 +7,9 @@ import { groupTasks, latestCompletions } from '../utils/taskGroups'
 import { todayStr, dateStrFromToday, localDateStr } from '../utils/date'
 import { useTaskCompletion } from '../hooks/useTaskCompletion'
 import { usePageTitle } from '../hooks/usePageTitle'
+import { useFocusOnSwap } from '../hooks/useFocusOnSwap'
 import TaskRow from '../components/kid/TaskRow'
+import LoadError from '../components/LoadError'
 import TaskToasts from '../components/kid/TaskToasts'
 import EditTaskModal from '../components/kid/EditTaskModal'
 import AddTaskModal from '../components/kid/AddTaskModal'
@@ -55,12 +57,17 @@ export default function KidTasks() {
   const [selectMode, setSelectMode]   = useState(false)
   const [selectedIds, setSelectedIds] = useState(new Set<string>())
   const [confirming, setConfirming]   = useState(false)
+  // Delete → "are you sure" swaps the control out from under the keyboard.
+  const deleteBarRef = useRef<HTMLDivElement>(null)
+  useFocusOnSwap(deleteBarRef, confirming)
   const [editingTask, setEditingTask] = useState<Task | null>(null)
   const [addOpen, setAddOpen]         = useState(false)
   const [logOpen, setLogOpen]         = useState(false)
 
-  const { data: tasks = [], isLoading: tasksLoading } = useQuery({ queryKey: ['tasks'], queryFn: getTasks })
-  const { data: completions = [], isLoading: completionsLoading } = useQuery({ queryKey: ['completions'], queryFn: getCompletions })
+  const tasksQuery       = useQuery({ queryKey: ['tasks'],       queryFn: getTasks })
+  const completionsQuery = useQuery({ queryKey: ['completions'], queryFn: getCompletions })
+  const { data: tasks = [], isLoading: tasksLoading } = tasksQuery
+  const { data: completions = [], isLoading: completionsLoading } = completionsQuery
 
   const { complete, lingering, displayCompletion, toastXp, toastError, showError } = useTaskCompletion(tasks)
 
@@ -74,6 +81,7 @@ export default function KidTasks() {
   })
 
   const isLoading      = tasksLoading || completionsLoading
+  const loadFailed     = tasksQuery.isError || completionsQuery.isError
   const today          = todayStr()
   const tomorrow       = dateStrFromToday(1)
   const completionInfo = latestCompletions(completions)
@@ -126,12 +134,16 @@ export default function KidTasks() {
 
   const selectedCount = selectedIds.size
 
-  function renderList(list: Task[], labelledBy: string, className = '', overdueIds?: ReadonlySet<string>) {
+  // Every task list on this page goes through here. The upcoming section used
+  // to inline its own copy so it could pass a due label, and drifted: it never
+  // got the rejected tint the other lists give. Deriving the label from the
+  // task's own date instead of a call-site argument keeps one implementation.
+  function renderList(list: Task[], labelledBy: string, className = '') {
     return (
       <ul className="flex flex-col gap-2" aria-labelledby={labelledBy}>
         {list.map(task => {
           const shown = displayCompletion(task.id, completionInfo.get(task.id))
-          const isOverdue = overdueIds?.has(task.id) ?? false
+          const isOverdue = overdueIds.has(task.id)
           // Late or sent back — both need attention, so both carry the tint.
           // Ticking one clears it straight away, since `shown` flips to done.
           const needsAttention = shown?.status === 'rejected' || isOverdue
@@ -142,6 +154,9 @@ export default function KidTasks() {
               completionInfo={shown}
               onComplete={complete}
               overdue={isOverdue}
+              // Only a future date needs spelling out — today's and overdue
+              // rows already sit under headings that say when they are.
+              dueLabel={task.due_date && task.due_date > today ? formatDueDate(task.due_date) : undefined}
               showAiSummary
               selectMode={selectMode}
               selected={selectedIds.has(task.id)}
@@ -172,6 +187,8 @@ export default function KidTasks() {
 
       {isLoading ? (
         <p className="font-body text-sm text-gray-400 py-10 text-center">{t('tasks.loading')}</p>
+      ) : loadFailed ? (
+        <LoadError onRetry={() => { tasksQuery.refetch(); completionsQuery.refetch() }} />
       ) : (
         <>
         {/* Left: work to do. Right: what is done or waiting on someone
@@ -193,7 +210,7 @@ export default function KidTasks() {
                 <button
                   type="button"
                   onClick={() => (selectMode ? exitSelectMode() : setSelectMode(true))}
-                  className="font-body text-sm font-semibold text-primary-600 hover:text-primary-700 focus-ring rounded-lg px-2 py-1"
+                  className="min-h-11 -my-2 inline-flex items-center font-body text-sm font-semibold text-primary-600 hover:text-primary-700 focus-ring rounded-lg px-2"
                 >
                   {selectMode ? t('common.cancel') : t('tasks.select')}
                 </button>
@@ -210,7 +227,7 @@ export default function KidTasks() {
               )}
 
               {todayList.length > 0 ? (
-                renderList(todayList, 'today-heading', '', overdueIds)
+                renderList(todayList, 'today-heading')
               ) : (
                 <div className="flex flex-col items-center gap-1.5 py-8 text-center">
                   <span className="text-4xl" aria-hidden="true">
@@ -231,7 +248,7 @@ export default function KidTasks() {
 
               {/* Delete lives with the tasks it removes, not in a page-level bar */}
               {selectMode && (
-                <div className="mt-3 pt-3 border-t border-gray-100">
+                <div className="mt-3 pt-3 border-t border-gray-100" ref={deleteBarRef}>
                   {confirming ? (
                     <div role="group" aria-label={t('tasks.deleteConfirmMany', { count: selectedCount })} className="flex items-center gap-2 flex-wrap">
                       <p className="flex-1 font-body text-sm font-semibold text-gray-700">
@@ -271,23 +288,7 @@ export default function KidTasks() {
 
             {groups.upcoming.length > 0 && (
               <Section id="upcoming-heading" icon="📅" title={t('kidDash.upcoming')}>
-                <ul className="flex flex-col gap-2" aria-labelledby="upcoming-heading">
-                  {groups.upcoming.map(task => (
-                    <TaskRow
-                      key={task.id}
-                      task={task}
-                      completionInfo={displayCompletion(task.id, completionInfo.get(task.id))}
-                      onComplete={complete}
-                      dueLabel={formatDueDate(task.due_date!)}
-                      showAiSummary
-                      selectMode={selectMode}
-                      selected={selectedIds.has(task.id)}
-                      onToggleSelect={toggleSelect}
-                      onEdit={() => setEditingTask(task)}
-                      className="rounded-xl hover:bg-gray-50 transition-colors"
-                    />
-                  ))}
-                </ul>
+                {renderList(groups.upcoming, 'upcoming-heading')}
               </Section>
             )}
 
@@ -318,7 +319,7 @@ export default function KidTasks() {
                   type="button"
                   onClick={() => setLogOpen(true)}
                   aria-haspopup="dialog"
-                  className="flex items-center gap-1.5 rounded-full bg-teal-50 text-teal-700 px-3 py-1 font-body text-xs font-semibold hover:bg-teal-100 focus-ring transition-colors"
+                  className="min-h-11 -my-2 flex items-center gap-1.5 rounded-full bg-teal-50 text-teal-700 px-3 font-body text-xs font-semibold hover:bg-teal-100 focus-ring transition-colors"
                 >
                   <span aria-hidden="true">✓</span>
                   {t('kidDash.pointsLog')}

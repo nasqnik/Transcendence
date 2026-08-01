@@ -11,17 +11,26 @@ const WELCOME_KEY = (userId: string) => `kp_welcome_${userId}`
 
 export default function ChildDashboard() {
   const { t } = useTranslation()
-  const userId = useAuthStore(s => s.currentUser?.id ?? '')
+  const userId = useAuthStore(s => s.currentUser?.id)
   usePageTitle(t('app.name'))
 
-  const [welcomeDismissed, setWelcomeDismissed] = useState(
-    () => !!localStorage.getItem(WELCOME_KEY(userId))
-  )
+  const [dismissedThisSession, setDismissedThisSession] = useState(false)
+
+  // Read on every render rather than once in a useState initializer. The
+  // initializer captured whatever the id was at mount and never revisited it,
+  // so an id that arrived a tick late produced the key `kp_welcome_` and the
+  // dismissal was stored against nobody. ProtectedRoute's hydration gate makes
+  // that unlikely, but nothing here needs to depend on that being true.
+  const alreadyDismissed = !!userId && !!localStorage.getItem(WELCOME_KEY(userId))
 
   function dismissWelcome() {
-    localStorage.setItem(WELCOME_KEY(userId), '1')
-    setWelcomeDismissed(true)
+    if (userId) localStorage.setItem(WELCOME_KEY(userId), '1')
+    setDismissedThisSession(true)
   }
+
+  // Never shown before the user is known — a modal keyed to nobody would
+  // reappear on every visit once the id arrived.
+  const showWelcome = !!userId && !alreadyDismissed && !dismissedThisSession
 
   return (
     <main
@@ -42,7 +51,7 @@ export default function ChildDashboard() {
         </div>
       </div>
 
-      {!welcomeDismissed && (
+      {showWelcome && (
         <WelcomeModal onDismiss={dismissWelcome} />
       )}
     </main>

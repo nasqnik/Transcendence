@@ -1,8 +1,16 @@
 import type { ButtonHTMLAttributes, ReactNode } from 'react'
+import { Link } from 'react-router-dom'
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   variant: 'primary' | 'secondary'
   children: ReactNode
+  /**
+   * Render as a router link instead of a button. A control that navigates
+   * should be a link: `onClick={() => navigate(...)}` on a <button> has no
+   * href, so middle-click, ctrl-click and "open in new tab" all do nothing,
+   * and assistive tech announces it as a button rather than a destination.
+   */
+  to?: string
 }
 
 const variantStyles = {
@@ -21,8 +29,23 @@ export default function Button({
   variant,
   className,
   type = 'button',
+  to,
   ...props
 }: ButtonProps) {
+  const classes = [
+    'font-body font-semibold px-6 py-3 rounded-xl focus-ring',
+    variantStyles[variant],
+    className,
+  ].filter(Boolean).join(' ')
+
+  if (to) {
+    return (
+      <Link to={to} className={`inline-block text-center ${classes}`}>
+        {children}
+      </Link>
+    )
+  }
+
   return (
     <button
       {...props}

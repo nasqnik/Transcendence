@@ -1,11 +1,12 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { useQueryClient } from '@tanstack/react-query'
 import { createTaskStream } from '../../api/tasks'
 import { todayStr } from '../../utils/date'
 import Modal from '../Modal'
+import ModalHeader from '../ModalHeader'
 import StreamingView from './StreamingView'
 import TaskFormFields from './TaskFormFields'
+import { useTaskStream } from '../../hooks/useTaskStream'
 
 interface Props {
   onClose: () => void
@@ -13,63 +14,27 @@ interface Props {
 
 export default function AddTaskModal({ onClose }: Props) {
   const { t } = useTranslation()
-  const queryClient = useQueryClient()
+  const { status, streamingText, run } = useTaskStream(onClose)
 
   const today = todayStr()
 
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
   const [dueDate, setDueDate] = useState(today)
-  const [status, setStatus] = useState<'idle' | 'streaming' | 'error'>('idle')
-  const [streamingText, setStreamingText] = useState('')
-  const abortRef = useRef<AbortController | null>(null)
-
-  useEffect(() => {
-    return () => { abortRef.current?.abort() }
-  }, [])
-
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!title.trim() || status === 'streaming') return
 
-    const controller = new AbortController()
-    abortRef.current = controller
-    setStatus('streaming')
-    setStreamingText('')
-
-    try {
-      await createTaskStream(
-        { title: title.trim(), description: description.trim(), due_date: dueDate || null },
-        (text) => setStreamingText(prev => prev + text),
-        () => {
-          queryClient.invalidateQueries({ queryKey: ['tasks'] })
-          onClose()
-        },
-        controller.signal,
-      )
-    } catch (err: unknown) {
-      if ((err as Error)?.name === 'AbortError') return
-      setStatus('error')
-    }
+    await run((onText, onDone, signal) => createTaskStream(
+      { title: title.trim(), description: description.trim(), due_date: dueDate || null },
+      onText, onDone, signal,
+    ))
   }
 
   return (
     <Modal onClose={onClose} labelledBy="add-task-heading" cardClassName="rounded-2xl w-full max-w-md mx-4">
 
-      {/* Header */}
-      <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
-        <h2 id="add-task-heading" className="font-heading text-xl font-bold text-gray-900">
-          {t('tasks.createTask')}
-        </h2>
-        <button
-          type="button"
-          onClick={onClose}
-          aria-label={t('common.close')}
-          className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 focus-ring transition-colors text-gray-400 hover:text-gray-600"
-        >
-          ✕
-        </button>
-      </div>
+      <ModalHeader id="add-task-heading" title={t('tasks.createTask')} onClose={onClose} />
 
       {/* Streaming view */}
       {status === 'streaming' ? (

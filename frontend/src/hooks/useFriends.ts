@@ -24,15 +24,10 @@ export function useFriends() {
   const queryClient = useQueryClient()
   const [actionError, setActionError] = useState(false)
 
-  const { data: friends = [], isLoading: friendsLoading } = useQuery({
-    queryKey: FRIENDS_KEY,
-    queryFn: getFriends,
-  })
-
-  const { data: requests = [], isLoading: requestsLoading } = useQuery({
-    queryKey: REQUESTS_KEY,
-    queryFn: getFriendRequests,
-  })
+  const friendsQuery  = useQuery({ queryKey: FRIENDS_KEY,  queryFn: getFriends })
+  const requestsQuery = useQuery({ queryKey: REQUESTS_KEY, queryFn: getFriendRequests })
+  const { data: friends = [], isLoading: friendsLoading } = friendsQuery
+  const { data: requests = [], isLoading: requestsLoading } = requestsQuery
 
   function refreshBoth() {
     queryClient.invalidateQueries({ queryKey: FRIENDS_KEY })
@@ -76,6 +71,10 @@ export function useFriends() {
     friends,
     requests,
     isLoading: friendsLoading || requestsLoading,
+    // Both lists fall back to [], which renders as "No friends yet" — a claim
+    // the page has no business making when the request failed.
+    isError: friendsQuery.isError || requestsQuery.isError,
+    refetch: () => { friendsQuery.refetch(); requestsQuery.refetch() },
     accept,
     decline,
     remove,

@@ -38,11 +38,15 @@ export interface Completion {
 // `-50` tint backgrounds. `bar`/`bg` stay at `-500`/`-50` since neither ever
 // carries text (progress-bar fills and badge tints are held to the looser
 // 3:1 non-text contrast rule, which `-500` already clears).
-export const CATEGORY_STYLE: Record<TaskCategory, { bg: string; text: string; bar: string; icon: string }> = {
-  health:         { bg: 'bg-teal-50',    text: 'text-teal-700',    bar: 'bg-teal-500',    icon: '❤️' },
-  learning:       { bg: 'bg-blue-50',    text: 'text-blue-700',    bar: 'bg-blue-500',    icon: '📘' },
-  responsibility: { bg: 'bg-amber-50',   text: 'text-amber-700',   bar: 'bg-amber-500',   icon: '🏆' },
-  creativity:     { bg: 'bg-primary-50', text: 'text-primary-700', bar: 'bg-primary-500', icon: '🎨' },
+// `solid` is the fill to use behind white text. The `bar` shades are -500 and
+// exist for progress fills, which are held to the looser 3:1 non-text rule;
+// white on them measures 2.17-4.23:1, all under the 4.5 AA text minimum
+// (amber is the worst). The -700 shades run 6.70-10.01:1.
+export const CATEGORY_STYLE: Record<TaskCategory, { bg: string; text: string; bar: string; solid: string; icon: string }> = {
+  health:         { bg: 'bg-teal-50',    text: 'text-teal-700',    bar: 'bg-teal-500',    solid: 'bg-teal-700',    icon: '❤️' },
+  learning:       { bg: 'bg-blue-50',    text: 'text-blue-700',    bar: 'bg-blue-500',    solid: 'bg-blue-700',    icon: '📘' },
+  responsibility: { bg: 'bg-amber-50',   text: 'text-amber-700',   bar: 'bg-amber-500',   solid: 'bg-amber-700',   icon: '🏆' },
+  creativity:     { bg: 'bg-primary-50', text: 'text-primary-700', bar: 'bg-primary-500', solid: 'bg-primary-700', icon: '🎨' },
 }
 
 /** Returns the category with the highest points_value, used as the display category. */

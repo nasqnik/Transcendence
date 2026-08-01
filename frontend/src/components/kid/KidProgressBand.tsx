@@ -9,13 +9,13 @@ import { useKidLevel } from '../../hooks/useKidLevel'
  * kept the streak. Colour comes from the avatar and the lit streak days rather
  * than a gradient fill, so the space it takes is space that says something.
  *
- * The avatar tile is a placeholder. Character creation and the wardrobe are
- * Madiha's — when `GET /catalog/avatar/` is wired up, the composed avatar
- * image replaces the emoji here and the tile becomes a link to the wardrobe.
+ * The avatar tile shows the kid's composed character from `GET /catalog/avatar/`
+ * and links to the studio. Character creation and the wardrobe themselves are
+ * Madiha's; this only reads the result, sharing her query cache.
  */
 export default function KidProgressBand() {
   const { t, i18n } = useTranslation()
-  const { level, progress, xpCurrent, xpMax, coins, streak, week, isLoading } = useKidLevel()
+  const { level, progress, xpCurrent, xpMax, coins, streak, week, isLoading, isError, refetch } = useKidLevel()
   // Shares AvatarStudio's cache, so customising there updates this immediately.
   const { data: avatar } = useQuery({ queryKey: ['kidAvatar'], queryFn: getKidAvatar })
 
@@ -30,7 +30,9 @@ export default function KidProgressBand() {
 
   return (
     <section
-      aria-label={t('kidDash.myStats')}
+      // Not 'My Stats' — that is the heading of the panel below, so a screen
+      // reader announced two different regions by the same name.
+      aria-label={t('kidDash.yourProgress')}
       // 700 → 600, not 600 → 500: white on primary-500 measures 4.23:1, under
       // the 4.5 AA minimum for the small XP and streak text. primary-600 is the
       // lightest shade that passes, so it is the light end of the gradient.
@@ -59,6 +61,23 @@ export default function KidProgressBand() {
           <div className="animate-pulse flex flex-col gap-2">
             <div className="h-4 w-28 rounded-full bg-white/25" />
             <div className="h-3 rounded-full bg-white/25" />
+          </div>
+        ) : isError ? (
+          /* Every number here falls back to 0, so a failed load rendered as a
+             real "Level 0 · 0/200 XP · 0 Coins · 0-day streak" — a confident
+             claim built on a request that never landed. Say nothing instead,
+             and offer the retry: a sentence with no action left the kid stuck.
+             Inverted rather than the shared LoadError because the band sits on
+             a coloured surface. */
+          <div className="flex items-center gap-3 flex-wrap">
+            <p className="font-body text-sm text-white">{t('common.loadFailed')}</p>
+            <button
+              type="button"
+              onClick={refetch}
+              className="rounded-lg bg-white/20 hover:bg-white/30 px-3 py-1.5 font-body text-xs font-bold text-white focus-ring transition-colors"
+            >
+              {t('common.retry')}
+            </button>
           </div>
         ) : (
           <>
@@ -90,7 +109,7 @@ export default function KidProgressBand() {
       </div>
 
       {/* What you've banked: coins to spend, and the week behind you. */}
-      {!isLoading && (
+      {!isLoading && !isError && (
         <div className="flex items-center justify-start lg:justify-end gap-3 sm:gap-4 flex-wrap min-w-0">
 
           {/* Shown even at zero — the topbar hides coins below 1, so a kid who

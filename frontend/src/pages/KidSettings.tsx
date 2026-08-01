@@ -1,5 +1,7 @@
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
+import { getKidAvatar } from '../api/catalog'
+import LoadError from '../components/LoadError'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { type TaskCategory, CATEGORY_STYLE } from '../constants/categories'
 import { getCategorySettings, updateCategorySettings, type CategorySettings } from '../api/tasks'
@@ -13,6 +15,7 @@ import useAuthStore from '../store/authStore'
 import FormField from '../components/FormField'
 import FormAlert from '../components/FormAlert'
 import Button from '../components/Button'
+import FormActions from '../components/FormActions'
 import LanguageSwitcher from '../components/LanguageSwitcher'
 import KidAccountRow from '../components/kid/KidAccountRow'
 import KidEmailRow from '../components/kid/KidEmailRow'
@@ -67,13 +70,19 @@ function Toggle({ checked, onChange, label, disabled }: ToggleProps) {
       aria-label={label}
       disabled={disabled}
       onClick={() => onChange(!checked)}
-      className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors focus-ring disabled:opacity-50 ${
+      // The track stays 24px by design; the ::before extends the touch target
+      // to 44px without changing how the switch looks or shifting the row.
+      className={`relative before:absolute before:-inset-y-2.5 before:inset-x-0 before:content-[''] inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors focus-ring disabled:opacity-50 ${
         checked ? 'bg-primary-500' : 'bg-gray-200'
       }`}
     >
+      {/* Positioned with the logical `start-*`, not `translate-x-*`. A
+          translate is a physical transform that Tailwind does not mirror, so
+          in Arabic the knob slid right — out of a track whose start edge is
+          now on the right — and sat detached beside it. */}
       <span
-        className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${
-          checked ? 'translate-x-6' : 'translate-x-1'
+        className={`absolute h-4 w-4 rounded-full bg-white shadow transition-all ${
+          checked ? 'start-6' : 'start-1'
         }`}
       />
     </button>
@@ -89,22 +98,28 @@ export default function KidSettings() {
 
   const currentUser = useAuthStore(s => s.currentUser)
   const updateUser = useAuthStore(s => s.updateUser)
-  const { level, isLoading: levelLoading } = useKidLevel()
+  const { level, isLoading: levelLoading, isError: levelError } = useKidLevel()
 
-  const { data: profile, isLoading: profileLoading } = useQuery({
+  const profileQuery = useQuery({
     queryKey: ['kidMe'],
     queryFn: getKidMe,
   })
+  const { data: profile, isLoading: profileLoading } = profileQuery
 
-  const { data: serverSettings } = useQuery({
+  const settingsQuery = useQuery({
     queryKey: ['categorySettings'],
     queryFn: getCategorySettings,
   })
+  const { data: serverSettings } = settingsQuery
 
   // Optimistic override applied on each toggle; null until the user changes
   // something, at which point it takes over from the server copy.
   const [settings, setSettings] = useState<CategorySettings | null>(null)
   const [savedRecently, setSavedRecently] = useState(false)
+  // Cleared on unmount: navigating away inside the two-second window left a
+  // timer writing to a component that no longer existed.
+  const savedTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  useEffect(() => () => { if (savedTimer.current) clearTimeout(savedTimer.current) }, [])
 
   // ── Invite parent ────────────────────────────────────────────────────────────
   const [inviteEmail, setInviteEmail]       = useState('')
@@ -142,7 +157,8 @@ export default function KidSettings() {
     onSuccess: (updated) => {
       queryClient.setQueryData(['categorySettings'], updated)
       setSavedRecently(true)
-      setTimeout(() => setSavedRecently(false), 2000)
+      if (savedTimer.current) clearTimeout(savedTimer.current)
+      savedTimer.current = setTimeout(() => setSavedRecently(false), 2000)
     },
     onError: () => {
       // Revert to last known server state on failure
@@ -158,6 +174,8 @@ export default function KidSettings() {
     save(updated)
   }
 
+  const { data: avatar } = useQuery({ queryKey: ['kidAvatar'], queryFn: getKidAvatar })
+
   const displaySettings = settings ?? serverSettings
   const displayName = profile?.name || profile?.username || currentUser?.username
   const initial = displayName?.[0]?.toUpperCase() ?? '?'
@@ -172,11 +190,17 @@ export default function KidSettings() {
 
       {/* ── Identity ──────────────────────────────────────────────────────────── */}
       <section className="bg-white rounded-2xl p-6 flex items-center gap-4">
+        {/* The character, same as the topbar and the dashboard band, off the
+            same cached query. This card kept showing a bare initial after
+            those two were wired up, so the kid's face was their identity
+            everywhere except the page actually headed "your account". */}
         <div
-          className="w-16 h-16 rounded-2xl bg-primary-100 flex items-center justify-center font-heading font-bold text-2xl text-primary-700 shrink-0"
+          className="w-16 h-16 rounded-2xl bg-primary-100 flex items-center justify-center font-heading font-bold text-2xl text-primary-700 shrink-0 overflow-hidden"
           aria-hidden="true"
         >
-          {initial}
+          {avatar?.avatar_url
+            ? <img src={avatar.avatar_url} alt="" className="w-full h-full object-cover" />
+            : initial}
         </div>
         <div className="min-w-0">
           <p className="font-heading text-xl font-bold text-gray-900 truncate">{displayName}</p>
@@ -184,7 +208,10 @@ export default function KidSettings() {
             <span className="inline-flex items-center gap-1 bg-primary-50 text-primary-700 rounded-full px-2.5 py-0.5 font-body text-xs font-semibold">
               <span aria-hidden="true">🧒</span> {t('auth.child')}
             </span>
-            {!levelLoading && (
+            {/* Hidden on failure, not shown as zero: `level` falls back to 0,
+                so a failed fetch used to award the kid "Level 0" — the same
+                claim-from-nothing the progress band already bans. */}
+            {!levelLoading && !levelError && (
               <span className="inline-flex items-center gap-1 bg-amber-50 text-amber-700 rounded-full px-2.5 py-0.5 font-body text-xs font-semibold">
                 <span aria-hidden="true">⭐</span> {t('kidDash.level', { level })}
               </span>
@@ -200,7 +227,13 @@ export default function KidSettings() {
         <div className="flex flex-col gap-4 sm:gap-6">
           {/* ── Account details ───────────────────────────────────────────────────── */}
           <Section id="account-heading" icon="👤" title={t('parentDash.accountDetails')}>
-            {profileLoading || !profile ? (
+            {/* The error branch has to come first: the skeleton condition is
+                `!profile`, which a failed fetch also satisfies — so without
+                this the card shimmered forever, with no error and no way to
+                retry. */}
+            {profileQuery.isError ? (
+              <LoadError variant="inline" onRetry={() => profileQuery.refetch()} />
+            ) : profileLoading || !profile ? (
               <div className="flex flex-col gap-3 py-2">
                 <div className="h-10 rounded-xl bg-gray-100 animate-pulse" />
                 <div className="h-10 rounded-xl bg-gray-100 animate-pulse" />
@@ -222,6 +255,7 @@ export default function KidSettings() {
                   value={profile.username}
                   fieldKey="username"
                   autoComplete="username"
+                  dir="ltr"
                   save={(username) => updateKidProfile({ username })}
                   onSaved={(username) => updateUser({ username })}
                 />
@@ -265,7 +299,12 @@ export default function KidSettings() {
               </span>
             </div>
 
-            {!displaySettings ? (
+            {/* Error before loading: `!displaySettings` is also true when the
+                fetch failed, so without this branch the panel showed the
+                loading string forever — the same trap the account card had. */}
+            {settingsQuery.isError ? (
+              <LoadError variant="inline" onRetry={() => settingsQuery.refetch()} />
+            ) : !displaySettings ? (
               <p className="font-body text-sm text-gray-400 mt-4">{t('tasks.loading')}</p>
             ) : (
               <div className="flex flex-col divide-y divide-gray-100 mt-2">
@@ -318,7 +357,7 @@ export default function KidSettings() {
                 <button
                   type="button"
                   onClick={() => { resetFieldErrors(); setInviteErrorKey(null); setInviteOpen(true) }}
-                  className="shrink-0 font-body text-sm font-semibold text-primary-600 hover:text-primary-700 focus-ring rounded"
+                  className="shrink-0 min-h-11 -my-2 px-2 inline-flex items-center font-body text-sm font-semibold text-primary-600 hover:text-primary-700 focus-ring rounded"
                 >
                   {t('kidDash.inviteNow')}
                 </button>
@@ -353,20 +392,12 @@ export default function KidSettings() {
                   disabled={inviteLoading}
                   onChange={e => setUsernameHint(e.target.value)}
                 />
-                <div className="flex gap-2">
-                  <Button variant="primary" type="submit" disabled={inviteLoading} className="px-4 py-2 text-sm">
-                    {inviteLoading ? t('inviteParent.sending') : t('inviteParent.submit')}
-                  </Button>
-                  <Button
-                    variant="secondary"
-                    type="button"
-                    onClick={() => { setInviteOpen(false); resetFieldErrors(); setInviteErrorKey(null) }}
-                    disabled={inviteLoading}
-                    className="px-4 py-2 text-sm"
-                  >
-                    {t('common.cancel')}
-                  </Button>
-                </div>
+                <FormActions
+                  submitLabel={t('inviteParent.submit')}
+                  pendingLabel={t('inviteParent.sending')}
+                  busy={inviteLoading}
+                  onCancel={() => { setInviteOpen(false); resetFieldErrors(); setInviteErrorKey(null) }}
+                />
               </form>
             )}
           </Section>
