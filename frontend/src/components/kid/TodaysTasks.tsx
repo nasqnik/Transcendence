@@ -9,6 +9,7 @@ import { useTaskCompletion } from '../../hooks/useTaskCompletion'
 import TaskRow from './TaskRow'
 import TaskToasts from './TaskToasts'
 import AddTaskModal from './AddTaskModal'
+import LoadError from '../LoadError'
 
 /**
  * Dashboard card: only what the kid can do *today*. Missed, rejected, upcoming
@@ -18,8 +19,12 @@ export default function TodaysTasks() {
   const { t } = useTranslation()
   const [addOpen, setAddOpen] = useState(false)
 
-  const { data: tasks       = [], isLoading: tasksLoading       } = useQuery({ queryKey: ['tasks'],       queryFn: getTasks })
-  const { data: completions = [], isLoading: completionsLoading } = useQuery({ queryKey: ['completions'], queryFn: getCompletions })
+  const tasksQuery       = useQuery({ queryKey: ['tasks'],       queryFn: getTasks })
+  const completionsQuery = useQuery({ queryKey: ['completions'], queryFn: getCompletions })
+
+  const { data: tasks = [], isLoading: tasksLoading } = tasksQuery
+  const { data: completions = [], isLoading: completionsLoading } = completionsQuery
+  const loadFailed = tasksQuery.isError || completionsQuery.isError
 
   const { complete, lingering, displayCompletion, toastXp, toastError } = useTaskCompletion(tasks)
 
@@ -51,7 +56,7 @@ export default function TodaysTasks() {
             <h2 id="tasks-heading" className="font-heading text-xl font-bold text-gray-900">
               {t('kidDash.todaysTasks')}
             </h2>
-            {!isLoading && (
+            {!isLoading && !loadFailed && (
               <span
                 role="status"
                 aria-live="polite"
@@ -62,7 +67,7 @@ export default function TodaysTasks() {
               </span>
             )}
           </div>
-          {!isLoading && tasks.length > 0 && (
+          {!isLoading && !loadFailed && tasks.length > 0 && (
             <Link
               to="/tasks"
               className="font-body text-sm font-semibold text-primary-600 hover:text-primary-700 focus-ring rounded"
@@ -75,7 +80,7 @@ export default function TodaysTasks() {
         {/* The one goal on this page that can actually be finished today.
             Level and XP are cumulative and a long way off; "2 of 5" is close
             enough to be worth chasing, and it resets every morning. */}
-        {!isLoading && dueToday.length > 0 && (
+        {!isLoading && !loadFailed && dueToday.length > 0 && (
           <div className={`mb-4 rounded-2xl px-4 py-3 ${goalPercent === 100 ? 'bg-teal-50' : 'bg-primary-50'}`}>
             <div className="flex items-center justify-between gap-2 mb-2">
               {/* Always the plain count, even at 100% — the empty state below
@@ -104,7 +109,7 @@ export default function TodaysTasks() {
           </div>
         )}
 
-        {!isLoading && (
+        {!isLoading && !loadFailed && (
           <button
             type="button"
             onClick={() => setAddOpen(true)}
@@ -122,6 +127,8 @@ export default function TodaysTasks() {
           <div className="flex flex-col items-center gap-2 py-10 text-center">
             <p className="font-body text-sm text-gray-400">{t('tasks.loading')}</p>
           </div>
+        ) : loadFailed ? (
+          <LoadError onRetry={() => { tasksQuery.refetch(); completionsQuery.refetch() }} />
         ) : todaysTasks.length === 0 ? (
           <div className="flex flex-col items-center gap-2 py-10 text-center">
             {/* Emoji, headline and hint now come from a single decision. They
@@ -163,15 +170,24 @@ export default function TodaysTasks() {
           </div>
         ) : (
           <ul className="flex flex-col gap-2" aria-label={t('kidDash.todaysTasks')}>
-            {todaysTasks.map(task => (
-              <TaskRow
-                key={task.id}
-                task={task}
-                completionInfo={displayCompletion(task.id, completionInfo.get(task.id))}
-                onComplete={complete}
-                className="rounded-xl hover:bg-gray-50 transition-colors"
-              />
-            ))}
+            {todaysTasks.map(task => {
+              const shown = displayCompletion(task.id, completionInfo.get(task.id))
+              // Same tint the tasks page gives a sent-back task. Without it a
+              // rejection looked routine here and urgent one click away, which
+              // is the sort of drift that makes two screens feel like two apps.
+              const needsAttention = shown?.status === 'rejected'
+              return (
+                <TaskRow
+                  key={task.id}
+                  task={task}
+                  completionInfo={shown}
+                  onComplete={complete}
+                  className={`rounded-xl transition-colors ${
+                    needsAttention ? 'bg-danger-50' : 'hover:bg-gray-50'
+                  }`}
+                />
+              )
+            })}
           </ul>
         )}
 

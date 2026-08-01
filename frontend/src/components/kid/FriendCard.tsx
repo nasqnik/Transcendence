@@ -1,7 +1,8 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { CATEGORY_STYLE, type TaskCategory } from '../../constants/categories'
 import { friendAvatarUrl, type Friend } from '../../api/social'
+import { useFocusOnSwap } from '../../hooks/useFocusOnSwap'
 
 interface Props {
   friend: Friend
@@ -12,6 +13,10 @@ interface Props {
 export default function FriendCard({ friend, onRemove, disabled }: Props) {
   const { t } = useTranslation()
   const [confirming, setConfirming] = useState(false)
+  // Activating Remove unmounts it and mounts Confirm/Cancel; without this the
+  // keyboard is dropped on <body> mid-decision.
+  const actionsRef = useRef<HTMLDivElement>(null)
+  useFocusOnSwap(actionsRef, confirming)
   const avatarUrl = friendAvatarUrl(friend.avatar)
 
   return (
@@ -56,21 +61,21 @@ export default function FriendCard({ friend, onRemove, disabled }: Props) {
 
       {/* Removing a friend is quiet and permanent, so it asks first. Inline
           rather than a modal: a modal for this would be heavier than the act. */}
-      <div className="shrink-0">
+      <div className="shrink-0" ref={actionsRef}>
         {confirming ? (
           <div className="flex flex-col gap-1">
             <button
               type="button"
               disabled={disabled}
               onClick={() => { setConfirming(false); onRemove(friend.kid_id) }}
-              className="rounded-lg bg-danger-50 px-2.5 py-1.5 font-body text-xs font-bold text-danger-700 hover:bg-danger-100 disabled:opacity-50 focus-ring transition-colors"
+              className="min-h-11 px-2.5 rounded-lg bg-danger-50 font-body text-xs font-bold text-danger-700 hover:bg-danger-100 disabled:opacity-50 focus-ring transition-colors"
             >
               {t('friends.removeConfirm')}
             </button>
             <button
               type="button"
               onClick={() => setConfirming(false)}
-              className="rounded-lg px-2.5 py-1.5 font-body text-xs font-semibold text-gray-700 hover:bg-gray-100 focus-ring transition-colors"
+              className="min-h-11 px-2.5 rounded-lg font-body text-xs font-semibold text-gray-700 hover:bg-gray-100 focus-ring transition-colors"
             >
               {t('common.cancel')}
             </button>
@@ -80,7 +85,7 @@ export default function FriendCard({ friend, onRemove, disabled }: Props) {
             type="button"
             onClick={() => setConfirming(true)}
             aria-label={t('friends.removeNamed', { name: friend.name || friend.username })}
-            className="rounded-lg px-2.5 py-1.5 font-body text-xs font-semibold text-gray-700 hover:bg-gray-100 focus-ring transition-colors"
+            className="min-h-11 px-2.5 rounded-lg font-body text-xs font-semibold text-gray-700 hover:bg-gray-100 focus-ring transition-colors"
           >
             {/* Narrow screens can't spare ~50px for a word here: with the
                 label spelled out, every friend's name truncated to "Yusuf

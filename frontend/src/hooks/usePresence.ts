@@ -2,10 +2,8 @@ import { useEffect } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { type Friend } from '../api/social'
 import useAuthStore from '../store/authStore'
-
-const WS_BASE = (import.meta.env.VITE_API_URL ?? 'https://localhost/api')
-  .replace('https://', 'wss://')
-  .replace('/api', '')
+import { closeSocket } from '../utils/closeSocket'
+import { WS_BASE } from '../utils/wsBase'
 
 const FRIENDS_KEY = ['friends'] as const
 
@@ -93,14 +91,7 @@ export function usePresence(enabled: boolean) {
       if (pingTimer) clearInterval(pingTimer)
       const socket = ws
       ws = null
-      if (!socket) return
-      // Detach first so teardown can't schedule a reconnect or write to a cache
-      // that is about to be torn down too.
-      socket.onopen = socket.onmessage = socket.onerror = socket.onclose = null
-      // Closing a CONNECTING socket logs a "closed before the connection is
-      // established" warning on every StrictMode remount, so wait for open.
-      if (socket.readyState === WebSocket.CONNECTING) socket.onopen = () => socket.close()
-      else socket.close()
+      closeSocket(socket)
     }
   }, [token, enabled, queryClient])
 }

@@ -1,45 +1,26 @@
 import { NavLink } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { useQuery } from '@tanstack/react-query'
-import { getTasks, getCompletions } from '../../api/tasks'
-import { getFriendRequests } from '../../api/social'
-import { groupTasks } from '../../utils/taskGroups'
-import { todayStr } from '../../utils/date'
+import { useKidNav } from '../../hooks/useKidNav'
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
+/**
+ * Desktop navigation. Below `lg` this is hidden and KidBottomNav takes over —
+ * the old `w-14` icon rail spent 15% of a phone's width on emoji with no room
+ * for their labels.
+ */
 export default function KidSidebar() {
   const { t } = useTranslation()
-
-  // Both are already in the cache from the dashboard/tasks page — no extra requests.
-  const { data: tasks = [] } = useQuery({ queryKey: ['tasks'], queryFn: getTasks })
-  const { data: completions = [] } = useQuery({ queryKey: ['completions'], queryFn: getCompletions })
-
-  // social-service sends no notification when a request arrives, so this badge
-  // is the only thing that tells a kid someone is waiting on them.
-  const { data: requests = [] } = useQuery({ queryKey: ['friendRequests'], queryFn: getFriendRequests })
-
-  // What needs doing now. Upcoming and undated tasks are left out on purpose:
-  // they would sit in the badge forever instead of clearing as work gets done.
-  const groups = groupTasks(tasks, completions, todayStr())
-  const todoCount = groups.overdue.length + groups.today.length
-
-  const NAV_ITEMS = [
-    { icon: '🏠', labelKey: 'kidDash.nav.home',     path: '/dashboard', badge: 0 },
-    { icon: '📋', labelKey: 'tasks.allTasks',       path: '/tasks',     badge: todoCount },
-    { icon: '🎨', labelKey: 'kidDash.nav.avatar',   path: '/avatar',    badge: 0 },
-    { icon: '👥', labelKey: 'friends.title',        path: '/friends',   badge: requests.length },
-    { icon: '⚙️', labelKey: 'kidDash.nav.settings', path: '/settings',  badge: 0 },
-  ] as const
+  const NAV_ITEMS = useKidNav()
 
   return (
-    <aside className="w-14 lg:w-56 shrink-0 bg-white border-r border-gray-200 flex flex-col">
+    <aside className="hidden lg:flex w-56 shrink-0 bg-white border-e border-gray-200 flex-col">
 
       {/* Logo */}
-      <div className="p-3 lg:p-5">
+      <div className="p-5">
         <div className="flex items-center gap-2">
           <span className="text-2xl shrink-0" aria-hidden="true">⭐</span>
-          <div className="hidden lg:block">
+          <div>
             <div className="font-heading font-bold text-primary-700 text-lg leading-tight">
               {t('app.name')}
             </div>
@@ -51,7 +32,7 @@ export default function KidSidebar() {
       </div>
 
       {/* Nav */}
-      <nav aria-label={t('a11y.mainNav')} className="flex-1 px-2 lg:px-3 py-2 flex flex-col gap-1">
+      <nav aria-label={t('a11y.mainNav')} className="flex-1 px-3 py-2 flex flex-col gap-1">
         {NAV_ITEMS.map(item => (
           <NavLink
             key={item.path}
@@ -63,7 +44,7 @@ export default function KidSidebar() {
                 : t(item.labelKey)
             }
             className={({ isActive }) =>
-              `relative flex items-center gap-3 px-3 lg:px-4 py-3 rounded-xl font-body font-semibold text-sm transition-colors focus-ring ${
+              `relative flex items-center gap-3 px-4 py-3 rounded-xl font-body font-semibold text-sm transition-colors focus-ring ${
                 isActive
                   ? 'bg-primary-50 text-primary-700'
                   : 'text-gray-500 hover:bg-gray-50 hover:text-gray-700'
@@ -71,11 +52,11 @@ export default function KidSidebar() {
             }
           >
             <span aria-hidden="true">{item.icon}</span>
-            <span className="hidden lg:inline flex-1">{t(item.labelKey)}</span>
+            <span className="flex-1">{t(item.labelKey)}</span>
             {item.badge > 0 && (
               <span
                 aria-hidden="true"
-                className="absolute top-1 end-1 lg:static lg:ms-auto min-w-5 h-5 px-1 rounded-full bg-primary-600 text-white font-body font-bold text-[10px] flex items-center justify-center"
+                className="ms-auto min-w-5 h-5 px-1 rounded-full bg-primary-600 text-white font-body font-bold text-[10px] flex items-center justify-center"
               >
                 {item.badge}
               </span>

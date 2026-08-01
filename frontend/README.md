@@ -34,7 +34,6 @@ A gamified task and learning app for children aged 8–12. This document covers 
 | Kid dashboard — Invite parent (moved to settings) | ✅ Done |
 | Forgot password | — Not planned (no route) |
 | Character creation | 🔲 Placeholder only |
-| Profile pages | 🔲 Placeholder only |
 | Parent dashboard — pending approvals | 🔲 Not started |
 | Username / avatar change | 🔲 Needs backend |
 | Rewards system | 🔲 Not started |
@@ -110,7 +109,7 @@ Two account types — **parent** and **kid** — with separate API endpoints.
 **Route groups in `App.tsx`:**
 - **`GuestRoute`** — `/`, `/login`, `/signup` (guests only; logged-in users go to their dashboard)
 - **Open** — `/accept-invite`, `/verify-email`, `/kid/verify-email` (usable while logged in or out)
-- **`ProtectedRoute role="kid"`** — `/dashboard`, `/character`, `/profile`
+- **`ProtectedRoute role="kid"`** — `/dashboard`, `/tasks`, `/friends`, `/avatar`, `/settings`
 - **`ProtectedRoute role="parent"`** — `/parent/dashboard`, `/parent/profile`
 - **`*`** — `NotFound` page
 
@@ -244,8 +243,6 @@ src/
 │   ├── ChildDashboard.tsx   ← main content only; layout via KidLayout
 │   ├── KidSettings.tsx      ← category visibility + invite parent
 │   ├── ParentDashboard.tsx  ← placeholder
-│   ├── CharacterCreation.tsx
-│   ├── Profile.tsx
 │   └── ParentProfile.tsx
 ├── store/
 │   └── authStore.ts    ← Zustand store (persists to localStorage)
@@ -342,7 +339,7 @@ Routes live in `src/App.tsx`. Guards are **layout routes**: they render `<Outlet
 |-------|--------|--------|
 | Guest | `/`, `/login`, `/signup` | `GuestRoute` |
 | Open | `/accept-invite`, `/verify-email`, `/kid/verify-email` | — |
-| Kid | `/dashboard`, `/character`, `/profile` | `ProtectedRoute role="kid"` |
+| Kid | `/dashboard`, `/tasks`, `/friends`, `/avatar`, `/settings` | `ProtectedRoute role="kid"` |
 | Parent | `/parent/dashboard`, `/parent/profile` | `ProtectedRoute role="parent"` |
 | Fallback | anything else | `NotFound` |
 

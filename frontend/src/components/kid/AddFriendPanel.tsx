@@ -2,6 +2,7 @@ import { useEffect, useId, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useQuery } from '@tanstack/react-query'
 import { searchKids, type KidSearchResult } from '../../api/social'
+import LoadError from '../LoadError'
 
 /** The server rejects anything shorter, so don't spend a request finding out. */
 const MIN_QUERY = 2
@@ -25,11 +26,17 @@ export default function AddFriendPanel({ onAdd, disabled }: Props) {
   }, [query])
 
   const ready = debounced.length >= MIN_QUERY
-  const { data, isFetching } = useQuery({
+  const searchQuery = useQuery({
     queryKey: ['kidSearch', debounced],
-    queryFn: () => searchKids({ q: debounced }),
+    // 'all', not the server's `not_friends` default: that default hides anyone
+    // you already have any tie to, so looking up a friend by name answered
+    // "Nobody found" — which reads as "that person doesn't exist" rather than
+    // "you're already friends". Each row shows the state the server reports.
+    queryFn: () => searchKids({ q: debounced, status: 'all' }),
     enabled: ready,
   })
+  const { data, isFetching, refetch } = searchQuery
+  const isError = searchQuery.isError
 
   const results = data?.results ?? []
 
@@ -57,6 +64,10 @@ export default function AddFriendPanel({ onAdd, disabled }: Props) {
           </p>
         ) : isFetching ? (
           <p className="font-body text-sm text-gray-700 py-2">{t('tasks.loading')}</p>
+        ) : isError ? (
+          // Otherwise a failed search says "Nobody found", which tells a kid
+          // the person doesn't exist when the request never landed.
+          <LoadError variant="inline" onRetry={() => refetch()} />
         ) : results.length === 0 ? (
           <p className="font-body text-sm text-gray-700 py-2">{t('friends.searchEmpty')}</p>
         ) : (
@@ -91,7 +102,7 @@ function SearchRow({ kid, onAdd, disabled }: { kid: KidSearchResult } & Pick<Pro
             disabled={disabled}
             onClick={() => onAdd(kid.kid_id)}
             aria-label={t('friends.addNamed', { name: kid.name || kid.username })}
-            className="rounded-xl bg-primary-600 px-3 py-1.5 font-body text-xs font-bold text-white hover:bg-primary-700 disabled:opacity-50 focus-ring transition-colors"
+            className="min-h-11 px-3 rounded-xl bg-primary-600 font-body text-xs font-bold text-white hover:bg-primary-700 disabled:opacity-50 focus-ring transition-colors"
           >
             {t('friends.add')}
           </button>
