@@ -112,7 +112,7 @@
     "loadingSession": "جاري تحميل جلستك...",
     "skipToContent": "تخطَّ إلى المحتوى الرئيسي",
     "mainNav": "التنقل الرئيسي",
-    "userMenu": "قائمة الحساب",
+    "userMenu": "قائمة المستخدم",
     "legalNav": "الوثائق القانونية",
     "completeTask": "وضع علامة \"مكتمل\" على \"{{title}}\"",
     "selectTask": "تحديد \"{{title}}\"",
@@ -348,7 +348,16 @@
     "reviewedAt": "روجعت {{date}}",
     "noReviewed": "لا توجد مهام تمت مراجعتها بعد.",
     "exportPdf": "تصدير PDF",
-    "progressReport": "تقرير التقدم"
+    "progressReport": "تقرير التقدم",
+    "profile": "الملف الشخصي",
+    "editProfile": "تعديل الملف الشخصي",
+    "memberSince": "عضو منذ",
+    "deleteAccount": "حذف الحساب",
+    "deleteAccountHint": "حذف حسابك وجميع البيانات المرتبطة به نهائيًا. لا يمكن التراجع عن ذلك.",
+    "deleteAccountConfirmTitle": "حذف حسابك؟",
+    "deleteAccountConfirmBody": "سيؤدي هذا إلى حذف حسابك نهائيًا ولا يمكن التراجع عنه.",
+    "deleteAccountConfirm": "حذف حسابي",
+    "deleteAccountPending": "جارٍ الحذف…"
   },
   "errors": {
     "required": "هذا الحقل مطلوب",
@@ -394,7 +403,8 @@
       "emailNotVerified": "يرجى التحقق من بريدك الإلكتروني قبل تسجيل الدخول.",
       "invalidVerificationToken": "رابط التحقق هذا غير صالح.",
       "verificationExpired": "انتهت صلاحية رابط التحقق. يرجى التسجيل مرة أخرى.",
-      "alreadyVerified": "بريدك الإلكتروني محقق بالفعل. يمكنك تسجيل الدخول."
+      "alreadyVerified": "بريدك الإلكتروني محقق بالفعل. يمكنك تسجيل الدخول.",
+      "parentHasLinkedKids": "لا يمكنك حذف حسابك بينما أنت ولي الأمر الوحيد لطفل. اربط كل طفل بولي أمر آخر أولاً."
     }
   },
   "notifications": {

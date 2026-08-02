@@ -112,7 +112,7 @@
     "loadingSession": "Загрузка сессии...",
     "skipToContent": "Перейти к основному содержимому",
     "mainNav": "Основная навигация",
-    "userMenu": "Меню аккаунта",
+    "userMenu": "Меню пользователя",
     "legalNav": "Юридические документы",
     "completeTask": "Отметить «{{title}}» как выполненное",
     "selectTask": "Выбрать «{{title}}»",
@@ -348,7 +348,16 @@
     "reviewedAt": "Проверено {{date}}",
     "noReviewed": "Пока нет проверенных задач.",
     "exportPdf": "Экспорт в PDF",
-    "progressReport": "Отчёт о прогрессе"
+    "progressReport": "Отчёт о прогрессе",
+    "profile": "Профиль",
+    "editProfile": "Редактировать профиль",
+    "memberSince": "Участник с",
+    "deleteAccount": "Удалить аккаунт",
+    "deleteAccountHint": "Безвозвратно удалить ваш аккаунт и все связанные данные. Это действие нельзя отменить.",
+    "deleteAccountConfirmTitle": "Удалить аккаунт?",
+    "deleteAccountConfirmBody": "Аккаунт будет удалён безвозвратно, отменить это действие нельзя.",
+    "deleteAccountConfirm": "Удалить мой аккаунт",
+    "deleteAccountPending": "Удаление…"
   },
   "errors": {
     "required": "Это поле обязательно",
@@ -394,7 +403,8 @@
       "emailNotVerified": "Подтвердите вашу почту перед входом.",
       "invalidVerificationToken": "Эта ссылка для подтверждения недействительна.",
       "verificationExpired": "Срок ссылки истёк. Пожалуйста, зарегистрируйтесь снова.",
-      "alreadyVerified": "Ваша почта уже подтверждена. Вы можете войти."
+      "alreadyVerified": "Ваша почта уже подтверждена. Вы можете войти.",
+      "parentHasLinkedKids": "Нельзя удалить аккаунт, пока вы единственный опекун ребёнка. Сначала привяжите каждого ребёнка к другому родителю."
     }
   },
   "notifications": {
