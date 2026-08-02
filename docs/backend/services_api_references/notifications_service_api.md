@@ -49,6 +49,7 @@ Returns `404` if the notification does not belong to the authenticated user.
 | `task_rejected` | A parent rejected the kid's task completion. |
 | `task_submitted` | A kid submitted a task for review (parent receives this). |
 | `level_up` | The kid levelled up in the gamification system. |
+| `friend_request` | A kid sent a friend request to another kid. |
 
 ## Internal (Service-to-Service)
 

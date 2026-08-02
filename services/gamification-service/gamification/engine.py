@@ -4,6 +4,18 @@ from .models import KidProfile, KidStat, CompletionEvent
 from django.db import transaction
 from django.conf import settings
 
+
+def get_or_create_kid_profile(*, kid_id, for_update=False):
+    """Create profile with starter coins on first touch."""
+    qs = KidProfile.objects
+    if for_update:
+        qs = qs.select_for_update()
+    return qs.get_or_create(
+        kid_id=kid_id,
+        defaults={'coins': settings.STARTER_COINS},
+    )
+
+
 def apply_completion(kid_id, completion_id, category_points):
     # all or nothing transaction
     # if any step fails, the entire transaction is rolled back
@@ -20,8 +32,7 @@ def apply_completion(kid_id, completion_id, category_points):
 
         # _ is used to ignore
         # select_for_update() is used to lock the row for the duration of the transaction
-        # get_or_create() is used to create the row if it doesn't exist
-        kid_profile, _ = KidProfile.objects.select_for_update().get_or_create(kid_id=kid_id)
+        kid_profile, _ = get_or_create_kid_profile(kid_id=kid_id, for_update=True)
         main_level_before = kid_profile.main_level
 
         for item in category_points:
@@ -79,7 +90,7 @@ def apply_completion(kid_id, completion_id, category_points):
 
 def deduct_coins(kid_id, amount):
     with transaction.atomic():
-        profile, _ = KidProfile.objects.select_for_update().get_or_create(kid_id=kid_id)
+        profile, _ = get_or_create_kid_profile(kid_id=kid_id, for_update=True)
         if profile.coins < amount:
             return False, profile.coins
         profile.coins -= amount
