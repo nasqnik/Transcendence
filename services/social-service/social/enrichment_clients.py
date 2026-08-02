@@ -90,9 +90,10 @@ def fetch_avatars_by_ids(kid_ids):
             continue
         result[str(row['kid_id'])] = {
             'base_character': row.get('base_character') or 'default',
-            'equipped_hat': row.get('equipped_hat'),
-            'equipped_outfit': row.get('equipped_outfit'),
-            'equipped_accessory': row.get('equipped_accessory'),
+            'avatar_url': row.get('avatar_url'),
+            'equipped_hair': row.get('equipped_hair'),
+            'equipped_glasses': row.get('equipped_glasses'),
+            'equipped_earrings': row.get('equipped_earrings'),
             'equipped_background': row.get('equipped_background'),
         }
     return result
