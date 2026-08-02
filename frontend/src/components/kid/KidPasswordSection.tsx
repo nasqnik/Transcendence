@@ -1,11 +1,11 @@
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useMutation } from '@tanstack/react-query'
 import { changePassword } from '../../api/account'
 import { getFieldErrors } from '../../api/errors'
 import { useFormErrors } from '../../hooks/useFormErrors'
 import FormField from '../FormField'
-import Button from '../Button'
+import FormActions from '../FormActions'
 
 interface Props {
   /** False for a Google-only account, which sets a first password instead. */
@@ -19,6 +19,15 @@ export default function KidPasswordSection({ hasPassword }: Props) {
   const [next, setNext] = useState('')
   const [confirm, setConfirm] = useState('')
   const [done, setDone] = useState(false)
+  const doneTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  // The form unmounts on save or cancel, taking the focused control with it.
+  const editTriggerRef = useRef<HTMLButtonElement>(null)
+  const wasOpen = useRef(open)
+  useEffect(() => {
+    if (wasOpen.current && !open) editTriggerRef.current?.focus()
+    wasOpen.current = open
+  }, [open])
+  useEffect(() => () => { if (doneTimer.current) clearTimeout(doneTimer.current) }, [])
   const { fieldErrors, setFieldErrors, clearFieldError, resetFieldErrors } = useFormErrors()
 
   const { mutate, isPending } = useMutation({
@@ -28,9 +37,10 @@ export default function KidPasswordSection({ hasPassword }: Props) {
     }),
     onSuccess: () => {
       setDone(true)
+      if (doneTimer.current) clearTimeout(doneTimer.current)
       setOpen(false)
       setCurrent(''); setNext(''); setConfirm('')
-      setTimeout(() => setDone(false), 2500)
+      doneTimer.current = setTimeout(() => setDone(false), 2500)
     },
     onError: (err) => setFieldErrors(getFieldErrors(err)),
   })
@@ -54,9 +64,10 @@ export default function KidPasswordSection({ hasPassword }: Props) {
         <div className="flex items-center gap-3">
           {done && <span className="font-body text-xs text-teal-700">{t('parentDash.passwordChanged')}</span>}
           <button
+            ref={editTriggerRef}
             type="button"
             onClick={() => { resetFieldErrors(); setOpen(true) }}
-            className="font-body text-sm font-semibold text-primary-600 hover:text-primary-700 focus-ring rounded"
+            className="min-h-11 -my-2 px-2 inline-flex items-center font-body text-sm font-semibold text-primary-600 hover:text-primary-700 focus-ring rounded"
           >
             {t('tasks.editBtn')}
           </button>
@@ -97,20 +108,12 @@ export default function KidPasswordSection({ hasPassword }: Props) {
         error={fieldErrors.confirm}
         onChange={(e) => { setConfirm(e.target.value); clearFieldError('confirm') }}
       />
-      <div className="flex gap-2">
-        <Button type="submit" variant="primary" disabled={isPending} className="px-4 py-2 text-sm">
-          {isPending ? t('kidDash.settingsSaving') : t('tasks.saveTask')}
-        </Button>
-        <Button
-          type="button"
-          variant="secondary"
-          onClick={() => setOpen(false)}
-          disabled={isPending}
-          className="px-4 py-2 text-sm"
-        >
-          {t('common.cancel')}
-        </Button>
-      </div>
+      <FormActions
+        submitLabel={t('tasks.saveTask')}
+        pendingLabel={t('kidDash.settingsSaving')}
+        busy={isPending}
+        onCancel={() => setOpen(false)}
+      />
     </form>
   )
 }

@@ -2,6 +2,7 @@ import { Outlet } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import KidSidebar from './KidSidebar'
 import KidTopbar from './KidTopbar'
+import KidBottomNav from './KidBottomNav'
 import LegalLinks from '../LegalLinks'
 
 export default function KidLayout() {
@@ -19,10 +20,13 @@ export default function KidLayout() {
       <div className="flex-1 flex flex-col min-w-0">
         <KidTopbar />
         <Outlet />
-        <footer className="border-t border-gray-200 bg-white px-4 sm:px-8 py-3 flex justify-center sm:justify-end shrink-0">
+        {/* Clears the fixed bottom bar so the last row of content and the
+            legal links are not hidden under it. */}
+        <footer className="border-t border-gray-200 bg-white px-4 sm:px-8 py-3 pb-20 lg:pb-3 flex justify-center sm:justify-end shrink-0">
           <LegalLinks />
         </footer>
       </div>
+      <KidBottomNav />
     </div>
   )
 }

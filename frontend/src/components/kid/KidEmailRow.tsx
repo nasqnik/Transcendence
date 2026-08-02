@@ -1,11 +1,11 @@
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { requestEmailChange } from '../../api/account'
 import { getFieldErrors } from '../../api/errors'
 import { useFormErrors } from '../../hooks/useFormErrors'
 import FormField from '../FormField'
-import Button from '../Button'
+import FormActions from '../FormActions'
 
 interface Props {
   email: string
@@ -21,6 +21,14 @@ export default function KidEmailRow({ email, pendingEmail, emailVerified }: Prop
   const { t } = useTranslation()
   const queryClient = useQueryClient()
   const [editing, setEditing] = useState(false)
+  // The form unmounts on save or cancel, taking the focused control with it.
+  // Focus goes back to the button that opened it.
+  const editTriggerRef = useRef<HTMLButtonElement>(null)
+  const wasEditing = useRef(editing)
+  useEffect(() => {
+    if (wasEditing.current && !editing) editTriggerRef.current?.focus()
+    wasEditing.current = editing
+  }, [editing])
   const [value, setValue] = useState('')
   const [sentTo, setSentTo] = useState<string | null>(null)
   const { fieldErrors, setFieldErrors, clearFieldError, resetFieldErrors } = useFormErrors()
@@ -52,9 +60,10 @@ export default function KidEmailRow({ email, pendingEmail, emailVerified }: Prop
         </div>
         {!editing && (
           <button
+            ref={editTriggerRef}
             type="button"
             onClick={() => { setValue(''); resetFieldErrors(); setSentTo(null); setEditing(true) }}
-            className="shrink-0 font-body text-sm font-semibold text-primary-600 hover:text-primary-700 focus-ring rounded"
+            className="shrink-0 min-h-11 -my-2 px-2 inline-flex items-center font-body text-sm font-semibold text-primary-600 hover:text-primary-700 focus-ring rounded"
           >
             {t('parentDash.changeEmail')}
           </button>
@@ -87,20 +96,12 @@ export default function KidEmailRow({ email, pendingEmail, emailVerified }: Prop
             error={fieldErrors.email}
             onChange={(e) => { setValue(e.target.value); clearFieldError('email') }}
           />
-          <div className="flex gap-2">
-            <Button type="submit" variant="primary" disabled={isPending} className="px-4 py-2 text-sm">
-              {isPending ? t('kidDash.settingsSaving') : t('tasks.saveTask')}
-            </Button>
-            <Button
-              type="button"
-              variant="secondary"
-              onClick={() => setEditing(false)}
-              disabled={isPending}
-              className="px-4 py-2 text-sm"
-            >
-              {t('common.cancel')}
-            </Button>
-          </div>
+          <FormActions
+            submitLabel={t('tasks.saveTask')}
+            pendingLabel={t('kidDash.settingsSaving')}
+            busy={isPending}
+            onCancel={() => setEditing(false)}
+          />
         </form>
       )}
     </div>

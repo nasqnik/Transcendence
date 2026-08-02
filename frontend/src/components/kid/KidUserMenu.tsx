@@ -1,6 +1,8 @@
 import { useRef, useState, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
+import { useQuery } from '@tanstack/react-query'
+import { getKidAvatar } from '../../api/catalog'
 import useAuthStore from '../../store/authStore'
 import { useDismissable } from '../../hooks/useDismissable'
 
@@ -8,12 +10,14 @@ export default function KidUserMenu() {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const { currentUser, logout } = useAuthStore()
+  // Same cached query the dashboard band and the studio use.
+  const { data: avatar } = useQuery({ queryKey: ['kidAvatar'], queryFn: getKidAvatar })
 
   const [menuOpen, setMenuOpen] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
   const triggerRef = useRef<HTMLButtonElement>(null)
   const closeMenu = useCallback(() => { setMenuOpen(false); triggerRef.current?.focus() }, [])
-  useDismissable(menuRef, closeMenu, { enabled: menuOpen })
+  useDismissable(menuRef, closeMenu, { enabled: menuOpen , trapFocus: true })
 
   return (
     <div className="relative" ref={menuRef}>
@@ -23,12 +27,14 @@ export default function KidUserMenu() {
         ref={triggerRef}
         type="button"
         onClick={() => setMenuOpen(v => !v)}
-        aria-label={currentUser?.username ?? 'Menu'}
+        aria-label={currentUser?.username || t('a11y.userMenu')}
         aria-expanded={menuOpen}
         aria-haspopup="menu"
-        className="w-10 h-10 rounded-full bg-primary-100 flex items-center justify-center font-heading font-bold text-primary-700 hover:bg-primary-200 focus-ring transition-colors"
+        className="w-11 h-11 rounded-full bg-primary-100 flex items-center justify-center font-heading font-bold text-primary-700 hover:bg-primary-200 focus-ring transition-colors overflow-hidden"
       >
-        {currentUser?.username?.[0]?.toUpperCase() ?? '?'}
+        {avatar?.avatar_url
+          ? <img src={avatar.avatar_url} alt="" className="w-full h-full object-cover" />
+          : currentUser?.username?.[0]?.toUpperCase() ?? '?'}
       </button>
 
       {/* Dropdown */}
@@ -42,7 +48,7 @@ export default function KidUserMenu() {
             role="menuitem"
             autoFocus
             onClick={() => { closeMenu(); logout(); navigate('/') }}
-            className="w-full px-4 py-3 flex items-center gap-3 font-body text-sm text-danger-700 hover:bg-danger-50 focus-ring transition-colors text-left"
+            className="w-full px-4 py-3 flex items-center gap-3 font-body text-sm text-danger-700 hover:bg-danger-50 focus-ring transition-colors text-start"
           >
             <span aria-hidden="true">🚪</span>
             {t('nav.logout')}

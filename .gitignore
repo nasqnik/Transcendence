@@ -26,3 +26,8 @@ __pycache__/
 *$py.class
 
 services/catalog-service/media/
+
+# Frontend test suite is kept local, not committed.
+# Note: the 14 test files already in history stay tracked — an ignore rule
+# does not untrack files. This only keeps new ones out.
+frontend/src/tests/

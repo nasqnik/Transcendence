@@ -29,6 +29,10 @@ export interface KidLevelData {
   /** The last 7 local days, oldest first, for the streak strip */
   week: DayMark[]
   isLoading: boolean
+  /** The gamification fetches failed — the numbers below are placeholders, not facts. */
+  isError: boolean
+  /** Re-runs the failed gamification queries. */
+  refetch: () => void
 }
 
 export interface DayMark {
@@ -100,8 +104,10 @@ function computeStreak(completions: Completion[]): number {
 
 export function useKidLevel(): KidLevelData {
   // Gamification service — real server-side XP/level data
-  const { data: rawStats   = [], isLoading: statsLoading } = useQuery({ queryKey: ['gamificationStats'],   queryFn: getGamificationStats })
-  const { data: profile        , isLoading: profileLoading } = useQuery({ queryKey: ['gamificationProfile'], queryFn: getGamificationProfile })
+  const statsQuery   = useQuery({ queryKey: ['gamificationStats'],   queryFn: getGamificationStats })
+  const profileQuery = useQuery({ queryKey: ['gamificationProfile'], queryFn: getGamificationProfile })
+  const { data: rawStats = [], isLoading: statsLoading } = statsQuery
+  const { data: profile, isLoading: profileLoading } = profileQuery
   // Tasks + completions already cached by TodaysTasks — no extra requests
   const { data: tasks       = [] } = useQuery({ queryKey: ['tasks'],       queryFn: getTasks })
   const { data: completions = [] } = useQuery({ queryKey: ['completions'], queryFn: getCompletions })
@@ -136,5 +142,12 @@ export function useKidLevel(): KidLevelData {
   const streak    = computeStreak(completions)
   const week      = computeWeek(completions)
 
-  return { stats, pendingXpByCategory, level, progress, xpCurrent, xpMax, coins, streak, week, isLoading: statsLoading || profileLoading }
+  return {
+    stats, pendingXpByCategory, level, progress, xpCurrent, xpMax, coins, streak, week,
+    isLoading: statsLoading || profileLoading,
+    // Every number above falls back to 0, so a failed fetch renders as a real
+    // Level 0 with no XP. Callers need to be able to tell those apart.
+    isError: statsQuery.isError || profileQuery.isError,
+    refetch: () => { statsQuery.refetch(); profileQuery.refetch() },
+  }
 }
