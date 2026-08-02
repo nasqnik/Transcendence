@@ -11,7 +11,7 @@ from .serializers import (
     KidStatSerializer,
     KidProfileSerializer,
 )
-from .engine import apply_completion, deduct_coins
+from .engine import apply_completion, deduct_coins, get_or_create_kid_profile
 
 
 @extend_schema(
@@ -168,7 +168,7 @@ class KidProfileView(APIView):
     permission_classes = [IsKid]
 
     def get(self, request):
-        profile, _ = KidProfile.objects.get_or_create(kid_id=request.user.kid_id)
+        profile, _ = get_or_create_kid_profile(kid_id=request.user.kid_id)
         return Response(KidProfileSerializer(profile).data)
 
 
