@@ -65,7 +65,7 @@ export default function Login() {
         <Button variant="primary" className="w-full" onClick={() => setWaitingForParent(false)}>
           {t('auth.tryLoginAgain')}
         </Button>
-        <Button variant="secondary" className="w-full" onClick={() => navigate('/')}>
+        <Button variant="secondary" className="w-full" to="/">
           {t('auth.backToHome')}
         </Button>
       </AuthMessageLayout>
@@ -89,7 +89,9 @@ export default function Login() {
           type="text"
           dir="ltr"
           value={identifier}
-          placeholder={t('auth.emailOrUsernameHint')}
+          // Label already reads "Email or username"; repeating that here
+          // overflowed the field on a phone ("…or your usernam‹").
+          placeholder={t('auth.emailHint')}
           required
           autoComplete="username"
           disabled={isLoading}

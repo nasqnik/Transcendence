@@ -177,6 +177,14 @@ export default function Signup() {
             onSuccess={async credential => {
               setErrorKey(null)
               resetFieldErrors()
+              // The password form validates this on submit; the Google path
+              // used to skip it entirely, so a parent could create an account
+              // without ever accepting the terms. The kid path already
+              // re-checks in SignupKidGoogleProfile.
+              if (!agreedToTerms) {
+                setFieldErrors({ agreedToTerms: t('errors.mustAgreeToTerms') })
+                return
+              }
               if (role === 'parent') {
                 setIsLoading(true)
                 try {

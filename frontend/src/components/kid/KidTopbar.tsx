@@ -34,9 +34,12 @@ export default function KidTopbar() {
         )}
 
         {coins > 0 && (
-          <div className="hidden sm:flex items-center gap-2.5 bg-amber-50 rounded-2xl px-4 py-2.5">
+          <div
+            aria-label={`${coins} ${t('kidDash.coins')}`}
+            className="hidden sm:flex items-center gap-2.5 bg-amber-50 rounded-2xl px-4 py-2.5"
+          >
             <span className="text-xl" aria-hidden="true">🪙</span>
-            <div>
+            <div aria-hidden="true">
               <p className="font-heading font-bold text-gray-900 text-base leading-none">{coins}</p>
               <p className="font-body text-xs text-gray-400 leading-none mt-0.5">{t('kidDash.coins')}</p>
             </div>

@@ -19,13 +19,12 @@ import KidLayout from './components/kid/KidLayout'
 import ParentLayout from './components/parent/ParentLayout'
 import ChildDashboard from './pages/ChildDashboard'
 import KidTasks from './pages/KidTasks'
+import KidFriends from './pages/KidFriends'
 import KidSettings from './pages/KidSettings'
 import AvatarStudio from './pages/AvatarStudio'
 import ParentDashboard from './pages/ParentDashboard'
 import ParentApprovals from './pages/ParentApprovals'
 import ParentProfile from './pages/ParentProfile'
-import CharacterCreation from './pages/CharacterCreation'
-import Profile from './pages/Profile'
 import ParentSettings from './pages/ParentSettings'
 import PrivacyPolicy from './pages/PrivacyPolicy'
 import TermsOfService from './pages/TermsOfService'
@@ -88,10 +87,9 @@ export default function App() {
             <Route path="/dashboard" element={<ChildDashboard />} />
             <Route path="/avatar" element={<AvatarStudio />} />
             <Route path="/tasks" element={<KidTasks />} />
+            <Route path="/friends" element={<KidFriends />} />
             <Route path="/settings" element={<KidSettings />} />
           </Route>
-          <Route path="/character" element={<CharacterCreation />} />
-          <Route path="/profile" element={<Profile />} />
         </Route>
 
         {/* Parent (protected) */}

@@ -1,5 +1,4 @@
 import { useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import AuthMessageLayout from './AuthMessageLayout'
 import Button from './Button'
@@ -12,7 +11,6 @@ interface Props {
 
 export default function SignupKidPending({ kidPending, parentEmail }: Props) {
   const { t } = useTranslation()
-  const navigate = useNavigate()
 
   useEffect(() => { document.getElementById('waiting-heading')?.focus() }, [])
 
@@ -35,7 +33,7 @@ export default function SignupKidPending({ kidPending, parentEmail }: Props) {
           ? t('auth.waitingForParentHint', { email: parentEmail })
           : t('auth.kidStep2', { email: parentEmail })}
       </p>
-      <Button variant="primary" className="w-full" onClick={() => navigate('/')}>
+      <Button variant="primary" className="w-full" to="/">
         {t('auth.backToHome')}
       </Button>
     </AuthMessageLayout>

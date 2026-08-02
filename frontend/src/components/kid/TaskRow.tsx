@@ -102,52 +102,22 @@ export default function TaskRow({
       {/* Content */}
       <div className="flex-1 min-w-0">
 
-        {/* Title + pencil. Wraps rather than truncating — on a phone the
-            column is narrow enough that truncation left titles unreadable. */}
-        <div className="flex items-start gap-1.5">
-          <p className={`font-body font-semibold text-sm flex-1 min-w-0 line-clamp-3 ${isDone ? 'line-through text-gray-400' : 'text-gray-900'}`}>
-            {task.title}
-          </p>
-          {/* Sits with the row's other controls rather than as a line of text
-              under the title. Reads "AI" — short and the same in every
-              language — with the fuller wording as its accessible name. */}
-          {hasAiNote && !selectMode && (
-            <button
-              type="button"
-              onClick={() => setAiOpen(open => !open)}
-              aria-expanded={aiOpen}
-              aria-controls={aiPanelId}
-              aria-label={t('kidDash.aiSummary')}
-              className={`shrink-0 inline-flex items-center gap-0.5 rounded-lg px-1.5 h-6 font-body text-xs font-semibold transition-colors focus-ring ${
-                aiOpen
-                  ? 'bg-primary-100 text-primary-700'
-                  : 'text-primary-600 hover:bg-primary-50'
-              }`}
-            >
-              <span aria-hidden="true">✨</span>
-              <span aria-hidden="true">AI</span>
-            </button>
-          )}
-          {onEdit && !selectMode && (
-            <button
-              type="button"
-              onClick={onEdit}
-              aria-label={t('a11y.editTask', { title: task.title })}
-              className="shrink-0 w-6 h-6 flex items-center justify-center rounded-lg text-gray-400 hover:text-primary-600 hover:bg-primary-50 focus-ring transition-colors"
-            >
-              <PencilIcon />
-            </button>
-          )}
-        </div>
+        {/* Title gets the full content column. The AI and edit controls used
+            to share this line and cost it ~90px, which on a phone truncated
+            titles to "Read 20 minutes of your…". They now sit on the meta
+            line below, which was mostly empty space. */}
+        <p className={`font-body font-semibold text-sm line-clamp-3 ${isDone ? 'line-through text-gray-400' : 'text-gray-900'}`}>
+          {task.title}
+        </p>
 
         {/* Due date. The category is carried by the coloured icon rather than
             repeated as text, and the description lives in the edit view — a
             list row stays scannable with just a title and one meta line. */}
         {/* Meta line. The XP reward sits here rather than in the right-hand
             cluster so the title keeps the width it needs on narrow screens. */}
-        <p className="flex items-center gap-1.5 mt-0.5 font-body text-xs">
+        <div className="flex items-center gap-1.5 mt-0.5 font-body text-xs">
           {dueDateFormatted && (
-            <span className={overdue ? 'text-danger-700 font-semibold' : 'text-gray-400'}>
+            <span className={`whitespace-nowrap ${overdue ? 'text-danger-700 font-semibold' : 'text-gray-400'}`}>
               {dueDateFormatted}
             </span>
           )}
@@ -156,7 +126,42 @@ export default function TaskRow({
             <span aria-hidden="true">⭐</span> +{task.xp_reward}
             <span className="sr-only"> {t('tasks.xpRewardLabel')}</span>
           </span>
-        </p>
+
+          {/* Pushed to the end of the meta line — out of the title's way, and
+              still on the row they act on. */}
+          <span className="ms-auto flex items-center gap-2">
+            {/* Sits with the row's other controls rather than as a line of text
+                under the title. Reads "AI" — short and the same in every
+                language — with the fuller wording as its accessible name. */}
+            {hasAiNote && !selectMode && (
+              <button
+                type="button"
+                onClick={() => setAiOpen(open => !open)}
+                aria-expanded={aiOpen}
+                aria-controls={aiPanelId}
+                aria-label={t('kidDash.aiSummary')}
+                className={`relative before:absolute before:-inset-y-1.5 before:inset-x-0 before:content-[''] shrink-0 inline-flex items-center gap-0.5 rounded-lg px-2 h-8 font-body text-xs font-semibold transition-colors focus-ring ${
+                  aiOpen
+                    ? 'bg-primary-100 text-primary-700'
+                    : 'text-primary-600 hover:bg-primary-50'
+                }`}
+              >
+                <span aria-hidden="true">✨</span>
+                <span aria-hidden="true">AI</span>
+              </button>
+            )}
+            {onEdit && !selectMode && (
+              <button
+                type="button"
+                onClick={onEdit}
+                aria-label={t('a11y.editTask', { title: task.title })}
+                className="relative before:absolute before:-inset-y-1.5 before:inset-x-0 before:content-[''] shrink-0 w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-primary-600 hover:bg-primary-50 focus-ring transition-colors"
+              >
+                <PencilIcon />
+              </button>
+            )}
+          </span>
+        </div>
 
         {/* Sent back: the parent's words are the useful part, so the label is
             folded in rather than given its own line. */}
@@ -194,7 +199,7 @@ export default function TaskRow({
       {/* Right column: just the action, so the title gets the rest */}
       <div className="flex items-center gap-2 shrink-0 mt-0.5">
         {selectMode ? (
-          <label className="w-8 h-8 flex items-center justify-center cursor-pointer">
+          <label className="w-11 h-11 flex items-center justify-center cursor-pointer">
             <span className="sr-only">{t('a11y.selectTask', { title: task.title })}</span>
             <input
               type="checkbox"
@@ -224,7 +229,7 @@ export default function TaskRow({
             type="button"
             aria-label={t('a11y.completeTask', { title: task.title })}
             onClick={() => onComplete(task.id)}
-            className={`w-8 h-8 rounded-full border-2 shrink-0 flex items-center justify-center focus-ring transition-colors ${
+            className={`w-11 h-11 rounded-full border-2 shrink-0 flex items-center justify-center focus-ring transition-colors ${
               // A task that came back shows a redo glyph rather than an empty
               // circle: the action is the same, but it reads as "do it again".
               isRejected

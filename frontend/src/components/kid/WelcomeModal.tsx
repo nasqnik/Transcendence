@@ -22,7 +22,7 @@ export default function WelcomeModal({ onDismiss }: Props) {
         </div>
 
         <h2 id="welcome-heading" className="font-heading text-xl font-bold text-gray-900">
-          {t('kidDash.welcomeModalTitle')}
+          {t('kidDash.welcomeModalTitle')}<span aria-hidden="true"> 🌟</span>
         </h2>
 
         <p className="font-body text-sm text-gray-500 leading-relaxed">
