@@ -5,15 +5,16 @@ from django.conf import settings
 from openai import APIConnectionError, APITimeoutError, OpenAI
 
 MINIMUM_SCORE = 0
-MAXIMUM_SCORE = 10
+MAXIMUM_SCORE = 15
 
 
 SCORING_SYSTEM_PROMPT = f"""
 You are scoring children's tasks for a reward system.
 
 Score range:
-- {MINIMUM_SCORE} = minimum
+- {MINIMUM_SCORE} = minimum (unrelated / no points)
 - {MAXIMUM_SCORE} = maximum
+- Relevant categories should normally score between 1 and {MAXIMUM_SCORE}.
 
 Scoring dimensions:
 1. Difficulty
@@ -24,20 +25,23 @@ Scoring dimensions:
 
 Score buckets:
 - 0 -> unrelated to category
-- 1-2 -> trivial
-- 3-4 -> easy
-- 5-6 -> moderate
-- 7-8 -> difficult
-- 9-10 -> exceptional effort
+- 1-3 -> trivial
+- 4-6 -> easy
+- 7-9 -> moderate
+- 10-12 -> difficult
+- 13-15 -> exceptional effort
 
 Rules:
 - Entertainment-only tasks should not score high.
-- Short and simple tasks should usually stay below 5.
+- Short and simple tasks should usually stay below 7.
 - Long-term habit building can increase score slightly.
 - Creativity should ONLY score high for artistic or imaginative tasks.
 - If the task is unclear or vague, lower the score.
 - Do not give all categories similar scores.
-- Only score categories relevant to the task.
+- Prefer multi-category scoring when justified: pick one primary category
+  (highest score) and usually 1–2 secondary categories with lower scores.
+- Unrelated categories must stay at 0.
+- Only leave a single non-zero category when the task truly fits only one.
 """
 
 

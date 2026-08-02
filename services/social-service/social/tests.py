@@ -34,11 +34,13 @@ def parent_access_token(user_id=None):
     AUTH_INTERNAL_URL='http://auth-service:8000',
     GAMIFICATION_INTERNAL_URL='http://gamification-service:8000',
     CATALOG_INTERNAL_URL='http://catalog-service:8000',
+    NOTIFICATION_INTERNAL_URL='http://notification-service:8000',
     INTERNAL_SERVICE_TOKEN='test-internal-token',
     CHANNEL_LAYERS={
         'default': {'BACKEND': 'channels.layers.InMemoryChannelLayer'},
     },
 )
+@patch('social.views.notify_friend_request')
 @patch('social.serializers.fetch_avatars_by_ids', return_value={})
 @patch('social.serializers.fetch_progress_by_ids', return_value={})
 @patch('social.serializers.fetch_kids_by_ids', return_value={})
@@ -55,13 +57,13 @@ class FriendshipApiTests(APITestCase):
         )
 
     def test_unauthenticated_returns_401(
-        self, _mock_lookup, _mock_kids, _mock_progress, _mock_avatars
+        self, _mock_lookup, _mock_kids, _mock_progress, _mock_avatars, _mock_notify
     ):
         response = self.client.get('/api/social/friends/')
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
     def test_parent_forbidden(
-        self, _mock_lookup, _mock_kids, _mock_progress, _mock_avatars
+        self, _mock_lookup, _mock_kids, _mock_progress, _mock_avatars, _mock_notify
     ):
         self.client.credentials(
             HTTP_AUTHORIZATION=f'Bearer {parent_access_token()}'
@@ -70,7 +72,7 @@ class FriendshipApiTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
     def test_send_and_list_incoming_request(
-        self, _mock_lookup, _mock_kids, _mock_progress, _mock_avatars
+        self, _mock_lookup, mock_kids, _mock_progress, _mock_avatars, mock_notify
     ):
         self.auth_as(self.kid_a)
         create = self.client.post(
@@ -80,15 +82,30 @@ class FriendshipApiTests(APITestCase):
         )
         self.assertEqual(create.status_code, status.HTTP_201_CREATED)
         self.assertEqual(create.data['status'], 'pending')
+        mock_notify.assert_called_once_with(
+            recipient_id=self.kid_b,
+            sender_username='kid',
+        )
+
+        mock_kids.return_value = {
+            str(self.kid_a): {
+                'name': 'Alex',
+                'username': 'alex_me',
+                'bio': 'I like robots',
+            }
+        }
 
         self.auth_as(self.kid_b)
         incoming = self.client.get('/api/social/friends/requests/')
         self.assertEqual(incoming.status_code, status.HTTP_200_OK)
         self.assertEqual(len(incoming.data), 1)
         self.assertEqual(incoming.data[0]['from_kid_id'], str(self.kid_a))
+        self.assertEqual(incoming.data[0]['from_name'], 'Alex')
+        self.assertEqual(incoming.data[0]['from_username'], 'alex_me')
+        self.assertEqual(incoming.data[0]['from_bio'], 'I like robots')
 
     def test_cannot_friend_self(
-        self, _mock_lookup, _mock_kids, _mock_progress, _mock_avatars
+        self, _mock_lookup, _mock_kids, _mock_progress, _mock_avatars, _mock_notify
     ):
         self.auth_as(self.kid_a)
         response = self.client.post(
@@ -99,7 +116,7 @@ class FriendshipApiTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_duplicate_request_rejected(
-        self, _mock_lookup, _mock_kids, _mock_progress, _mock_avatars
+        self, _mock_lookup, _mock_kids, _mock_progress, _mock_avatars, _mock_notify
     ):
         self.auth_as(self.kid_a)
         self.client.post(
@@ -123,7 +140,7 @@ class FriendshipApiTests(APITestCase):
         self.assertEqual(reverse.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_accept_list_and_unfriend(
-        self, _mock_lookup, mock_kids, mock_progress, mock_avatars
+        self, _mock_lookup, mock_kids, mock_progress, mock_avatars, _mock_notify
     ):
         self.auth_as(self.kid_a)
         created = self.client.post(
@@ -156,12 +173,17 @@ class FriendshipApiTests(APITestCase):
                 ],
             }
         }
+        avatar_url = (
+            'https://api.dicebear.com/10.x/adventurer/svg'
+            '?seed=5dko0f0w&hairColor=2c1b18'
+        )
         mock_avatars.return_value = {
             str(self.kid_a): {
                 'base_character': 'default',
-                'equipped_hat': None,
-                'equipped_outfit': None,
-                'equipped_accessory': None,
+                'avatar_url': avatar_url,
+                'equipped_hair': None,
+                'equipped_glasses': None,
+                'equipped_earrings': None,
                 'equipped_background': None,
             }
         }
@@ -180,6 +202,8 @@ class FriendshipApiTests(APITestCase):
         self.assertEqual(friend['overall_xp'], 150)
         self.assertEqual(friend['stats'][0]['category'], 'health')
         self.assertEqual(friend['avatar']['base_character'], 'default')
+        self.assertEqual(friend['avatar']['avatar_url'], avatar_url)
+        self.assertIsNone(friend['avatar']['equipped_hair'])
 
         mark_offline(self.kid_a)
         friends_offline = self.client.get('/api/social/friends/')
@@ -192,7 +216,7 @@ class FriendshipApiTests(APITestCase):
         )
 
     def test_decline_request(
-        self, _mock_lookup, _mock_kids, _mock_progress, _mock_avatars
+        self, _mock_lookup, _mock_kids, _mock_progress, _mock_avatars, _mock_notify
     ):
         self.auth_as(self.kid_a)
         created = self.client.post(
@@ -213,7 +237,7 @@ class FriendshipApiTests(APITestCase):
         self.assertEqual(friends.data, [])
 
     def test_unknown_kid_rejected(
-        self, mock_lookup, _mock_kids, _mock_progress, _mock_avatars
+        self, mock_lookup, _mock_kids, _mock_progress, _mock_avatars, _mock_notify
     ):
         mock_lookup.side_effect = ValidationError('Kid not found.')
         self.auth_as(self.kid_a)
@@ -225,7 +249,7 @@ class FriendshipApiTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_friends_list_defaults_when_enrichment_empty(
-        self, _mock_lookup, _mock_kids, _mock_progress, _mock_avatars
+        self, _mock_lookup, _mock_kids, _mock_progress, _mock_avatars, _mock_notify
     ):
         Friendship.objects.create(
             from_kid_id=self.kid_a,

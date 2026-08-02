@@ -10,6 +10,7 @@ from common.permissions import IsKid
 
 from .auth_client import search_kids
 from .models import Friendship
+from .notification_client import notify_friend_request
 from .presence import online_among
 from .search import (
     ALLOWED_ORDERING,
@@ -22,17 +23,19 @@ from .search import (
 from .serializers import (
     FriendListItemSerializer,
     FriendRequestCreateSerializer,
+    FriendRequestListItemSerializer,
     FriendshipSerializer,
     KidSearchResultSerializer,
     either_direction_q,
     serialize_friends_for,
+    serialize_incoming_requests_for,
 )
 
 
 @extend_schema_view(
     get=extend_schema(
         summary='List incoming friend requests',
-        responses={200: FriendshipSerializer(many=True)},
+        responses={200: FriendRequestListItemSerializer(many=True)},
         auth=[{'BearerAuth': []}],
         tags=['Friends'],
     ),
@@ -49,12 +52,7 @@ class FriendRequestListCreateView(generics.GenericAPIView):
     serializer_class = FriendshipSerializer
 
     def get(self, request):
-        me = request.user.kid_id
-        rows = Friendship.objects.filter(
-            to_kid_id=me,
-            status=Friendship.Status.PENDING,
-        )
-        return Response(self.get_serializer(rows, many=True).data)
+        return Response(serialize_incoming_requests_for(request.user.kid_id))
 
     def post(self, request):
         serializer = FriendRequestCreateSerializer(
@@ -63,6 +61,10 @@ class FriendRequestListCreateView(generics.GenericAPIView):
         )
         serializer.is_valid(raise_exception=True)
         friendship = serializer.save()
+        notify_friend_request(
+            recipient_id=friendship.to_kid_id,
+            sender_username=getattr(request.user, 'username', ''),
+        )
         return Response(
             FriendshipSerializer(friendship).data,
             status=status.HTTP_201_CREATED,

@@ -154,6 +154,9 @@ Called by catalog-service on avatar purchase. Uses row locking to prevent double
 ## Notes for frontend
 
 - Coin balance lives here — catalog-service deducts coins internally on purchase; the kid UI should read `/profile/` for the current balance.
+- New profiles start with `STARTER_COINS` (default **50**) so kids can buy something before grinding.
 - Category stats start empty until the kid completes confirmed tasks (task-service pushes completions internally).
+- A single completion can award points to **multiple** categories (`category_points` is a list).
 - Main level increases when `overall_xp` crosses the configured threshold; coins are awarded on main level-up.
 - After a main level-up, gamification-service notifies the kid via notification-service (`level_up`).
+- Economy defaults: category bar **50**, **50** overall XP per stat level, main level at **100** XP, **50** coins per main level.
