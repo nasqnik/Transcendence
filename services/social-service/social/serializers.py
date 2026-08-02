@@ -78,9 +78,10 @@ class FriendRequestListItemSerializer(serializers.Serializer):
 
 class FriendAvatarSerializer(serializers.Serializer):
     base_character = serializers.CharField()
-    equipped_hat = serializers.UUIDField(allow_null=True)
-    equipped_outfit = serializers.UUIDField(allow_null=True)
-    equipped_accessory = serializers.UUIDField(allow_null=True)
+    avatar_url = serializers.CharField(allow_null=True, allow_blank=True)
+    equipped_hair = serializers.UUIDField(allow_null=True)
+    equipped_glasses = serializers.UUIDField(allow_null=True)
+    equipped_earrings = serializers.UUIDField(allow_null=True)
     equipped_background = serializers.UUIDField(allow_null=True)
 
 
