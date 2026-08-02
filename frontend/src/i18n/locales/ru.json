@@ -51,7 +51,13 @@
     "tryLoginAgain": "Попробовать войти снова",
     "completeProfile": "Заполните профиль",
     "back": "Назад",
-    "agreeToTermsPrefix": "Я принимаю"
+    "agreeToTermsPrefix": "Я принимаю",
+    "devLinksTitle": "Разработка — используйте эти ссылки (без реальной почты)",
+    "devLinksHint": "Письма только записываются в журнал сервера. Скопируйте токен или откройте ссылку ниже.",
+    "devVerifyToken": "Токен подтверждения email",
+    "devVerifyLink": "Ссылка подтверждения email",
+    "devInviteToken": "Токен приглашения родителя",
+    "devInviteLink": "Ссылка приглашения родителя"
   },
   "dashboard": {
     "greeting": "Привет, {{name}}!",
@@ -119,7 +125,8 @@
     "legalNav": "Юридические документы",
     "completeTask": "Отметить «{{title}}» как выполненное",
     "selectTask": "Выбрать «{{title}}»",
-    "editTask": "Изменить «{{title}}»"
+    "editTask": "Изменить «{{title}}»",
+    "userMenu": "Меню пользователя"
   },
   "kidDash": {
     "readyToLevel": "Готов подняться на новый уровень?",
@@ -327,7 +334,16 @@
     "reviewedAt": "Проверено {{date}}",
     "noReviewed": "Пока нет проверенных задач.",
     "exportPdf": "Экспорт в PDF",
-    "progressReport": "Отчёт о прогрессе"
+    "progressReport": "Отчёт о прогрессе",
+    "profile": "Профиль",
+    "editProfile": "Редактировать профиль",
+    "memberSince": "Участник с",
+    "deleteAccount": "Удалить аккаунт",
+    "deleteAccountHint": "Безвозвратно удалить ваш аккаунт и все связанные данные. Это действие нельзя отменить.",
+    "deleteAccountConfirmTitle": "Удалить аккаунт?",
+    "deleteAccountConfirmBody": "Аккаунт будет удалён безвозвратно, отменить это действие нельзя.",
+    "deleteAccountConfirm": "Удалить мой аккаунт",
+    "deleteAccountPending": "Удаление…"
   },
   "errors": {
     "required": "Это поле обязательно",
@@ -373,7 +389,8 @@
       "emailNotVerified": "Подтвердите вашу почту перед входом.",
       "invalidVerificationToken": "Эта ссылка для подтверждения недействительна.",
       "verificationExpired": "Срок ссылки истёк. Пожалуйста, зарегистрируйтесь снова.",
-      "alreadyVerified": "Ваша почта уже подтверждена. Вы можете войти."
+      "alreadyVerified": "Ваша почта уже подтверждена. Вы можете войти.",
+      "parentHasLinkedKids": "Нельзя удалить аккаунт, пока вы единственный опекун ребёнка. Сначала привяжите каждого ребёнка к другому родителю."
     }
   },
   "notifications": {

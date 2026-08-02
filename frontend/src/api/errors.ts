@@ -28,6 +28,7 @@ const API_ERROR_KEYS: Record<string, string> = {
   'Not a kid refresh token.': 'errors.api.notKidRefreshToken',
   'Kid not found.': 'errors.api.kidNotFound',
   'This kid already has the maximum number of guardians.': 'errors.api.maxGuardians',
+  "You can't delete this account while you're the only guardian. Link each child to another parent first.": 'errors.api.parentHasLinkedKids',
   'Given token not valid for any token type': 'errors.api.tokenNotValid',
   'Google sign-in is not configured on the server.': 'errors.api.googleNotConfigured',
   'Invalid Google token.': 'errors.api.invalidGoogleToken',
