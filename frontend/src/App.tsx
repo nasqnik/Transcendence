@@ -23,6 +23,7 @@ import KidSettings from './pages/KidSettings'
 import AvatarStudio from './pages/AvatarStudio'
 import ParentDashboard from './pages/ParentDashboard'
 import ParentApprovals from './pages/ParentApprovals'
+import ParentProfile from './pages/ParentProfile'
 import CharacterCreation from './pages/CharacterCreation'
 import Profile from './pages/Profile'
 import ParentSettings from './pages/ParentSettings'
@@ -98,6 +99,7 @@ export default function App() {
           <Route element={<ParentLayout />}>
             <Route path="/parent/dashboard" element={<ParentDashboard />} />
             <Route path="/parent/approvals" element={<ParentApprovals />} />
+            <Route path="/parent/profile" element={<ParentProfile />} />
             <Route path="/parent/settings" element={<ParentSettings />} />
           </Route>
         </Route>

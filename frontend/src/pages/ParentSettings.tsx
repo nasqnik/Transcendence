@@ -3,15 +3,17 @@ import { useTranslation } from 'react-i18next'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import useAuthStore from '../store/authStore'
 import { kidsFromToken } from '../api/parent'
+import { useNavigate } from 'react-router-dom'
 import {
-  getMe, updateUsername, changePassword, requestEmailChange, type MeProfile,
+  getMe, updateUsername, changePassword, requestEmailChange, deleteAccount, type MeProfile,
 } from '../api/account'
 import { getParentAvatar, uploadParentAvatar, deleteParentAvatar } from '../api/avatar'
-import { getFieldErrors } from '../api/errors'
+import { getFieldErrors, getApiErrorKey } from '../api/errors'
 import { usePageTitle } from '../hooks/usePageTitle'
 import { useFormErrors } from '../hooks/useFormErrors'
 import FormField from '../components/FormField'
 import Button from '../components/Button'
+import Modal from '../components/Modal'
 import LanguageSwitcher from '../components/LanguageSwitcher'
 import Avatar from '../components/parent/Avatar'
 
@@ -338,6 +340,70 @@ function IdentityCard({ displayName }: { displayName?: string }) {
   )
 }
 
+// Delete account
+
+function DeleteAccountSection() {
+  const { t } = useTranslation()
+  const navigate = useNavigate()
+  const { logout } = useAuthStore()
+  const [confirming, setConfirming] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  const { mutate: destroy, isPending } = useMutation({
+    mutationFn: deleteAccount,
+    onSuccess: () => { logout(); navigate('/') },
+    onError: (err) => setError(t(getApiErrorKey(err))),
+  })
+
+  return (
+    <section aria-labelledby="danger-heading" className="bg-white rounded-2xl p-6">
+      <h2 id="danger-heading" className="font-heading text-lg font-bold text-gray-900 mb-2">
+        {t('parentDash.deleteAccount')}
+      </h2>
+      <p className="font-body text-sm text-gray-500 mb-4">{t('parentDash.deleteAccountHint')}</p>
+      <button
+        type="button"
+        onClick={() => { setError(null); setConfirming(true) }}
+        className="font-body font-semibold text-sm text-danger-700 hover:opacity-80 focus-ring rounded transition-opacity"
+      >
+        {t('parentDash.deleteAccount')}
+      </button>
+
+      {confirming && (
+        <Modal
+          onClose={() => { if (!isPending) setConfirming(false) }}
+          labelledBy="delete-modal-title"
+          cardClassName="rounded-2xl p-6 w-full max-w-sm flex flex-col gap-4"
+        >
+          <h2 id="delete-modal-title" className="font-heading text-lg font-bold text-gray-900">
+            {t('parentDash.deleteAccountConfirmTitle')}
+          </h2>
+          <p className="font-body text-sm text-gray-600">{t('parentDash.deleteAccountConfirmBody')}</p>
+          {error && <p className="field-error" role="alert">{error}</p>}
+          <div className="flex items-center justify-end gap-3">
+            <button
+              type="button"
+              onClick={() => setConfirming(false)}
+              disabled={isPending}
+              className="font-body font-semibold text-sm px-4 py-2 rounded-xl text-gray-500 hover:text-gray-700 focus-ring transition-colors disabled:opacity-50"
+            >
+              {t('parentDash.cancel')}
+            </button>
+            <button
+              type="button"
+              onClick={() => { setError(null); destroy() }}
+              disabled={isPending}
+              className="font-body font-semibold text-sm px-4 py-2 rounded-xl bg-danger-700 text-white hover:opacity-90 focus-ring transition-opacity disabled:opacity-50"
+            >
+              {isPending ? t('parentDash.deleteAccountPending') : t('parentDash.deleteAccountConfirm')}
+            </button>
+          </div>
+        </Modal>
+      )}
+    </section>
+  )
+}
+
 // Page
 
 export default function ParentSettings() {
@@ -403,6 +469,8 @@ export default function ParentSettings() {
           <LanguageSwitcher />
         </div>
       </section>
+
+      <DeleteAccountSection />
     </main>
   )
 }
