@@ -173,13 +173,17 @@ class FriendshipApiTests(APITestCase):
                 ],
             }
         }
-        hat_id = uuid4()
+        avatar_url = (
+            'https://api.dicebear.com/10.x/adventurer/svg'
+            '?seed=5dko0f0w&hairColor=2c1b18'
+        )
         mock_avatars.return_value = {
             str(self.kid_a): {
                 'base_character': 'default',
-                'equipped_hat': hat_id,
-                'equipped_outfit': None,
-                'equipped_accessory': None,
+                'avatar_url': avatar_url,
+                'equipped_hair': None,
+                'equipped_glasses': None,
+                'equipped_earrings': None,
                 'equipped_background': None,
             }
         }
@@ -198,7 +202,8 @@ class FriendshipApiTests(APITestCase):
         self.assertEqual(friend['overall_xp'], 150)
         self.assertEqual(friend['stats'][0]['category'], 'health')
         self.assertEqual(friend['avatar']['base_character'], 'default')
-        self.assertEqual(friend['avatar']['equipped_hat'], str(hat_id))
+        self.assertEqual(friend['avatar']['avatar_url'], avatar_url)
+        self.assertIsNone(friend['avatar']['equipped_hair'])
 
         mark_offline(self.kid_a)
         friends_offline = self.client.get('/api/social/friends/')

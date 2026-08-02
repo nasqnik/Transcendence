@@ -125,9 +125,10 @@ Same shape as accept, with `"status": "declined"`.
     "bio": "I like robots",
     "avatar": {
       "base_character": "default",
-      "equipped_hat": null,
-      "equipped_outfit": null,
-      "equipped_accessory": null,
+      "avatar_url": "https://api.dicebear.com/10.x/adventurer/svg?seed=5dko0f0w&hairColor=2c1b18",
+      "equipped_hair": null,
+      "equipped_glasses": null,
+      "equipped_earrings": null,
       "equipped_background": null
     },
     "main_level": 2,
