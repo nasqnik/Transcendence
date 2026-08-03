@@ -1,103 +1,52 @@
-import { useState, useRef } from 'react'
+import { useState } from 'react'
+import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { getTasks, getCompletions, postCompletion, deleteTask, type CompletionInfo } from '../../api/tasks'
-import { CATEGORY_STYLE, primaryCategory } from '../../constants/categories'
-import { todayStr, dateStrFromToday } from '../../utils/date'
+import { useQuery } from '@tanstack/react-query'
+import { getTasks, getCompletions } from '../../api/tasks'
+import { groupTasks, latestCompletions } from '../../utils/taskGroups'
+import { todayStr } from '../../utils/date'
+import { useTaskCompletion } from '../../hooks/useTaskCompletion'
 import TaskRow from './TaskRow'
-import TasksAll from './TasksAll'
+import TaskToasts from './TaskToasts'
 import AddTaskModal from './AddTaskModal'
+import LoadError from '../LoadError'
 
-// ─── Component ────────────────────────────────────────────────────────────────
-
+/**
+ * Dashboard card: only what the kid can do *today*. Missed, rejected, upcoming
+ * and undated tasks live on the tasks page so this stays short and actionable.
+ */
 export default function TodaysTasks() {
-  const { t, i18n } = useTranslation()
-  const queryClient = useQueryClient()
-  const [viewAllOpen, setViewAllOpen] = useState(false)
-  const [addOpen, setAddOpen]         = useState(false)
-  const [toastXp, setToastXp]           = useState<number | null>(null)
-  const toastTimer                      = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const [toastError, setToastError]     = useState(false)
-  const toastErrorTimer                 = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const { t } = useTranslation()
+  const [addOpen, setAddOpen] = useState(false)
 
-  const today    = todayStr()
-  const tomorrow = dateStrFromToday(1)
-  const in7Days  = dateStrFromToday(7)
+  const tasksQuery       = useQuery({ queryKey: ['tasks'],       queryFn: getTasks })
+  const completionsQuery = useQuery({ queryKey: ['completions'], queryFn: getCompletions })
 
-  const { data: tasks       = [], isLoading: tasksLoading       } = useQuery({ queryKey: ['tasks'],       queryFn: getTasks })
-  const { data: completions = [], isLoading: completionsLoading } = useQuery({ queryKey: ['completions'], queryFn: getCompletions })
+  const { data: tasks = [], isLoading: tasksLoading } = tasksQuery
+  const { data: completions = [], isLoading: completionsLoading } = completionsQuery
+  const loadFailed = tasksQuery.isError || completionsQuery.isError
 
-  const { mutate: complete } = useMutation({
-    mutationFn: postCompletion,
-    onSuccess: (_data, taskId) => {
-      queryClient.invalidateQueries({ queryKey: ['completions'] })
-      queryClient.invalidateQueries({ queryKey: ['gamificationStats'] })
-      queryClient.invalidateQueries({ queryKey: ['gamificationProfile'] })
-      const xp = tasks.find(t => t.id === taskId)?.xp_reward ?? 0
-      if (xp > 0) {
-        if (toastTimer.current) clearTimeout(toastTimer.current)
-        setToastXp(xp)
-        toastTimer.current = setTimeout(() => setToastXp(null), 2000)
-      }
-    },
-    onError: () => {
-      if (toastErrorTimer.current) clearTimeout(toastErrorTimer.current)
-      setToastError(true)
-      toastErrorTimer.current = setTimeout(() => setToastError(false), 3000)
-    },
-  })
+  const { complete, lingering, displayCompletion, toastXp, toastError } = useTaskCompletion(tasks)
 
-  const { mutate: removeTasks } = useMutation({
-    mutationFn: (ids: string[]) => Promise.all(ids.map(deleteTask)),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['tasks'] })
-      queryClient.invalidateQueries({ queryKey: ['completions'] })
-    },
-    onError: () => {
-      if (toastErrorTimer.current) clearTimeout(toastErrorTimer.current)
-      setToastError(true)
-      toastErrorTimer.current = setTimeout(() => setToastError(false), 3000)
-    },
-  })
+  const isLoading      = tasksLoading || completionsLoading
+  const today          = todayStr()
+  const completionInfo = latestCompletions(completions)
+  const todaysTasks    = groupTasks(tasks, completions, today, lingering).today
 
-  const isLoading = tasksLoading || completionsLoading
+  // The day's scoreboard. Counted from the tasks themselves rather than from
+  // the rendered list, so the linger window — which holds a ticked task on
+  // screen for a moment — can't make a task count as both done and to-do.
+  const dueToday = tasks.filter(task => task.due_date === today)
+  const finishedToday = dueToday.filter(task => {
+    const status = completionInfo.get(task.id)?.status
+    return status === 'confirmed' || status === 'pending'
+  }).length
+  const goalPercent = dueToday.length > 0
+    ? Math.round((finishedToday / dueToday.length) * 100)
+    : 0
 
-  // Most recent completion per task
-  const completionInfo = new Map<string, CompletionInfo>()
-  const sorted = [...completions].sort(
-    (a, b) => new Date(b.completed_at).getTime() - new Date(a.completed_at).getTime()
-  )
-  for (const c of sorted) {
-    if (!completionInfo.has(c.task)) {
-      completionInfo.set(c.task, { status: c.status, review_note: c.review_note })
-    }
-  }
-
-  // pending + confirmed = done (hide from main list); rejected = show again
-  const completedIds = new Set(
-    completions
-      .filter(c => c.status === 'pending' || c.status === 'confirmed')
-      .map(c => c.task)
-  )
-
-  const todaysTasks   = tasks.filter(task => task.due_date === today)
-  const pendingTasks  = todaysTasks.filter(task => !completedIds.has(task.id))
-  const allEditableTasks = tasks.filter(task => !completedIds.has(task.id))
-  const overdueTasks = tasks.filter(task =>
-    task.due_date !== null && task.due_date < today && !completedIds.has(task.id)
-  )
-  const undatedTasks = tasks.filter(task =>
-    task.due_date === null && !completedIds.has(task.id)
-  )
-  const upcomingTasks = tasks
-    .filter(task => task.due_date !== null && task.due_date > today && task.due_date <= in7Days)
-    .sort((a, b) => a.due_date!.localeCompare(b.due_date!))
-
-  function formatUpcomingDate(dateStr: string) {
-    if (dateStr === tomorrow) return t('kidDash.tomorrow')
-    const [y, m, d] = dateStr.split('-').map(Number)
-    return new Date(y, m - 1, d).toLocaleDateString(i18n.language, { weekday: 'short', month: 'short', day: 'numeric' })
-  }
+  // When the hold-up is a parent rather than the kid, say so.
+  const awaitingParent = groupTasks(tasks, completions, today).pending.length > 0
 
   return (
     <>
@@ -107,186 +56,146 @@ export default function TodaysTasks() {
             <h2 id="tasks-heading" className="font-heading text-xl font-bold text-gray-900">
               {t('kidDash.todaysTasks')}
             </h2>
-            {!isLoading && (
+            {!isLoading && !loadFailed && (
               <span
                 role="status"
                 aria-live="polite"
                 className="bg-primary-600 text-white font-body font-bold text-xs w-6 h-6 rounded-full flex items-center justify-center"
-                aria-label={t('kidDash.tasksRemaining', { count: pendingTasks.length })}
+                aria-label={t('kidDash.tasksRemaining', { count: todaysTasks.length })}
               >
-                {pendingTasks.length}
+                {todaysTasks.length}
               </span>
             )}
           </div>
-          {allEditableTasks.length > 0 && (
-            <button
-              type="button"
+          {!isLoading && !loadFailed && tasks.length > 0 && (
+            <Link
+              to="/tasks"
               className="font-body text-sm font-semibold text-primary-600 hover:text-primary-700 focus-ring rounded"
-              onClick={() => setViewAllOpen(true)}
             >
               {t('kidDash.viewAll')}
-            </button>
+            </Link>
           )}
         </div>
+
+        {/* The one goal on this page that can actually be finished today.
+            Level and XP are cumulative and a long way off; "2 of 5" is close
+            enough to be worth chasing, and it resets every morning. */}
+        {!isLoading && !loadFailed && dueToday.length > 0 && (
+          <div className={`mb-4 rounded-2xl px-4 py-3 ${goalPercent === 100 ? 'bg-teal-50' : 'bg-primary-50'}`}>
+            <div className="flex items-center justify-between gap-2 mb-2">
+              {/* Always the plain count, even at 100% — the empty state below
+                  already carries the "all done!" headline, and having both say
+                  it was the same sentence twice in a row. Here the colour and
+                  the 🎉 do the celebrating; the words stay factual. */}
+              <span className="font-heading font-bold text-sm text-gray-900">
+                <span aria-hidden="true" className="me-1.5">{goalPercent === 100 ? '🎉' : '⭐'}</span>
+                {t('kidDash.goalProgress', { done: finishedToday, total: dueToday.length })}
+              </span>
+              <span className="font-body text-xs font-bold text-gray-700 shrink-0">{goalPercent}%</span>
+            </div>
+            <div
+              role="progressbar"
+              aria-label={t('kidDash.goalProgress', { done: finishedToday, total: dueToday.length })}
+              aria-valuenow={finishedToday}
+              aria-valuemin={0}
+              aria-valuemax={dueToday.length}
+              className="h-3 bg-white rounded-full overflow-hidden"
+            >
+              <div
+                className={`h-full rounded-full transition-all duration-500 ${goalPercent === 100 ? 'bg-teal-500' : 'bg-primary-500'}`}
+                style={{ width: `${goalPercent}%` }}
+              />
+            </div>
+          </div>
+        )}
+
+        {!isLoading && !loadFailed && (
+          <button
+            type="button"
+            onClick={() => setAddOpen(true)}
+            // Dashed outline, not a tinted fill: the goal strip above is
+            // already primary-50, and two stacked tinted blocks read as one.
+            // The outline also says "add something here" rather than looking
+            // like a third status panel.
+            className="mb-3 w-full py-2.5 rounded-xl border-2 border-dashed border-primary-100 bg-white text-primary-700 font-body font-semibold text-sm hover:bg-primary-50 hover:border-primary-500 active:bg-primary-50 focus-ring transition-colors"
+          >
+            {t('kidDash.addTask')}
+          </button>
+        )}
 
         {isLoading ? (
           <div className="flex flex-col items-center gap-2 py-10 text-center">
             <p className="font-body text-sm text-gray-400">{t('tasks.loading')}</p>
           </div>
+        ) : loadFailed ? (
+          <LoadError onRetry={() => { tasksQuery.refetch(); completionsQuery.refetch() }} />
         ) : todaysTasks.length === 0 ? (
           <div className="flex flex-col items-center gap-2 py-10 text-center">
-            <span className="text-5xl" aria-hidden="true">📋</span>
-            <p className="font-heading font-bold text-gray-900">{t('kidDash.noTasks')}</p>
-            <p className="font-body text-sm text-gray-400">{t('kidDash.noTasksHint')}</p>
-          </div>
-        ) : pendingTasks.length === 0 ? (
-          <div className="flex flex-col items-center gap-2 py-10 text-center">
-            <span className="text-5xl" aria-hidden="true">🎉</span>
-            <p className="font-heading font-bold text-gray-900">{t('kidDash.allDone')}</p>
-            <p className="font-body text-sm text-gray-400">{t('kidDash.allDoneHint')}</p>
+            {/* Emoji, headline and hint now come from a single decision. They
+                used to be picked separately — the headline from tasks due
+                today, the hint from pending ones — so a kid whose only tasks
+                were submitted on some other day saw "No tasks for today"
+                sitting directly above "Waiting for parent approval". Read
+                together those contradict each other, and neither says where
+                the tasks actually went. */}
+            {finishedToday > 0 ? (
+              <>
+                <span className="text-5xl" aria-hidden="true">🎉</span>
+                <p className="font-heading font-bold text-gray-900">{t('kidDash.allDone')}</p>
+                <p className="font-body text-sm text-gray-400">
+                  {awaitingParent ? t('tasks.pendingReview') : t('kidDash.allDoneHint')}
+                </p>
+              </>
+            ) : awaitingParent ? (
+              <>
+                <span className="text-5xl" aria-hidden="true">⏳</span>
+                <p className="font-heading font-bold text-gray-900">{t('tasks.pendingReview')}</p>
+                {/* The one thing the old empty state never answered: where the
+                    tasks are now. They sit in the tasks page's waiting column
+                    until a parent gets to them. */}
+                <Link
+                  to="/tasks"
+                  className="mt-1 font-body text-sm font-semibold text-primary-600 hover:text-primary-700 focus-ring rounded px-2 py-1"
+                >
+                  {t('tasks.allTasks')}
+                </Link>
+              </>
+            ) : (
+              <>
+                <span className="text-5xl" aria-hidden="true">📋</span>
+                <p className="font-heading font-bold text-gray-900">{t('kidDash.noTasks')}</p>
+                <p className="font-body text-sm text-gray-400">{t('kidDash.noTasksHint')}</p>
+              </>
+            )}
           </div>
         ) : (
           <ul className="flex flex-col gap-2" aria-label={t('kidDash.todaysTasks')}>
-            {pendingTasks.map(task => (
-              <TaskRow
-                key={task.id}
-                task={task}
-                completionInfo={completionInfo.get(task.id)}
-                onComplete={complete}
-                className="rounded-xl hover:bg-gray-50 transition-colors"
-              />
-            ))}
+            {todaysTasks.map(task => {
+              const shown = displayCompletion(task.id, completionInfo.get(task.id))
+              // Same tint the tasks page gives a sent-back task. Without it a
+              // rejection looked routine here and urgent one click away, which
+              // is the sort of drift that makes two screens feel like two apps.
+              const needsAttention = shown?.status === 'rejected'
+              return (
+                <TaskRow
+                  key={task.id}
+                  task={task}
+                  completionInfo={shown}
+                  onComplete={complete}
+                  className={`rounded-xl transition-colors ${
+                    needsAttention ? 'bg-danger-50' : 'hover:bg-gray-50'
+                  }`}
+                />
+              )
+            })}
           </ul>
         )}
 
-        {!isLoading && overdueTasks.length > 0 && (
-          <div className="border-t border-gray-100 mt-4 pt-4">
-            <p
-              id="missed-tasks-label"
-              className="font-heading text-sm font-semibold text-danger-700 mb-3 flex items-center gap-1.5"
-            >
-              <span aria-hidden="true">⚠️</span>
-              {t('kidDash.missedTasks', { count: overdueTasks.length })}
-            </p>
-            <ul className="flex flex-col gap-2" aria-labelledby="missed-tasks-label">
-              {overdueTasks.map(task => (
-                <TaskRow
-                  key={task.id}
-                  task={task}
-                  completionInfo={completionInfo.get(task.id)}
-                  onComplete={complete}
-                  overdue
-                  className="rounded-xl bg-danger-50 hover:bg-danger-50 transition-colors"
-                />
-              ))}
-            </ul>
-          </div>
-        )}
-
-        {!isLoading && upcomingTasks.length > 0 && (
-          <div className="border-t border-gray-100 mt-4 pt-4">
-            <p
-              id="upcoming-tasks-label"
-              className="font-heading text-sm font-semibold text-gray-500 mb-3 flex items-center gap-1.5"
-            >
-              <span aria-hidden="true">📅</span>
-              {t('kidDash.upcoming')}
-            </p>
-            <ul className="flex flex-col gap-2" aria-labelledby="upcoming-tasks-label">
-              {upcomingTasks.map(task => {
-                const cat   = primaryCategory(task.category_rewards)
-                const style = CATEGORY_STYLE[cat]
-                return (
-                  <li key={task.id} className="flex items-center gap-3 px-3 py-2.5 rounded-xl bg-gray-50">
-                    <div
-                      className={`w-8 h-8 rounded-xl ${style.bg} flex items-center justify-center text-sm shrink-0`}
-                      aria-hidden="true"
-                    >
-                      {style.icon}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-body font-semibold text-sm text-gray-700 truncate">{task.title}</p>
-                      <p className="font-body text-xs text-gray-400">{formatUpcomingDate(task.due_date!)}</p>
-                    </div>
-                    <div className="flex items-center gap-1 shrink-0 bg-amber-50 rounded-full px-2.5 py-1">
-                      <span aria-hidden="true" className="text-xs">⭐</span>
-                      <span className="font-body font-bold text-xs text-amber-700">+{task.xp_reward}</span>
-                    </div>
-                  </li>
-                )
-              })}
-            </ul>
-          </div>
-        )}
-
-        {!isLoading && undatedTasks.length > 0 && (
-          <div className="border-t border-gray-100 mt-4 pt-4">
-            <p
-              id="anytime-tasks-label"
-              className="font-heading text-sm font-semibold text-gray-500 mb-3 flex items-center gap-1.5"
-            >
-              <span aria-hidden="true">📌</span>
-              {t('kidDash.anytime')}
-            </p>
-            <ul className="flex flex-col gap-2" aria-labelledby="anytime-tasks-label">
-              {undatedTasks.map(task => (
-                <TaskRow
-                  key={task.id}
-                  task={task}
-                  completionInfo={completionInfo.get(task.id)}
-                  onComplete={complete}
-                  className="rounded-xl hover:bg-gray-50 transition-colors"
-                />
-              ))}
-            </ul>
-          </div>
-        )}
-
-        {!isLoading && (
-          <button
-            type="button"
-            onClick={() => setAddOpen(true)}
-            className="mt-4 w-full py-3 rounded-xl bg-primary-600 text-white font-body font-semibold text-sm hover:bg-primary-700 active:bg-primary-700 focus-ring transition-colors"
-          >
-            {t('kidDash.addTask')}
-          </button>
-        )}
       </section>
 
-      {toastXp !== null && (
-        <div
-          role="status"
-          aria-live="polite"
-          className="fixed bottom-8 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 bg-amber-400 text-white font-heading font-bold text-lg px-6 py-3 rounded-2xl shadow-lg pointer-events-none select-none"
-        >
-          <span aria-hidden="true">⭐</span>
-          +{toastXp} XP
-          <span className="sr-only">{t('kidDash.xpEarned', { xp: toastXp })}</span>
-        </div>
-      )}
-
-      {toastError && (
-        <div
-          role="alert"
-          aria-live="assertive"
-          className="fixed bottom-8 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 bg-danger-700 text-white font-body font-semibold text-sm px-5 py-3 rounded-2xl shadow-lg pointer-events-none select-none"
-        >
-          <span aria-hidden="true">⚠️</span>
-          {t('errors.generic')}
-        </div>
-      )}
+      <TaskToasts xp={toastXp} error={toastError} />
 
       {addOpen && <AddTaskModal onClose={() => setAddOpen(false)} />}
-
-      {viewAllOpen && (
-        <TasksAll
-          tasks={allEditableTasks}
-          completionInfo={completionInfo}
-          onComplete={complete}
-          onDelete={removeTasks}
-          onClose={() => setViewAllOpen(false)}
-        />
-      )}
     </>
   )
 }

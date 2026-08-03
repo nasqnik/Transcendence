@@ -6,6 +6,7 @@ import Button from '../components/Button'
 import { verifyKidEmail } from '../api/auth'
 import { getApiErrorKey } from '../api/errors'
 import { usePageTitle } from '../hooks/usePageTitle'
+import { ALREADY_VERIFIED_KEYS } from '../hooks/useTokenVerification'
 import useAuthStore from '../store/authStore'
 import { PARENT_DASHBOARD_PATH } from '../auth/session'
 
@@ -43,9 +44,10 @@ export default function VerifyKidEmail() {
       .catch(err => {
         if (cancelled) return
         const key = getApiErrorKey(err)
-        // An invalid/used token almost always means the email was already
-        // verified on an earlier visit — show success rather than an error.
-        if (key === 'errors.api.alreadyVerified' || key === 'errors.api.invalidVerificationToken') {
+        // Same rule as the other verification pages; this page keeps its own
+        // effect because it has a fourth state ('active') taken from the
+        // response body, which the shared hook does not model.
+        if (ALREADY_VERIFIED_KEYS.includes(key)) {
           setState('success')
           return
         }
