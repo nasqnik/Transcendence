@@ -1,12 +1,10 @@
 import Button from '../components/Button'
 import LanguageSwitcher from '../components/LanguageSwitcher'
 import LegalLinks from '../components/LegalLinks'
-import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { usePageTitle } from '../hooks/usePageTitle'
 
 export default function Landing() {
-  const navigate = useNavigate()
   const { t } = useTranslation()
   usePageTitle(t('app.name'))
 
@@ -34,10 +32,10 @@ export default function Landing() {
           {/* Actions */}
           <div className="px-6 py-6 flex flex-col gap-4">
             <nav aria-label={t('a11y.mainNav')} className="flex flex-col gap-3">
-              <Button variant="primary" className="w-full" onClick={() => navigate('/login')}>
+              <Button variant="primary" className="w-full" to="/login">
                 {t('nav.login')}
               </Button>
-              <Button variant="secondary" className="w-full" onClick={() => navigate('/signup')}>
+              <Button variant="secondary" className="w-full" to="/signup">
                 {t('nav.signup')}
               </Button>
             </nav>

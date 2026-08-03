@@ -91,3 +91,14 @@ export async function getKidAnalytics(kidId: string): Promise<KidAnalytics> {
   const res = await client.get<KidAnalytics>(`/analytics/kids/${kidId}/dashboard/`)
   return res.data
 }
+
+export interface KidAvatarSummary {
+  kid_id: string
+  avatar_url: string
+}
+
+/** GET /catalog/parent/kids/avatars/ — composed avatar URL for each guarded kid. */
+export async function getKidsAvatars(): Promise<KidAvatarSummary[]> {
+  const res = await client.get<KidAvatarSummary[]>('/catalog/parent/kids/avatars/')
+  return res.data
+}

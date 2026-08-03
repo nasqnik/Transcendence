@@ -26,11 +26,28 @@ export interface KidLevelData {
   coins: number
   /** Consecutive days (ending today, local time) with ≥1 confirmed completion */
   streak: number
+  /** The last 7 local days, oldest first, for the streak strip */
+  week: DayMark[]
   isLoading: boolean
+  /** The gamification fetches failed — the numbers below are placeholders, not facts. */
+  isError: boolean
+  /** Re-runs the failed gamification queries. */
+  refetch: () => void
+}
+
+export interface DayMark {
+  /** Local YYYY-MM-DD */
+  date: string
+  /** At least one confirmed completion that day */
+  done: boolean
+  isToday: boolean
 }
 
 const CATEGORIES: TaskCategory[] = ['health', 'learning', 'responsibility', 'creativity']
-const MAIN_XP_PER_LEVEL = 200  // must match backend MAIN_XP_PER_LEVEL setting
+// Must match gamification-service's MAIN_XP_PER_LEVEL. It moved 200 -> 100
+// when the reward curve was sped up; while these disagreed the bar read
+// "80 / 200" at 40% for a kid who was 80% of the way to the next level.
+const MAIN_XP_PER_LEVEL = 100
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -44,16 +61,37 @@ function emptyPending(): Record<TaskCategory, number> {
   return Object.fromEntries(CATEGORIES.map(cat => [cat, 0])) as Record<TaskCategory, number>
 }
 
-function computeStreak(completions: Completion[]): number {
-  // Convert server UTC timestamps to local-timezone date strings so the streak
-  // reflects the kid's calendar day, not the UTC day.
-  // (e.g. a task done at 8 pm UTC-5 is stored as the next UTC day on the server,
-  //  but should count as today for the kid.)
-  const confirmedDates = new Set(
+/**
+ * Local-timezone dates that have at least one confirmed completion.
+ *
+ * Server timestamps are UTC, so they are converted to the kid's calendar day
+ * first — a task done at 8 pm UTC-5 is stored as the next UTC day but should
+ * still count as today for them.
+ */
+function confirmedDateSet(completions: Completion[]): Set<string> {
+  return new Set(
     completions
       .filter(c => c.status === 'confirmed')
       .map(c => localDateStr(new Date(c.completed_at)))
   )
+}
+
+/** The last 7 local days, oldest first. */
+function computeWeek(completions: Completion[]): DayMark[] {
+  const confirmedDates = confirmedDateSet(completions)
+  const today = new Date()
+  const week: DayMark[] = []
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date(today)
+    d.setDate(d.getDate() - i)
+    const date = localDateStr(d)
+    week.push({ date, done: confirmedDates.has(date), isToday: i === 0 })
+  }
+  return week
+}
+
+function computeStreak(completions: Completion[]): number {
+  const confirmedDates = confirmedDateSet(completions)
   let streak = 0
   const today = new Date()
   for (let i = 0; ; i++) {
@@ -69,8 +107,10 @@ function computeStreak(completions: Completion[]): number {
 
 export function useKidLevel(): KidLevelData {
   // Gamification service — real server-side XP/level data
-  const { data: rawStats   = [], isLoading: statsLoading } = useQuery({ queryKey: ['gamificationStats'],   queryFn: getGamificationStats })
-  const { data: profile        , isLoading: profileLoading } = useQuery({ queryKey: ['gamificationProfile'], queryFn: getGamificationProfile })
+  const statsQuery   = useQuery({ queryKey: ['gamificationStats'],   queryFn: getGamificationStats })
+  const profileQuery = useQuery({ queryKey: ['gamificationProfile'], queryFn: getGamificationProfile })
+  const { data: rawStats = [], isLoading: statsLoading } = statsQuery
+  const { data: profile, isLoading: profileLoading } = profileQuery
   // Tasks + completions already cached by TodaysTasks — no extra requests
   const { data: tasks       = [] } = useQuery({ queryKey: ['tasks'],       queryFn: getTasks })
   const { data: completions = [] } = useQuery({ queryKey: ['completions'], queryFn: getCompletions })
@@ -103,6 +143,14 @@ export function useKidLevel(): KidLevelData {
   const progress  = profile ? Math.round((xpCurrent / xpMax) * 100) : 0
   const coins     = profile?.coins ?? 0
   const streak    = computeStreak(completions)
+  const week      = computeWeek(completions)
 
-  return { stats, pendingXpByCategory, level, progress, xpCurrent, xpMax, coins, streak, isLoading: statsLoading || profileLoading }
+  return {
+    stats, pendingXpByCategory, level, progress, xpCurrent, xpMax, coins, streak, week,
+    isLoading: statsLoading || profileLoading,
+    // Every number above falls back to 0, so a failed fetch renders as a real
+    // Level 0 with no XP. Callers need to be able to tell those apart.
+    isError: statsQuery.isError || profileQuery.isError,
+    refetch: () => { statsQuery.refetch(); profileQuery.refetch() },
+  }
 }

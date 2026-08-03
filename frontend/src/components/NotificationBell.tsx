@@ -1,13 +1,30 @@
-import { useState, useRef, useCallback } from 'react'
+import { useState, useRef, useCallback, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useNotifications } from '../hooks/useNotifications'
 import { useDismissable } from '../hooks/useDismissable'
+import LoadError from './LoadError'
+
+/**
+ * Where each notification takes you. Marking it read was the only thing a tap
+ * did, so the kid had to work out for themselves which page it referred to.
+ */
+const TYPE_PATH: Record<string, string> = {
+  task_confirmed: '/tasks',
+  task_rejected:  '/tasks',
+  task_submitted: '/tasks',
+  level_up:       '/dashboard',
+  friend_request: '/friends',
+}
 
 const TYPE_ICON: Record<string, string> = {
   task_confirmed: '✅',
   task_rejected:  '❌',
   task_submitted: '📋',
   level_up:       '⭐',
+  // Matches the Friends nav icon, so the notification and the place it sends
+  // you look like the same thing.
+  friend_request: '👥',
 }
 
 function formatRelative(dateStr: string, locale: string): string {
@@ -23,15 +40,27 @@ function formatRelative(dateStr: string, locale: string): string {
 
 export default function NotificationBell() {
   const { t, i18n } = useTranslation()
-  const { notifications, unreadCount, markRead } = useNotifications()
+  const navigate = useNavigate()
+  const { notifications, unreadCount, markRead, isError, refetch, pushedMessage } = useNotifications()
   const [open, setOpen] = useState(false)
   const containerRef = useRef<HTMLDivElement>(null)
   const triggerRef   = useRef<HTMLButtonElement>(null)
   const close = useCallback(() => { setOpen(false); triggerRef.current?.focus() }, [])
-  useDismissable(containerRef, close, { enabled: open })
+
+  // Focus the panel heading on open so the keyboard follows the panel, the way
+  // the user menu already does. React only honours `autoFocus` on form
+  // controls, so a heading has to be focused explicitly.
+  const headingRef = useRef<HTMLHeadingElement>(null)
+  useEffect(() => { if (open) headingRef.current?.focus() }, [open])
+
+  useDismissable(containerRef, close, { enabled: open , trapFocus: true })
 
   return (
     <div className="relative" ref={containerRef}>
+
+      {/* Notifications arrive over a socket, so nothing on the page changes in
+          a way a screen reader would notice — the badge just ticks up silently. */}
+      <p role="status" aria-live="polite" className="sr-only">{pushedMessage}</p>
 
       <button
         ref={triggerRef}
@@ -44,7 +73,7 @@ export default function NotificationBell() {
         }
         aria-expanded={open}
         aria-controls="notification-panel"
-        className="relative w-10 h-10 flex items-center justify-center rounded-full hover:bg-gray-100 focus-ring transition-colors text-gray-500 hover:text-gray-700"
+        className="relative w-11 h-11 flex items-center justify-center rounded-full hover:bg-gray-100 focus-ring transition-colors text-gray-500 hover:text-gray-700"
       >
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
           <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
@@ -63,10 +92,17 @@ export default function NotificationBell() {
       {open && (
         <div
           id="notification-panel"
-          className="absolute end-0 top-full mt-2 w-80 bg-white rounded-2xl shadow-lg border border-gray-100 z-50 overflow-hidden"
+          role="region"
+          aria-label={t('notifications.title')}
+          // w-80 alone overflowed a 375px screen; cap it to the viewport.
+          className="absolute end-0 top-full mt-2 w-80 max-w-[calc(100vw-2rem)] bg-white rounded-2xl shadow-lg border border-gray-100 z-50 overflow-hidden"
         >
           <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between">
-            <h2 className="font-heading font-bold text-gray-900 text-sm">{t('notifications.title')}</h2>
+            {/* tabIndex -1: focusable programmatically, but not a tab stop
+                once focus has moved on. */}
+            <h2 ref={headingRef} tabIndex={-1} className="font-heading font-bold text-gray-900 text-sm focus-ring rounded">
+              {t('notifications.title')}
+            </h2>
             {unreadCount > 0 && (
               <span className="font-body text-xs text-primary-600 font-semibold">
                 {t('notifications.newCount', { count: unreadCount })}
@@ -74,6 +110,9 @@ export default function NotificationBell() {
             )}
           </div>
 
+          {isError ? (
+            <LoadError variant="inline" onRetry={refetch} />
+          ) : (
           <ul className="max-h-80 overflow-y-auto">
             {notifications.length === 0 ? (
               <li className="font-body text-sm text-gray-400 text-center py-10">
@@ -84,7 +123,11 @@ export default function NotificationBell() {
                 <li key={n.id}>
                   <button
                     type="button"
-                    onClick={() => { if (!n.is_read) markRead(n.id) }}
+                    onClick={() => {
+                      if (!n.is_read) markRead(n.id)
+                      const path = TYPE_PATH[n.notification_type]
+                      if (path) { close(); navigate(path) }
+                    }}
                     className={`w-full text-start px-4 py-3 flex items-start gap-3 hover:bg-gray-50 transition-colors ${!n.is_read ? 'bg-primary-50/60' : ''}`}
                   >
                     <span className="text-base shrink-0 mt-0.5" aria-hidden="true">
@@ -106,6 +149,7 @@ export default function NotificationBell() {
               ))
             )}
           </ul>
+          )}
         </div>
       )}
 

@@ -10,11 +10,31 @@ const FOCUSABLE_SELECTOR = 'button, [href], input, select, textarea, [tabindex]:
  * focused before the dialog opened once it unmounts.
  */
 export function useFocusTrap(dialogRef: RefObject<HTMLElement | null>, onClose: () => void) {
-  const previouslyFocused = useRef<HTMLElement | null>(null)
+  // Captured during the first render, which is the last moment the trigger is
+  // still focused. Reading it inside the effect was too late: React applies an
+  // input's `autoFocus` during the commit phase, before effects run, so by then
+  // document.activeElement is already an element *inside* the dialog. Restoring
+  // to that on close focused a node that was unmounting, and focus fell to
+  // <body> — dumping a keyboard user at the top of the page.
+  const previouslyFocused = useRef<HTMLElement | null>(
+    typeof document === 'undefined' ? null : (document.activeElement as HTMLElement | null)
+  )
+
+  // Held in a ref so the setup effect below can depend only on the dialog.
+  // Callers pass inline arrows (`onClose={() => setOpen(false)}`), so `onClose`
+  // has a new identity on every render of the parent. With it in the dependency
+  // array the effect tore down and re-ran on each of those renders, and the
+  // re-run overwrote `previouslyFocused` with whatever was focused at the time
+  // — by then an element *inside* the dialog. On close it restored focus to a
+  // node that was unmounting, so focus silently fell back to <body> and a
+  // keyboard user was dumped at the top of the page.
+  const onCloseRef = useRef(onClose)
+  useEffect(() => { onCloseRef.current = onClose })
 
   useEffect(() => {
-    previouslyFocused.current = document.activeElement as HTMLElement | null
-
+    // Copied out for the cleanup closure: the ref is set once at render and
+    // never reassigned, but reading it in cleanup trips react-hooks lint.
+    const trigger = previouslyFocused.current
     const dialog = dialogRef.current
     // Respect an element that already grabbed focus on mount (e.g. an input
     // with `autoFocus`) instead of always jumping to the first focusable item.
@@ -27,7 +47,7 @@ export function useFocusTrap(dialogRef: RefObject<HTMLElement | null>, onClose: 
 
     function handleKeyDown(e: KeyboardEvent) {
       if (e.key === 'Escape') {
-        onClose()
+        onCloseRef.current()
         return
       }
       if (e.key !== 'Tab' || !dialogRef.current) return
@@ -52,7 +72,9 @@ export function useFocusTrap(dialogRef: RefObject<HTMLElement | null>, onClose: 
     document.addEventListener('keydown', handleKeyDown)
     return () => {
       document.removeEventListener('keydown', handleKeyDown)
-      previouslyFocused.current?.focus()
+      trigger?.focus()
     }
-  }, [dialogRef, onClose])
+    // Deliberately only `dialogRef` (a stable ref object): this must run once
+    // per dialog, on mount and unmount. See the note on onCloseRef above.
+  }, [dialogRef])
 }
