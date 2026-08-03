@@ -44,7 +44,10 @@ export interface DayMark {
 }
 
 const CATEGORIES: TaskCategory[] = ['health', 'learning', 'responsibility', 'creativity']
-const MAIN_XP_PER_LEVEL = 200  // must match backend MAIN_XP_PER_LEVEL setting
+// Must match gamification-service's MAIN_XP_PER_LEVEL. It moved 200 -> 100
+// when the reward curve was sped up; while these disagreed the bar read
+// "80 / 200" at 40% for a kid who was 80% of the way to the next level.
+const MAIN_XP_PER_LEVEL = 100
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 

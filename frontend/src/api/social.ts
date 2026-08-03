@@ -15,19 +15,18 @@ export interface FriendStat {
 }
 
 /**
- * A friend's wardrobe, as social-service reports it.
+ * A friend's character, as social-service reports it.
  *
- * Only `base_character` is dependable today: social reads `equipped_hat`,
- * `equipped_outfit` and `equipped_accessory` from catalog-service, but catalog
- * emits `equipped_hair`, `equipped_glasses` and `equipped_earrings`. The names
- * never match, so those three arrive `null` for everyone. `equipped_background`
- * is the one slot whose name lines up.
+ * `avatar_url` is composed by catalog-service and passed through, so the
+ * equipped items are already baked in — the frontend no longer reconstructs it
+ * from the base character. Null when the kid has no avatar row yet.
  */
 export interface FriendAvatar {
+  avatar_url: string | null
   base_character: string
-  equipped_hat: string | null
-  equipped_outfit: string | null
-  equipped_accessory: string | null
+  equipped_hair: string | null
+  equipped_glasses: string | null
+  equipped_earrings: string | null
   equipped_background: string | null
 }
 
@@ -46,11 +45,11 @@ export interface Friend {
 }
 
 /**
- * An incoming friend request.
+ * An incoming friend request, newest first.
  *
- * Note there is no identity here — just the sender's id. social-service has no
- * public kid-by-id lookup, so the UI cannot say who a request is from until
- * the serializer carries the sender's name the way the friends list does.
+ * The sender's identity is enriched from auth-service. If auth is unreachable
+ * those fields come back as empty strings and the row is still returned, so
+ * the UI falls back rather than showing nothing.
  */
 export interface FriendRequest {
   id: string
@@ -59,6 +58,9 @@ export interface FriendRequest {
   status: 'pending' | 'accepted' | 'declined'
   created_at: string
   responded_at: string | null
+  from_name: string
+  from_username: string
+  from_bio: string
 }
 
 export interface KidSearchResult {
@@ -128,24 +130,3 @@ export async function searchKids({ q, status, page, pageSize }: SearchKidsParams
   return res.data
 }
 
-// Mirrors catalog-service's `build_avatar_url`: these two seeds ship with a hair
-// colour override, and without it they render noticeably lighter than in the
-// avatar studio.
-const DARK_HAIR_SEEDS = ['5dko0f0w', 'kwiay0te']
-
-/**
- * A friend's character image, composed from their base character.
- *
- * Equipped items are deliberately not applied: they arrive null (see
- * `FriendAvatar`), and resolving item ids to DiceBear parameters would need the
- * catalog item list, which is a different service's concern.
- */
-export function friendAvatarUrl(avatar: FriendAvatar | null): string | null {
-  if (!avatar?.base_character) return null
-  const url = new URL('https://api.dicebear.com/10.x/adventurer/svg')
-  url.searchParams.set('seed', avatar.base_character)
-  if (DARK_HAIR_SEEDS.includes(avatar.base_character)) {
-    url.searchParams.set('hairColor', '2c1b18')
-  }
-  return url.toString()
-}

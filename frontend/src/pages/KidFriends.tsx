@@ -96,12 +96,6 @@ export default function KidFriends() {
               <h2 id="requests-heading" className="font-heading text-lg font-bold text-gray-900 mb-1">
                 {t('friends.requestsTitle')}
               </h2>
-              {/* social-service returns only the sender's id, and there is no
-                  public kid-by-id lookup, so a request cannot say who it is
-                  from yet. Saying that plainly beats printing a raw UUID at a
-                  child, and Accept/Decline still work. */}
-              <p className="font-body text-sm text-gray-700 mb-3">{t('friends.requestsUnknownHint')}</p>
-
               <ul className="flex flex-col gap-2">
                 {requests.map(request => (
                   // Buttons sit on their own row rather than beside the label:
@@ -112,9 +106,20 @@ export default function KidFriends() {
                       <span className="w-10 h-10 rounded-xl bg-white flex items-center justify-center text-xl shrink-0" aria-hidden="true">
                         ✉️
                       </span>
-                      <p className="flex-1 min-w-0 font-body text-sm font-semibold text-gray-900">
-                        {t('friends.requestFrom')}
-                      </p>
+                      {/* Falls back to the username, then to a generic line:
+                          auth being unreachable empties these rather than
+                          failing the request, so a kid still gets a card they
+                          can act on. */}
+                      <div className="flex-1 min-w-0">
+                        <p className="font-body text-sm font-semibold text-gray-900 truncate">
+                          {request.from_name || request.from_username || t('friends.requestFrom')}
+                        </p>
+                        {request.from_username && (
+                          <p className="font-body text-xs text-gray-700 truncate">
+                            <bdi>@{request.from_username}</bdi>
+                          </p>
+                        )}
+                      </div>
                     </div>
                     <div className="flex gap-2">
                       <button
