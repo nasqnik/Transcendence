@@ -1,7 +1,7 @@
 import { useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { CATEGORY_STYLE, type TaskCategory } from '../../constants/categories'
-import { friendAvatarUrl, type Friend } from '../../api/social'
+import { type Friend } from '../../api/social'
 import { useFocusOnSwap } from '../../hooks/useFocusOnSwap'
 
 interface Props {
@@ -17,7 +17,9 @@ export default function FriendCard({ friend, onRemove, disabled }: Props) {
   // keyboard is dropped on <body> mid-decision.
   const actionsRef = useRef<HTMLDivElement>(null)
   useFocusOnSwap(actionsRef, confirming)
-  const avatarUrl = friendAvatarUrl(friend.avatar)
+  // Composed by catalog-service and passed through by social, so the
+  // wardrobe a friend actually bought is included.
+  const avatarUrl = friend.avatar?.avatar_url ?? null
 
   return (
     <li className="rounded-2xl bg-gray-50 p-3">
