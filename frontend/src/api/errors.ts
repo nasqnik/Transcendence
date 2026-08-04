@@ -47,6 +47,25 @@ const API_ERROR_KEYS: Record<string, string> = {
   'This email is already registered.': 'errors.api.emailExists',
   'This password is too common.': 'errors.passwordTooCommon',
   'This password is entirely numeric.': 'errors.passwordEntirelyNumeric',
+  // Everything below was reaching the UI as the generic "Something went wrong".
+  // These strings are auth-service's `users/messages.py` verbatim — the map is
+  // exact-match, so a message that isn't listed here falls through to
+  // `errors.apiUnknown` and the kid learns nothing about what to fix.
+  'Kid email must be different from the parent email.': 'errors.api.kidEmailSameAsParent',
+  // The map already had this message with a trailing "Use kid sign-in instead."
+  // that the backend does not actually send.
+  'This email is registered as a kid account.': 'errors.api.emailIsKidAccount',
+  'Kid email is not verified.': 'errors.api.kidEmailNotVerified',
+  'A kid account already exists for this email.': 'errors.api.kidEmailExists',
+  'A kid account already exists for this Google account.': 'errors.api.kidGoogleAccountExists',
+  'No kid account found for this Google account.': 'errors.api.kidGoogleAccountNotFound',
+  'Current password is incorrect.': 'errors.api.currentPasswordIncorrect',
+  'Current password is required.': 'errors.api.currentPasswordRequired',
+  'This is already your current email.': 'errors.api.emailSameAsCurrent',
+  'A confirmation email was sent to the new address.': 'errors.api.emailChangePending',
+  // Both mean the session is no longer usable; the distinction is for logs.
+  'Invalid token.': 'errors.api.tokenNotValid',
+  'Not a kid access token.': 'errors.api.tokenNotValid',
 }
 
 const PASSWORD_ERROR_PREFIXES: Array<{ prefix: string; key: string }> = [
