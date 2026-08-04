@@ -263,11 +263,19 @@ function PasswordSection({ profile }: { profile: MeProfile }) {
 
 // Identity + avatar
 
+const MAX_AVATAR_BYTES = 2 * 1024 * 1024  // 2 MB — matches the nginx and backend limits
+const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp']
+
 function IdentityCard({ displayName }: { displayName?: string }) {
   const { t } = useTranslation()
   const qc = useQueryClient()
   const fileRef = useRef<HTMLInputElement>(null)
-  const { fieldErrors, setFieldErrors, resetFieldErrors } = useFormErrors()
+  const [error, setError] = useState<string | null>(null)
+
+  const flashError = (msg: string) => {
+    setError(msg)
+    window.setTimeout(() => setError(null), 4000)
+  }
 
   const { data: avatar } = useQuery({ queryKey: ['parentAvatar'], queryFn: getParentAvatar })
   const hasPhoto = !!avatar?.profile_picture
@@ -275,13 +283,13 @@ function IdentityCard({ displayName }: { displayName?: string }) {
   const { mutate: upload, isPending: uploading } = useMutation({
     mutationFn: (file: File) => uploadParentAvatar(file),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['parentAvatar'] }),
-    onError: (err) => setFieldErrors(getFieldErrors(err)),
+    onError: (err) => flashError(getFieldErrors(err).profile_picture ?? t('parentDash.avatarUploadFailed')),
   })
 
   const { mutate: remove, isPending: removing } = useMutation({
     mutationFn: deleteParentAvatar,
     onSuccess: () => qc.invalidateQueries({ queryKey: ['parentAvatar'] }),
-    onError: (err) => setFieldErrors(getFieldErrors(err)),
+    onError: () => flashError(t('parentDash.avatarUploadFailed')),
   })
 
   const busy = uploading || removing
@@ -289,7 +297,11 @@ function IdentityCard({ displayName }: { displayName?: string }) {
   function onPick(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     e.target.value = ''  // allow re-picking the same file
-    if (file) { resetFieldErrors(); upload(file) }
+    if (!file) return
+    setError(null)
+    if (!ALLOWED_IMAGE_TYPES.includes(file.type)) { flashError(t('parentDash.avatarInvalidType')); return }
+    if (file.size > MAX_AVATAR_BYTES) { flashError(t('parentDash.avatarTooLarge')); return }
+    upload(file)
   }
 
   return (
@@ -317,7 +329,7 @@ function IdentityCard({ displayName }: { displayName?: string }) {
           {hasPhoto && (
             <button
               type="button"
-              onClick={() => { resetFieldErrors(); remove() }}
+              onClick={() => { setError(null); remove() }}
               disabled={busy}
               className="font-body text-sm font-semibold text-danger-700 hover:opacity-80 focus-ring rounded disabled:opacity-50"
             >
@@ -332,10 +344,16 @@ function IdentityCard({ displayName }: { displayName?: string }) {
             className="hidden"
           />
         </div>
-        {fieldErrors.profile_picture && (
-          <p className="field-error mt-1">{fieldErrors.profile_picture}</p>
-        )}
       </div>
+
+      {error && (
+        <div
+          role="alert"
+          className="fixed bottom-8 left-1/2 -translate-x-1/2 z-50 bg-danger-700 text-white font-body font-semibold text-sm px-5 py-3 rounded-2xl shadow-lg max-w-[90vw] text-center"
+        >
+          {error}
+        </div>
+      )}
     </section>
   )
 }
