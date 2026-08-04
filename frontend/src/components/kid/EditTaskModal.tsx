@@ -18,7 +18,7 @@ interface Props {
 export default function EditTaskModal({ task, onClose }: Props) {
   const { t } = useTranslation()
   const queryClient = useQueryClient()
-  const { status, streamingText, run, fail } = useTaskStream(onClose)
+  const { status, errorKey, streamingText, run, fail } = useTaskStream(onClose)
 
   const [title, setTitle]             = useState(task.title)
   const [description, setDescription] = useState(task.description ?? '')
@@ -85,9 +85,10 @@ export default function EditTaskModal({ task, onClose }: Props) {
             onDueDateChange={setDueDate}
           />
 
+          {/* Keyed off the server's error code — see AddTaskModal. */}
           {status === 'error' && (
             <p role="alert" className="font-body text-sm text-danger-700">
-              {t('errors.generic')}
+              {t(errorKey)}
             </p>
           )}
 

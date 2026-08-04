@@ -1,11 +1,13 @@
 import { useState, useRef, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
+import { useNavigate } from 'react-router-dom'
 import { getKidAvatar } from '../api/catalog'
 import LoadError from '../components/LoadError'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { type TaskCategory, CATEGORY_STYLE } from '../constants/categories'
 import { getCategorySettings, updateCategorySettings, type CategorySettings } from '../api/tasks'
 import { getKidMe, updateKidProfile } from '../api/kidAccount'
+import { deleteAccount } from '../api/account'
 import { inviteParent } from '../api/auth'
 import { getApiErrorKey } from '../api/errors'
 import { useFormErrors } from '../hooks/useFormErrors'
@@ -20,6 +22,7 @@ import LanguageSwitcher from '../components/LanguageSwitcher'
 import KidAccountRow from '../components/kid/KidAccountRow'
 import KidEmailRow from '../components/kid/KidEmailRow'
 import KidPasswordSection from '../components/kid/KidPasswordSection'
+import Modal from '../components/Modal'
 import { usePageTitle } from '../hooks/usePageTitle'
 
 // ─── Category → settings key map ─────────────────────────────────────────────
@@ -49,6 +52,93 @@ function Section({ id, icon, title, children }: SectionProps) {
       </h2>
       {children}
     </section>
+  )
+}
+
+// ─── Delete account ───────────────────────────────────────────────────────────
+
+/**
+ * A kid deleting their own account.
+ *
+ * `DELETE /auth/me/` resolves the actor from the token and falls through to a
+ * plain `user.delete()` for a kid, so the role-agnostic `deleteAccount` helper
+ * works here unchanged — same as `changePassword` and `requestEmailChange`.
+ *
+ * This is the only route out of a kid account: there is no public endpoint for
+ * a parent to remove a kid, and `delete_parent_account` refuses with 409 while
+ * the parent is the sole guardian of one. Without this section a kid account
+ * could never be erased, and a sole-guardian parent was locked out of deleting
+ * their own account too.
+ */
+function DeleteAccountSection() {
+  const { t } = useTranslation()
+  const navigate = useNavigate()
+  const logout = useAuthStore(s => s.logout)
+  const [confirming, setConfirming] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  const { mutate: destroy, isPending } = useMutation({
+    mutationFn: deleteAccount,
+    // The token belongs to a user that no longer exists, so every later request
+    // would 401. Clearing it locally also wipes the cached tasks and stats.
+    onSuccess: () => { logout(); navigate('/') },
+    onError: (err) => setError(t(getApiErrorKey(err))),
+  })
+
+  return (
+    <Section id="danger-heading" icon="⚠️" title={t('parentDash.deleteAccount')}>
+      <p className="font-body text-sm text-gray-500 mb-4">{t('parentDash.deleteAccountHint')}</p>
+      {/* Solid danger-700, not danger-500: white on the brighter red measures
+          3.93:1 and fails AA, while this lands at 7.07:1. Filled rather than a
+          red text link — inside a column of ordinary settings rows the link
+          read as just another one, and this is the row that can't be undone. */}
+      <button
+        type="button"
+        onClick={() => { setError(null); setConfirming(true) }}
+        className="min-h-11 px-4 inline-flex items-center rounded-xl bg-danger-700 font-body text-sm font-semibold text-white hover:opacity-90 focus-ring transition-opacity"
+      >
+        {t('parentDash.deleteAccount')}
+      </button>
+
+      {confirming && (
+        // alertdialog, not dialog: this interrupts to confirm a destructive,
+        // irreversible act, so the body text is announced with the title
+        // rather than waiting for the kid to explore the dialog.
+        <Modal
+          role="alertdialog"
+          onClose={() => { if (!isPending) setConfirming(false) }}
+          labelledBy="kid-delete-modal-title"
+          describedBy="kid-delete-modal-body"
+          cardClassName="rounded-2xl p-6 w-full max-w-sm flex flex-col gap-4"
+        >
+          <h2 id="kid-delete-modal-title" className="font-heading text-lg font-bold text-gray-900">
+            {t('parentDash.deleteAccountConfirmTitle')}
+          </h2>
+          <p id="kid-delete-modal-body" className="font-body text-sm text-gray-600">
+            {t('parentDash.deleteAccountConfirmBody')}
+          </p>
+          {error && <p className="field-error" role="alert">{error}</p>}
+          <div className="flex items-center justify-end gap-3">
+            <button
+              type="button"
+              onClick={() => setConfirming(false)}
+              disabled={isPending}
+              className="min-h-11 font-body font-semibold text-sm px-4 py-2 rounded-xl text-gray-700 hover:bg-gray-100 focus-ring transition-colors disabled:opacity-50"
+            >
+              {t('common.cancel')}
+            </button>
+            <button
+              type="button"
+              onClick={() => { setError(null); destroy() }}
+              disabled={isPending}
+              className="min-h-11 font-body font-semibold text-sm px-4 py-2 rounded-xl bg-danger-700 text-white hover:opacity-90 focus-ring transition-opacity disabled:opacity-50"
+            >
+              {isPending ? t('parentDash.deleteAccountPending') : t('parentDash.deleteAccountConfirm')}
+            </button>
+          </div>
+        </Modal>
+      )}
+    </Section>
   )
 }
 
@@ -282,6 +372,9 @@ export default function KidSettings() {
               <LanguageSwitcher />
             </div>
           </Section>
+
+          {/* Last in the account column, under the things it undoes. */}
+          <DeleteAccountSection />
         </div>
 
         <div className="flex flex-col gap-4 sm:gap-6">
