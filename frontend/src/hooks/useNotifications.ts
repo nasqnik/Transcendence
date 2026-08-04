@@ -67,7 +67,9 @@ export function useNotifications() {
           // presence socket only carries friend_online/friend_offline. Without
           // this the bell would ping while the sidebar badge and the friends
           // page kept showing the old count until something happened to
-          // refetch them. Inert until social-service starts sending the type.
+          // refetch them. social-service does send this: it posts to
+          // notification-service's internal notify endpoint when a request is
+          // created, and `friend_request` is an accepted type there.
           if (notification.notification_type === 'friend_request') {
             queryClient.invalidateQueries({ queryKey: ['friendRequests'] })
           }

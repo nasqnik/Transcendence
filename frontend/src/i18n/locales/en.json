@@ -190,7 +190,11 @@
   "friends": {
     "title": "Friends",
     "myFriends": "My Friends",
-    "onlineCount": "{{count}} online right now",
+    "filterLabel": "Search your friends",
+    "filterPlaceholder": "Search friends…",
+    "filterEmpty": "None of your friends match “{{query}}”.",
+    "overallXp": "Overall XP",
+    "categoryXp": "Category XP",
     "online": "Online",
     "offline": "Offline",
     "emptyTitle": "No friends yet",
@@ -403,12 +407,38 @@
       "invalidVerificationToken": "This verification link is invalid.",
       "verificationExpired": "This verification link has expired. Please sign up again.",
       "alreadyVerified": "Your email is already verified. You can log in.",
-      "parentHasLinkedKids": "You can’t delete your account while you’re the only guardian of a child. Link each child to another parent first."
+      "parentHasLinkedKids": "You can’t delete your account while you’re the only guardian of a child. Link each child to another parent first.",
+      "kidEmailSameAsParent": "You can't use the same email for the child and the parent. Each needs their own.",
+      "kidEmailNotVerified": "This child's email hasn't been verified yet. Check the inbox for the verification link.",
+      "kidEmailExists": "A child account already uses this email.",
+      "kidGoogleAccountExists": "A child account already uses this Google account.",
+      "kidGoogleAccountNotFound": "No child account is linked to this Google account.",
+      "currentPasswordIncorrect": "That current password isn't right.",
+      "currentPasswordRequired": "Please enter your current password.",
+      "emailSameAsCurrent": "That's already your email address.",
+      "emailChangePending": "We sent a confirmation link to the new address."
+    },
+    "ai": {
+      "contentBlocked": "That task can't be used. Try describing something kind and safe you want to get done.",
+      "rateLimited": "That was a lot of tasks at once! Wait a moment and try again.",
+      "serviceUnavailable": "The helper that checks tasks is asleep right now. Try again in a bit.",
+      "invalidResponse": "The helper got confused. Try writing the task a different way.",
+      "generic": "That didn't work. Please try again."
     }
   },
   "notifications": {
     "title": "Notifications",
     "empty": "You're all caught up!",
     "newCount": "{{count}} new"
+  },
+  "rewards": {
+    "title": "How to earn coins",
+    "summary": "Level up {{levels}} categories — that's {{xp}} XP in each — and you get {{coins}} coins!",
+    "stepTask": "Finish a task and a grown-up says yes. You earn XP in that task's colours.",
+    "stepCategory": "Fill a colour bar to {{xp}} XP and that colour levels up.",
+    "stepOverall": "Every colour level-up adds {{xp}} to your Overall XP. At {{total}} you go up a whole level!",
+    "stepCoins": "Each new level gives you {{coins}} coins.",
+    "stepShop": "Spend coins in the shop on hats, glasses and more for your character.",
+    "gotIt": "Got it!"
   }
 }
