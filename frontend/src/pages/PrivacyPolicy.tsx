@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { usePageTitle } from '../hooks/usePageTitle'
+import { CONTACT_EMAIL } from '../constants/contact'
 
 export default function PrivacyPolicy() {
   const { t } = useTranslation()
@@ -218,10 +219,10 @@ export default function PrivacyPolicy() {
             <br />
             Email:{' '}
             <a
-              href="mailto:privacy@kiddopath.app"
+              href={`mailto:${CONTACT_EMAIL}`}
               className="text-primary-600 underline hover:text-primary-700 focus-ring rounded-sm"
             >
-              privacy@kiddopath.app
+              {CONTACT_EMAIL}
             </a>
           </address>
           <p className="font-body text-sm text-gray-700 leading-relaxed mt-2">
