@@ -46,7 +46,10 @@ export default function LevelUpModal({ category, level, onClose }: Props) {
       <button
         type="button"
         onClick={onClose}
-        className={`mt-2 w-full py-3 rounded-xl font-body font-semibold text-sm text-white focus-ring transition-colors ${style.bar}`}
+        // `solid` (-700), not `bar` (-500): white on the bar shades measures
+        // 2.17-4.23:1, under the 4.5 AA floor. The bar exists for progress
+        // fills, which only need 3:1.
+        className={`mt-2 w-full min-h-11 py-3 rounded-xl font-body font-semibold text-sm text-white focus-ring transition-colors ${style.solid}`}
       >
         <span aria-hidden="true">🚀</span> {t('kidDash.letsGo')}
       </button>

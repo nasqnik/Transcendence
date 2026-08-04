@@ -7,10 +7,32 @@ import Modal from '../Modal'
 
 interface RecentlyReviewedProps {
   kidLabelFor: (kidId: string) => string
+  kidAvatarFor?: (kidId: string) => string | undefined
   showKidLabel: boolean
 }
 
 const MAX_ITEMS = 10
+
+function KidTag({ label }: { label: string }) {
+  return (
+    <span className="inline-flex items-center gap-1 font-body text-xs font-semibold text-gray-600">
+      <span aria-hidden="true">👤</span>
+      {label}
+    </span>
+  )
+}
+
+/** Row/modal tile — the kid's avatar when available, else a generic task icon. */
+function TaskTile({ avatarUrl, sizeClass, fallbackClass }: { avatarUrl?: string; sizeClass: string; fallbackClass: string }) {
+  if (avatarUrl) {
+    return <img src={avatarUrl} alt="" aria-hidden="true" className={`${sizeClass} object-cover bg-primary-50`} />
+  }
+  return (
+    <div className={`${sizeClass} ${fallbackClass} flex items-center justify-center text-lg`} aria-hidden="true">
+      📋
+    </div>
+  )
+}
 
 function StatusBadge({ confirmed, label }: { confirmed: boolean; label: string }) {
   return (
@@ -25,7 +47,7 @@ function StatusBadge({ confirmed, label }: { confirmed: boolean; label: string }
   )
 }
 
-export default function RecentlyReviewed({ kidLabelFor, showKidLabel }: RecentlyReviewedProps) {
+export default function RecentlyReviewed({ kidLabelFor, kidAvatarFor, showKidLabel }: RecentlyReviewedProps) {
   const { t, i18n } = useTranslation()
   const [viewing, setViewing] = useState<Completion | null>(null)
 
@@ -82,19 +104,18 @@ export default function RecentlyReviewed({ kidLabelFor, showKidLabel }: Recently
                     onClick={() => setViewing(c)}
                     className="w-full text-start flex items-start gap-3 px-3 py-3 rounded-xl bg-gray-50 hover:bg-gray-100 focus-ring transition-colors"
                   >
-                    <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center text-lg shrink-0" aria-hidden="true">
-                      📋
-                    </div>
+                    <TaskTile
+                      avatarUrl={kidAvatarFor?.(c.kid_id)}
+                      sizeClass="w-10 h-10 rounded-xl shrink-0"
+                      fallbackClass="bg-white"
+                    />
                     <div className="flex-1 min-w-0">
                       <p className="font-body text-sm font-semibold text-gray-900 truncate">
                         {c.task_title || t('parentDash.untitledTask')}
                       </p>
                       <div className="flex items-center gap-2 mt-0.5 flex-wrap">
                         {showKidLabel && (
-                          <span className="inline-flex items-center gap-1 font-body text-xs font-semibold text-gray-600">
-                            <span aria-hidden="true">👤</span>
-                            {kidLabelFor(c.kid_id)}
-                          </span>
+                          <KidTag label={kidLabelFor(c.kid_id)} />
                         )}
                         <span className="font-body text-xs text-gray-400">
                           {t('parentDash.reviewedAt', { date: reviewedDate(c) })}
@@ -120,9 +141,11 @@ export default function RecentlyReviewed({ kidLabelFor, showKidLabel }: Recently
           cardClassName="rounded-2xl p-6 w-full max-w-sm flex flex-col gap-4"
         >
           <div className="flex items-start gap-3">
-            <div className="w-11 h-11 rounded-xl bg-gray-50 flex items-center justify-center text-xl shrink-0" aria-hidden="true">
-              📋
-            </div>
+            <TaskTile
+              avatarUrl={kidAvatarFor?.(viewing.kid_id)}
+              sizeClass="w-11 h-11 rounded-xl shrink-0"
+              fallbackClass="bg-gray-50"
+            />
             <div className="min-w-0 flex-1">
               <h2 id="reviewed-modal-title" className="font-heading text-lg font-bold text-gray-900">
                 {viewing.task_title || t('parentDash.untitledTask')}
@@ -130,10 +153,7 @@ export default function RecentlyReviewed({ kidLabelFor, showKidLabel }: Recently
               <div className="flex items-center gap-2 mt-1.5 flex-wrap">
                 <StatusBadge confirmed={viewing.status === 'confirmed'} label={statusLabel(viewing)} />
                 {showKidLabel && (
-                  <span className="inline-flex items-center gap-1 font-body text-xs font-semibold text-gray-600">
-                    <span aria-hidden="true">👤</span>
-                    {kidLabelFor(viewing.kid_id)}
-                  </span>
+                  <KidTag label={kidLabelFor(viewing.kid_id)} />
                 )}
               </div>
             </div>

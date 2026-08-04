@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useQuery } from '@tanstack/react-query'
 import useAuthStore from '../store/authStore'
-import { kidsFromToken, kidDisplayName, getKidStats, type KidRef } from '../api/parent'
+import { kidsFromToken, kidDisplayName, getKidStats, getKidsAvatars, type KidRef } from '../api/parent'
 import { usePageTitle } from '../hooks/usePageTitle'
 import KidCard from '../components/parent/KidCard'
 import KidSwitcher from '../components/parent/KidSwitcher'
@@ -35,6 +35,12 @@ export default function ParentDashboard() {
     enabled: kidId !== null,
   })
 
+  const { data: kidsAvatars = [] } = useQuery({
+    queryKey: ['kidsAvatars'],
+    queryFn: getKidsAvatars,
+  })
+  const avatarUrlFor = (id: string) => kidsAvatars.find(a => a.kid_id === id)?.avatar_url
+
   if (!kidId) {
     return (
       <main id="main-content" className="flex-1 flex items-center justify-center p-4 sm:p-8">
@@ -58,9 +64,15 @@ export default function ParentDashboard() {
       </h1>
 
       <div className="flex items-center justify-between gap-4 flex-wrap">
-        <KidCard kidName={selectedLabel} />
+        <KidCard kidName={selectedLabel} avatarUrl={avatarUrlFor(kidId)} />
         {kids.length > 1 && (
-          <KidSwitcher kids={kids} selectedId={kidId} onSelect={setSelectedKidId} labelFor={labelFor} />
+          <KidSwitcher
+            kids={kids}
+            selectedId={kidId}
+            onSelect={setSelectedKidId}
+            labelFor={labelFor}
+            avatarFor={kid => avatarUrlFor(kid.id)}
+          />
         )}
       </div>
 
