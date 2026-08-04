@@ -356,7 +356,20 @@
     "deleteAccountConfirmTitle": "Delete your account?",
     "deleteAccountConfirmBody": "This permanently deletes your account and cannot be undone.",
     "deleteAccountConfirm": "Delete my account",
-    "deleteAccountPending": "Deleting…"
+    "deleteAccountPending": "Deleting…",
+    "avatarTooLarge": "Image is too large. Please choose one under 2 MB.",
+    "avatarInvalidType": "Unsupported format. Please use a JPEG, PNG, or WebP image.",
+    "avatarUploadFailed": "Couldn’t upload the image. Please try again.",
+    "exportCsv": "Export CSV",
+    "csvGenerated": "Generated",
+    "csvSummary": "Summary",
+    "csvMetric": "Metric",
+    "csvValue": "Value",
+    "csvCategory": "Category",
+    "csvTotalXp": "Total XP",
+    "csvLevel": "Level",
+    "csvDate": "Date",
+    "csvXp": "XP"
   },
   "errors": {
     "required": "This field is required",
