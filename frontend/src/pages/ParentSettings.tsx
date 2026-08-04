@@ -375,43 +375,50 @@ function DeleteAccountSection() {
 
   return (
     <section aria-labelledby="danger-heading" className="bg-white rounded-2xl p-6">
-      <h2 id="danger-heading" className="font-heading text-lg font-bold text-gray-900 mb-2">
-        {t('parentDash.deleteAccount')}
+      <h2 id="danger-heading" className="font-heading text-lg font-bold text-gray-900 mb-4">
+        <span aria-hidden="true">⚠️</span> {t('parentDash.deleteAccount')}
       </h2>
       <p className="font-body text-sm text-gray-500 mb-4">{t('parentDash.deleteAccountHint')}</p>
+      {/* Solid danger-700 (7.07:1 on white), filled rather than a red text link —
+          inside a column of ordinary settings rows the link read as just another
+          one, and this is the row that can't be undone. */}
       <button
         type="button"
         onClick={() => { setError(null); setConfirming(true) }}
-        className="font-body font-semibold text-sm text-danger-700 hover:opacity-80 focus-ring rounded transition-opacity"
+        className="min-h-11 px-4 inline-flex items-center rounded-xl bg-danger-700 font-body text-sm font-semibold text-white hover:opacity-90 focus-ring transition-opacity"
       >
         {t('parentDash.deleteAccount')}
       </button>
 
       {confirming && (
         <Modal
+          role="alertdialog"
           onClose={() => { if (!isPending) setConfirming(false) }}
-          labelledBy="delete-modal-title"
+          labelledBy="parent-delete-modal-title"
+          describedBy="parent-delete-modal-body"
           cardClassName="rounded-2xl p-6 w-full max-w-sm flex flex-col gap-4"
         >
-          <h2 id="delete-modal-title" className="font-heading text-lg font-bold text-gray-900">
+          <h2 id="parent-delete-modal-title" className="font-heading text-lg font-bold text-gray-900">
             {t('parentDash.deleteAccountConfirmTitle')}
           </h2>
-          <p className="font-body text-sm text-gray-600">{t('parentDash.deleteAccountConfirmBody')}</p>
+          <p id="parent-delete-modal-body" className="font-body text-sm text-gray-600">
+            {t('parentDash.deleteAccountConfirmBody')}
+          </p>
           {error && <p className="field-error" role="alert">{error}</p>}
           <div className="flex items-center justify-end gap-3">
             <button
               type="button"
               onClick={() => setConfirming(false)}
               disabled={isPending}
-              className="font-body font-semibold text-sm px-4 py-2 rounded-xl text-gray-500 hover:text-gray-700 focus-ring transition-colors disabled:opacity-50"
+              className="min-h-11 font-body font-semibold text-sm px-4 py-2 rounded-xl text-gray-700 hover:bg-gray-100 focus-ring transition-colors disabled:opacity-50"
             >
-              {t('parentDash.cancel')}
+              {t('common.cancel')}
             </button>
             <button
               type="button"
               onClick={() => { setError(null); destroy() }}
               disabled={isPending}
-              className="font-body font-semibold text-sm px-4 py-2 rounded-xl bg-danger-700 text-white hover:opacity-90 focus-ring transition-opacity disabled:opacity-50"
+              className="min-h-11 font-body font-semibold text-sm px-4 py-2 rounded-xl bg-danger-700 text-white hover:opacity-90 focus-ring transition-opacity disabled:opacity-50"
             >
               {isPending ? t('parentDash.deleteAccountPending') : t('parentDash.deleteAccountConfirm')}
             </button>
