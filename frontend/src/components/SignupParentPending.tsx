@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import AuthMessageLayout from './AuthMessageLayout'
 import Button from './Button'
@@ -10,7 +10,6 @@ interface Props {
 
 export default function SignupParentPending({ email }: Props) {
   const { t } = useTranslation()
-  const navigate = useNavigate()
 
   useEffect(() => { document.getElementById('verify-heading')?.focus() }, [])
 
@@ -24,7 +23,7 @@ export default function SignupParentPending({ email }: Props) {
       <p className="font-body text-sm text-gray-500 text-center w-full">
         {t('auth.verifyEmailHint', { email })}
       </p>
-      <Button variant="primary" className="w-full" onClick={() => navigate('/')}>
+      <Button variant="primary" className="w-full" to="/">
         {t('auth.backToHome')}
       </Button>
       <p className="font-body text-sm text-gray-500 text-center">

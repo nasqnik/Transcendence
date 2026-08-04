@@ -1,42 +1,16 @@
-import { useEffect, useState } from 'react'
-import { useSearchParams, useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import AuthMessageLayout from '../components/AuthMessageLayout'
 import Button from '../components/Button'
 import { verifyEmailChange } from '../api/account'
-import { getApiErrorKey } from '../api/errors'
 import { usePageTitle } from '../hooks/usePageTitle'
-
-type PageState = 'loading' | 'success' | 'error'
+import { useTokenVerification } from '../hooks/useTokenVerification'
 
 export default function VerifyEmailChange() {
   const { t } = useTranslation()
   const navigate = useNavigate()
   usePageTitle(`${t('parentDash.emailChangeSuccess')} — ${t('app.name')}`)
-  const [searchParams] = useSearchParams()
-  const token = searchParams.get('token')
-  const [state, setState] = useState<PageState>(() => (token ? 'loading' : 'error'))
-  const [errorMessageKey, setErrorMessageKey] = useState(() => (token ? '' : 'verify.invalidLink'))
-
-  useEffect(() => {
-    if (state !== 'loading') document.getElementById('email-change-heading')?.focus()
-  }, [state])
-
-  useEffect(() => {
-    if (!token) return
-    let cancelled = false
-
-    verifyEmailChange(token)
-      .then(() => { if (!cancelled) setState('success') })
-      .catch(err => {
-        if (cancelled) return
-        setErrorMessageKey(getApiErrorKey(err))
-        setState('error')
-      })
-
-    return () => { cancelled = true }
-  // Only re-run on token change — language switches must not re-trigger.
-  }, [token])
+  const { state, errorMessageKey } = useTokenVerification('email-change-heading', verifyEmailChange)
 
   if (state === 'loading') {
     return (

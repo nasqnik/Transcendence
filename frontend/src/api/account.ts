@@ -34,6 +34,11 @@ export async function requestEmailChange(email: string): Promise<void> {
 }
 
 /** POST /auth/verify-email-change/ — confirm a pending email change via token. */
+/** DELETE /auth/me/ — permanently delete the logged-in account. */
+export async function deleteAccount(): Promise<void> {
+  await client.delete('/auth/me/')
+}
+
 export async function verifyEmailChange(token: string): Promise<void> {
   await client.post('/auth/verify-email-change/', { token })
 }
