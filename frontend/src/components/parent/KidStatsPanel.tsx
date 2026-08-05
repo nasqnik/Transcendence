@@ -32,6 +32,7 @@ export default function KidStatsPanel({ stats, isLoading }: KidStatsPanelProps) 
           const stat  = stats.find(s => s.category === category)
           const level = stat?.level ?? 0
           const pct   = stat?.xp_percent ?? 0
+          const shown = Math.round(pct / 2)   // express progress on a 0–50 scale
 
           return (
             <div key={category}>
@@ -52,9 +53,9 @@ export default function KidStatsPanel({ stats, isLoading }: KidStatsPanelProps) 
               <div
                 role="progressbar"
                 aria-label={t(`kidDash.categories.${category}` as `kidDash.categories.${TaskCategory}`)}
-                aria-valuenow={pct}
+                aria-valuenow={shown}
                 aria-valuemin={0}
-                aria-valuemax={100}
+                aria-valuemax={50}
                 className="h-3 bg-gray-100 rounded-full overflow-hidden ms-10"
               >
                 <div
@@ -62,7 +63,7 @@ export default function KidStatsPanel({ stats, isLoading }: KidStatsPanelProps) 
                   style={{ width: `${pct}%` }}
                 />
               </div>
-              <p className="font-body text-xs text-gray-400 ms-10 mt-1">{pct} / 100</p>
+              <p className="font-body text-xs text-gray-400 ms-10 mt-1">{shown} / 50</p>
             </div>
           )
         })}
