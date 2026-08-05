@@ -1,6 +1,7 @@
 from django.conf import settings
 from django.contrib.auth.password_validation import validate_password
 from django.db import transaction
+from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 from rest_framework.exceptions import AuthenticationFailed
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
@@ -59,6 +60,7 @@ from .services import (
     email_belongs_to_parent,
     email_is_taken,
     ensure_invitation_acceptable,
+    guardians_of_kid,
     get_guardian_invitation_by_token,
     issue_kid_email_change,
     issue_kid_email_verification,
@@ -667,8 +669,22 @@ class ParentProfileSerializer(serializers.ModelSerializer):
         return (value or "").strip()
 
 
+class KidGuardianSerializer(serializers.Serializer):
+    """A guardian as their kid sees them."""
+
+    id = serializers.UUIDField(read_only=True)
+    username = serializers.CharField(read_only=True)
+    email = serializers.EmailField(read_only=True)
+    bio = serializers.CharField(read_only=True)
+    role = serializers.ChoiceField(
+        choices=("primary", "secondary"),
+        read_only=True,
+    )
+
+
 class KidProfileSerializer(serializers.ModelSerializer):
     has_password = serializers.SerializerMethodField()
+    parents = serializers.SerializerMethodField()
 
     class Meta:
         model = Kid
@@ -684,6 +700,7 @@ class KidProfileSerializer(serializers.ModelSerializer):
             "avatar_url",
             "registration_status",
             "created_at",
+            "parents",
         )
         read_only_fields = (
             "id",
@@ -694,10 +711,16 @@ class KidProfileSerializer(serializers.ModelSerializer):
             "avatar_url",
             "registration_status",
             "created_at",
+            "parents",
         )
 
     def get_has_password(self, obj):
         return actor_has_password(obj)
+
+    @extend_schema_field(KidGuardianSerializer(many=True))
+    def get_parents(self, kid):
+        """Empty while the kid is still awaiting their primary parent."""
+        return KidGuardianSerializer(guardians_of_kid(kid), many=True).data
 
     def validate_name(self, value):
         name = value.strip()

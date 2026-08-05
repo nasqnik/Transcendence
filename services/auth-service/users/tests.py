@@ -999,6 +999,107 @@ class MeProfileTests(APITestCase):
     EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend",
     FRONTEND_URL="https://localhost",
 )
+class KidParentsInMeTests(APITestCase):
+    """The kid app needs to name the kid's guardians, so /auth/me/ carries them.
+
+    A kid can have two: the primary on the Kid.parent FK, a second only on an
+    accepted invitation.
+    """
+
+    def setUp(self):
+        self.kid = Kid.objects.create(
+            name="Alex",
+            username="alex_parents",
+            email="alex_parents@example.com",
+            registration_status=Kid.RegistrationStatus.ACTIVE,
+            email_verified=True,
+        )
+        self.kid.set_password("secure-pass-1")
+        self.kid.save(update_fields=["password_hash"])
+        login = self.client.post(
+            "/api/auth/kid/token/",
+            {"emailOrUsername": "alex_parents", "password": "secure-pass-1"},
+            format="json",
+        )
+        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {login.data['access']}")
+
+    def _parent(self, email, username, bio=""):
+        return CustomUser.objects.create_user(
+            email=email,
+            username=username,
+            password="secure-pass-1",
+            role="parent",
+            email_verified=True,
+            bio=bio,
+        )
+
+    def _parents(self):
+        response = self.client.get("/api/auth/me/")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        return response.data["parents"]
+
+    def test_kid_awaiting_a_parent_gets_an_empty_list(self):
+        self.assertEqual(self._parents(), [])
+
+    def test_primary_parent_is_listed(self):
+        parent = self._parent("mum@example.com", "mum", bio="Loves hiking")
+        self.kid.parent = parent
+        self.kid.save(update_fields=["parent"])
+
+        parents = self._parents()
+        self.assertEqual(len(parents), 1)
+        self.assertEqual(parents[0]["id"], str(parent.id))
+        self.assertEqual(parents[0]["username"], "mum")
+        self.assertEqual(parents[0]["email"], "mum@example.com")
+        self.assertEqual(parents[0]["bio"], "Loves hiking")
+        self.assertEqual(parents[0]["role"], "primary")
+
+    def test_second_guardian_is_listed_after_the_primary(self):
+        primary = self._parent("mum@example.com", "mum")
+        secondary = self._parent("dad@example.com", "dad")
+        self.kid.parent = primary
+        self.kid.save(update_fields=["parent"])
+        GuardianInvitation.objects.create(
+            kid=self.kid,
+            parent=secondary,
+            invite_email=secondary.email,
+            role="secondary",
+            status="accepted",
+        )
+
+        parents = self._parents()
+        self.assertEqual(
+            [(p["username"], p["role"]) for p in parents],
+            [("mum", "primary"), ("dad", "secondary")],
+        )
+
+    def test_pending_invitation_is_not_a_guardian_yet(self):
+        GuardianInvitation.objects.create(
+            kid=self.kid,
+            invite_email="maybe@example.com",
+            role="secondary",
+            status="pending",
+        )
+        self.assertEqual(self._parents(), [])
+
+    def test_primary_is_not_duplicated_by_its_own_invitation(self):
+        parent = self._parent("mum@example.com", "mum")
+        self.kid.parent = parent
+        self.kid.save(update_fields=["parent"])
+        GuardianInvitation.objects.create(
+            kid=self.kid,
+            parent=parent,
+            invite_email=parent.email,
+            role="primary",
+            status="accepted",
+        )
+        self.assertEqual(len(self._parents()), 1)
+
+
+@override_settings(
+    EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend",
+    FRONTEND_URL="https://localhost",
+)
 class MePasswordAndEmailTests(APITestCase):
     def _login_parent(self):
         self.client.post(

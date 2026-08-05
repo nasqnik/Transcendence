@@ -109,6 +109,45 @@ def kids_linked_to_parent(parent: CustomUser):
     return Kid.objects.filter(id__in=kid_ids)
 
 
+def guardians_of_kid(kid: Kid) -> list[dict]:
+    """The kid's accepted guardians, primary first.
+
+    The reverse of kids_linked_to_parent, and linked the same two ways: the
+    primary sits on the Kid.parent FK, a second guardian only on an accepted
+    invitation. Seeded kids can have the FK without a matching invitation, so
+    both sources are unioned rather than trusting either alone.
+    """
+    guardians = []
+    seen = set()
+
+    if kid.parent_id is not None:
+        guardians.append({'parent': kid.parent, 'role': 'primary'})
+        seen.add(kid.parent_id)
+
+    invitations = (
+        kid.guardian_invitations
+        .filter(status='accepted', parent__isnull=False)
+        .select_related('parent')
+        .order_by('responded_at')
+    )
+    for invitation in invitations:
+        if invitation.parent_id in seen:
+            continue
+        seen.add(invitation.parent_id)
+        guardians.append({'parent': invitation.parent, 'role': invitation.role})
+
+    return [
+        {
+            'id': entry['parent'].id,
+            'username': entry['parent'].username,
+            'email': entry['parent'].email,
+            'bio': entry['parent'].bio,
+            'role': entry['role'],
+        }
+        for entry in guardians
+    ]
+
+
 def parent_is_sole_guardian_of_any_kid(parent: CustomUser) -> bool:
     """
     True if this parent is linked to any kid that does not have

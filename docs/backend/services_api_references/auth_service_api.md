@@ -21,6 +21,29 @@ Editable profile fields:
 
 Read-only on GET `/auth/me/`: `id`, `email`, `pending_email`, `role` (parent), `registration_status` / `avatar_url` (kid), `email_verified`, `has_password`, `created_at`.
 
+### A kid's guardians (`parents`)
+
+A kid's GET `/auth/me/` also returns a read-only `parents` array, so the kid app
+can show who their guardians are:
+
+```json
+"parents": [
+  {
+    "id": "19ce7946-...",
+    "username": "dev_parent_multi",
+    "email": "dev-parent-multi@localhost",
+    "bio": "",
+    "role": "primary"
+  }
+]
+```
+
+The primary guardian comes first, followed by a secondary one if the kid invited
+a second parent who accepted. Only **accepted** guardians appear — a pending
+invitation is not listed. The array is empty while the kid is still
+`awaiting_primary_parent`, so clients must handle no guardians at all. Parents
+do not get this field; their kids are already carried in their JWT.
+
 ### Delete account (`DELETE /auth/me/`)
 
 - **Kid:** hard-deletes the kid account → `204`.
