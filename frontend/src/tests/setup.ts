@@ -22,6 +22,9 @@ vi.mock('react-i18next', () => ({
       language: 'en',
       resolvedLanguage: 'en',
       changeLanguage: vi.fn(),
+      // Components that mirror for RTL call this; without it any tree
+      // containing one throws "i18n.dir is not a function".
+      dir: () => 'ltr',
     },
   }),
   initReactI18next: { type: '3rdParty', init: vi.fn() },

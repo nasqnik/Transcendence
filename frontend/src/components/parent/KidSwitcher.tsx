@@ -7,9 +7,11 @@ interface KidSwitcherProps {
   onSelect: (id: string) => void
   /** Display label for a kid (name, or "Child N" fallback). */
   labelFor: (kid: KidRef, index: number) => string
+  /** Composed avatar URL for a kid, if available. */
+  avatarFor?: (kid: KidRef) => string | undefined
 }
 
-export default function KidSwitcher({ kids, selectedId, onSelect, labelFor }: KidSwitcherProps) {
+export default function KidSwitcher({ kids, selectedId, onSelect, labelFor, avatarFor }: KidSwitcherProps) {
   const { t } = useTranslation()
 
   return (
@@ -17,6 +19,7 @@ export default function KidSwitcher({ kids, selectedId, onSelect, labelFor }: Ki
       {kids.map((kid, i) => {
         const active = kid.id === selectedId
         const label = labelFor(kid, i)
+        const avatarUrl = avatarFor?.(kid)
         return (
           <button
             key={kid.id}
@@ -25,18 +28,27 @@ export default function KidSwitcher({ kids, selectedId, onSelect, labelFor }: Ki
             onClick={() => onSelect(kid.id)}
             className="group flex flex-col items-center gap-1.5 rounded-2xl px-2 py-1.5 focus-ring"
           >
-            {/* Avatar — placeholder initial for now; swap for the kid's real
-                avatar once the backend exposes it on the token. */}
-            <span
-              aria-hidden="true"
-              className={`w-14 h-14 rounded-full flex items-center justify-center text-xl font-heading font-bold transition-all ${
-                active
-                  ? 'bg-primary-600 text-white ring-2 ring-primary-600 ring-offset-2 ring-offset-primary-50'
-                  : 'bg-primary-100 text-primary-700 group-hover:bg-primary-200'
-              }`}
-            >
-              {label.charAt(0).toUpperCase()}
-            </span>
+            {avatarUrl ? (
+              <img
+                src={avatarUrl}
+                alt=""
+                aria-hidden="true"
+                className={`w-14 h-14 rounded-full object-cover bg-primary-50 transition-all ${
+                  active ? 'ring-2 ring-primary-600 ring-offset-2 ring-offset-primary-50' : ''
+                }`}
+              />
+            ) : (
+              <span
+                aria-hidden="true"
+                className={`w-14 h-14 rounded-full flex items-center justify-center text-xl font-heading font-bold transition-all ${
+                  active
+                    ? 'bg-primary-600 text-white ring-2 ring-primary-600 ring-offset-2 ring-offset-primary-50'
+                    : 'bg-primary-100 text-primary-700 group-hover:bg-primary-200'
+                }`}
+              >
+                {label.charAt(0).toUpperCase()}
+              </span>
+            )}
             <span
               className={`font-body text-xs max-w-[5rem] truncate ${
                 active ? 'font-bold text-primary-700' : 'font-semibold text-gray-500'
