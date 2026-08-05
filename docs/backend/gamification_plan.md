@@ -50,7 +50,7 @@ No FKs to other services - `kid_id` stored as plain `UUIDField(db_index=True)`, 
 - `STAT_XP_PER_LEVEL = 50` (points to fill a stat toward the next level).
 - `OVERALL_XP_PER_STAT_LEVEL = 50` (overall XP granted per stat level completed).
 - `MAIN_XP_PER_LEVEL = 100` (overall XP to gain a main level).
-- `COINS_PER_MAIN_LEVEL = 50` (coins granted per main level gained).
+- `COINS_PER_STAT_LEVEL = 50` (coins granted per stat level completed).
 - `STARTER_COINS = 50` (coins on first profile create; env override).
 
 ## Plan
@@ -78,8 +78,8 @@ urlpatterns = [
 Single transactional function `apply_completion(kid_id, completion_id, category_points)`:
 
 - If `CompletionEvent(completion_id)` exists -> return early (idempotent).
-- For each `(category, points)`: add to `KidStat.xp_percent`; while `>= STAT_XP_PER_LEVEL`, subtract threshold, `level += 1`, accumulate `OVERALL_XP_PER_STAT_LEVEL` (loop handles multiple level-ups; percentage resets per spec).
-- Add accumulated overall XP to `KidProfile.overall_xp`; while `>= MAIN_XP_PER_LEVEL`, subtract, `main_level += 1`, `coins += COINS_PER_MAIN_LEVEL`.
+- For each `(category, points)`: add to `KidStat.xp_percent`; while `>= STAT_XP_PER_LEVEL`, subtract threshold, `level += 1`, accumulate `OVERALL_XP_PER_STAT_LEVEL` and `COINS_PER_STAT_LEVEL` (loop handles multiple level-ups; percentage resets per spec).
+- Add accumulated overall XP to `KidProfile.overall_xp`; while `>= MAIN_XP_PER_LEVEL`, subtract, `main_level += 1`.
 - Create `CompletionEvent` row. Wrap in `transaction.atomic()` + `select_for_update()`.
 
 ### 4. Internal ingest endpoint (push target)

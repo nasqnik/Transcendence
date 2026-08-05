@@ -1,6 +1,7 @@
 from django.conf import settings
 from django.contrib.auth.password_validation import validate_password
 from django.db import transaction
+from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 from rest_framework.exceptions import AuthenticationFailed
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
@@ -34,6 +35,10 @@ from .messages import (
     KID_NOT_REFRESH_TOKEN,
     KID_VERIFY_EMAIL_FIRST,
     MAX_GUARDIANS_REACHED,
+    PASSWORD_RESET_REQUESTED,
+    PASSWORD_RESET_SUCCESS,
+    PASSWORD_RESET_TOKEN_EXPIRED,
+    PASSWORD_RESET_TOKEN_INVALID,
     USERNAME_ALREADY_TAKEN,
 )
 from .models import CustomUser, GuardianInvitation, Kid
@@ -59,12 +64,19 @@ from .services import (
     email_belongs_to_parent,
     email_is_taken,
     ensure_invitation_acceptable,
+    guardians_of_kid,
     get_guardian_invitation_by_token,
+    PasswordResetExpired,
+    PasswordResetNotFound,
+    confirm_kid_password_reset,
+    confirm_parent_password_reset,
     issue_kid_email_change,
     issue_kid_email_verification,
     issue_parent_email_change,
     issue_parent_email_verification,
     normalize_email,
+    request_kid_password_reset,
+    request_parent_password_reset,
     username_belongs_to_kid,
     username_belongs_to_parent,
     username_is_taken,
@@ -73,6 +85,7 @@ from .services import (
     verify_parent_email,
 )
 from .tokens import KidRefreshToken
+from .validators import USERNAME_MAX_LENGTH, validate_username_format
 
 LOGIN_IDENTIFIER_FIELD = "emailOrUsername"
 
@@ -139,15 +152,16 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
 class KidSignupSerializer(serializers.Serializer):
     # rules and validations
     name = serializers.CharField(max_length=100)
-    username = serializers.CharField(max_length=100)
+    username = serializers.CharField(max_length=USERNAME_MAX_LENGTH)
     email = serializers.EmailField()
     password = serializers.CharField(write_only=True, min_length=8)
     parent_email = serializers.EmailField()
 
     def validate_username(self, value):
-        if username_is_taken(value):
+        username = validate_username_format(value)
+        if username_is_taken(username):
             raise serializers.ValidationError(USERNAME_ALREADY_TAKEN)
-        return value
+        return username
 
     def validate_email(self, value):
         email = value.lower()
@@ -223,6 +237,9 @@ class KidSignupSerializer(serializers.Serializer):
 class ParentRegisterSerializer(serializers.ModelSerializer):
     # rules and validations
     password = serializers.CharField(write_only=True, min_length=8)
+    # Declared so our rules replace the looser one AbstractUser brings along,
+    # which allows "@ . + -" and any unicode letter.
+    username = serializers.CharField(max_length=USERNAME_MAX_LENGTH)
 
     class Meta:
         model = CustomUser
@@ -235,9 +252,10 @@ class ParentRegisterSerializer(serializers.ModelSerializer):
         return email
 
     def validate_username(self, value):
-        if username_belongs_to_kid(value):
+        username = validate_username_format(value)
+        if username_is_taken(username):
             raise serializers.ValidationError(USERNAME_ALREADY_TAKEN)
-        return value
+        return username
 
     def validate_password(self, value):
         validate_password(value)
@@ -536,13 +554,14 @@ class KidVerifyEmailSerializer(serializers.Serializer):
 class KidGoogleSignupSerializer(serializers.Serializer):
     id_token = serializers.CharField()
     name = serializers.CharField(max_length=100)
-    username = serializers.CharField(max_length=100)
+    username = serializers.CharField(max_length=USERNAME_MAX_LENGTH)
     parent_email = serializers.EmailField()
 
     def validate_username(self, value):
-        if username_is_taken(value):
+        username = validate_username_format(value)
+        if username_is_taken(username):
             raise serializers.ValidationError(USERNAME_ALREADY_TAKEN)
-        return value
+        return username
 
     def validate_parent_email(self, value):
         parent_email = value.lower()
@@ -625,6 +644,7 @@ class KidGoogleLoginSerializer(serializers.Serializer):
 
 class ParentProfileSerializer(serializers.ModelSerializer):
     has_password = serializers.SerializerMethodField()
+    username = serializers.CharField(max_length=USERNAME_MAX_LENGTH)
 
     class Meta:
         model = CustomUser
@@ -653,9 +673,7 @@ class ParentProfileSerializer(serializers.ModelSerializer):
         return actor_has_password(obj)
 
     def validate_username(self, value):
-        username = value.strip()
-        if not username:
-            raise serializers.ValidationError("Username cannot be empty.")
+        username = validate_username_format(value)
         qs = CustomUser.objects.filter(username__iexact=username)
         if self.instance is not None:
             qs = qs.exclude(pk=self.instance.pk)
@@ -667,8 +685,23 @@ class ParentProfileSerializer(serializers.ModelSerializer):
         return (value or "").strip()
 
 
+class KidGuardianSerializer(serializers.Serializer):
+    """A guardian as their kid sees them."""
+
+    id = serializers.UUIDField(read_only=True)
+    username = serializers.CharField(read_only=True)
+    email = serializers.EmailField(read_only=True)
+    bio = serializers.CharField(read_only=True)
+    role = serializers.ChoiceField(
+        choices=("primary", "secondary"),
+        read_only=True,
+    )
+
+
 class KidProfileSerializer(serializers.ModelSerializer):
     has_password = serializers.SerializerMethodField()
+    parents = serializers.SerializerMethodField()
+    username = serializers.CharField(max_length=USERNAME_MAX_LENGTH)
 
     class Meta:
         model = Kid
@@ -684,6 +717,7 @@ class KidProfileSerializer(serializers.ModelSerializer):
             "avatar_url",
             "registration_status",
             "created_at",
+            "parents",
         )
         read_only_fields = (
             "id",
@@ -694,10 +728,16 @@ class KidProfileSerializer(serializers.ModelSerializer):
             "avatar_url",
             "registration_status",
             "created_at",
+            "parents",
         )
 
     def get_has_password(self, obj):
         return actor_has_password(obj)
+
+    @extend_schema_field(KidGuardianSerializer(many=True))
+    def get_parents(self, kid):
+        """Empty while the kid is still awaiting their primary parent."""
+        return KidGuardianSerializer(guardians_of_kid(kid), many=True).data
 
     def validate_name(self, value):
         name = value.strip()
@@ -706,9 +746,7 @@ class KidProfileSerializer(serializers.ModelSerializer):
         return name
 
     def validate_username(self, value):
-        username = value.strip()
-        if not username:
-            raise serializers.ValidationError("Username cannot be empty.")
+        username = validate_username_format(value)
         qs = Kid.objects.filter(username__iexact=username)
         if self.instance is not None:
             qs = qs.exclude(pk=self.instance.pk)
@@ -718,6 +756,96 @@ class KidProfileSerializer(serializers.ModelSerializer):
 
     def validate_bio(self, value):
         return (value or "").strip()
+
+class PasswordResetRequestSerializer(serializers.Serializer):
+    """Public: request a parent password-reset email. Always returns the same message."""
+
+    email = serializers.EmailField()
+
+    def validate_email(self, value):
+        return normalize_email(value)
+
+    def save(self, **kwargs):
+        email = self.validated_data["email"]
+        user = request_parent_password_reset(email)
+        data = {"message": PASSWORD_RESET_REQUESTED}
+        if settings.DEBUG and user is not None and user.password_reset_token:
+            data["reset_token"] = str(user.password_reset_token)
+            data["reset_url"] = (
+                f"{settings.FRONTEND_URL.rstrip('/')}/reset-password"
+                f"?token={user.password_reset_token}"
+            )
+        return data
+
+
+class KidPasswordResetRequestSerializer(serializers.Serializer):
+    """Public: request a kid password-reset email. Always returns the same message."""
+
+    email = serializers.EmailField()
+
+    def validate_email(self, value):
+        return normalize_email(value)
+
+    def save(self, **kwargs):
+        email = self.validated_data["email"]
+        kid = request_kid_password_reset(email)
+        data = {"message": PASSWORD_RESET_REQUESTED}
+        if settings.DEBUG and kid is not None and kid.password_reset_token:
+            data["reset_token"] = str(kid.password_reset_token)
+            data["reset_url"] = (
+                f"{settings.FRONTEND_URL.rstrip('/')}/kid/reset-password"
+                f"?token={kid.password_reset_token}"
+            )
+        return data
+
+
+class PasswordResetConfirmSerializer(serializers.Serializer):
+    """Public: set a new parent password with a reset token."""
+
+    token = serializers.UUIDField()
+    new_password = serializers.CharField(write_only=True, min_length=8)
+
+    def validate_new_password(self, value):
+        validate_password(value)
+        return value
+
+    def validate(self, attrs):
+        try:
+            confirm_parent_password_reset(attrs["token"], attrs["new_password"])
+        except PasswordResetNotFound as exc:
+            raise serializers.ValidationError(
+                {"token": [PASSWORD_RESET_TOKEN_INVALID]}
+            ) from exc
+        except PasswordResetExpired as exc:
+            raise serializers.ValidationError(
+                {"token": [PASSWORD_RESET_TOKEN_EXPIRED]}
+            ) from exc
+        return {"message": PASSWORD_RESET_SUCCESS}
+
+
+class KidPasswordResetConfirmSerializer(serializers.Serializer):
+    """Public: set a new kid password with a reset token."""
+
+    token = serializers.UUIDField()
+    new_password = serializers.CharField(write_only=True, min_length=8)
+
+    def validate_new_password(self, value):
+        validate_password(value)
+        return value
+
+    def validate(self, attrs):
+        try:
+            confirm_kid_password_reset(attrs["token"], attrs["new_password"])
+        except PasswordResetNotFound as exc:
+            raise serializers.ValidationError(
+                {"token": [PASSWORD_RESET_TOKEN_INVALID]}
+            ) from exc
+        except PasswordResetExpired as exc:
+            raise serializers.ValidationError(
+                {"token": [PASSWORD_RESET_TOKEN_EXPIRED]}
+            ) from exc
+        return {"message": PASSWORD_RESET_SUCCESS}
+
 
 class MePasswordSerializer(serializers.Serializer):
     current_password = serializers.CharField(

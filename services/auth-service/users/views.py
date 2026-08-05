@@ -17,6 +17,8 @@ from .serializers import (
     InviteSecondParentSerializer,
     KidGoogleLoginSerializer,
     KidGoogleSignupSerializer,
+    KidPasswordResetConfirmSerializer,
+    KidPasswordResetRequestSerializer,
     KidProfileSerializer,
     KidSignupSerializer,
     KidTokenObtainSerializer,
@@ -28,6 +30,8 @@ from .serializers import (
     ParentProfileSerializer,
     ParentRegisterSerializer,
     ParentVerifyEmailSerializer,
+    PasswordResetConfirmSerializer,
+    PasswordResetRequestSerializer,
     VerifyEmailChangeSerializer,
 )
 from .services import (
@@ -83,6 +87,54 @@ class ParentVerifyEmailView(APIView):
 
     def post(self, request):
         serializer = ParentVerifyEmailSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        return Response(serializer.validated_data, status=status.HTTP_200_OK)
+
+
+@extend_schema(request=PasswordResetRequestSerializer)
+class PasswordResetRequestView(APIView):
+    """Public: email a parent a password-reset link (does not reveal if the email exists)."""
+
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        serializer = PasswordResetRequestSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        return Response(serializer.save(), status=status.HTTP_200_OK)
+
+
+@extend_schema(request=PasswordResetConfirmSerializer)
+class PasswordResetConfirmView(APIView):
+    """Public: set a new parent password with a reset token."""
+
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        serializer = PasswordResetConfirmSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        return Response(serializer.validated_data, status=status.HTTP_200_OK)
+
+
+@extend_schema(request=KidPasswordResetRequestSerializer)
+class KidPasswordResetRequestView(APIView):
+    """Public: email a kid a password-reset link (does not reveal if the email exists)."""
+
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        serializer = KidPasswordResetRequestSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        return Response(serializer.save(), status=status.HTTP_200_OK)
+
+
+@extend_schema(request=KidPasswordResetConfirmSerializer)
+class KidPasswordResetConfirmView(APIView):
+    """Public: set a new kid password with a reset token."""
+
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        serializer = KidPasswordResetConfirmSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         return Response(serializer.validated_data, status=status.HTTP_200_OK)
 

@@ -14,7 +14,8 @@ SOCIAL_SERVICE := social-service
 SERVICES := $(AUTH_SERVICE) $(TASK_SERVICE) $(GAMIFICATION_SERVICE) $(ANALYTICS_SERVICE) $(NOTIFICATION_SERVICE) $(CATALOG_SERVICE) $(SOCIAL_SERVICE)
 
 .PHONY: all up down build build-all restart logs ps shell clean fclean ssl ssl-if-missing migrate init-dbs seed-dev \
-        seed-dev-friend seed-custom-friend seed-dual-parent \
+        seed-dev-friend seed-custom-friend seed-dual-parent seed-parent-two-kids \
+        seed-parent-many-kids \
         up-front build-front restart-front logs-front shell-front \
         logs-auth shell-auth logs-task shell-task restart-task seed-catalog
 
@@ -92,6 +93,34 @@ seed-dual-parent:
 	@echo "==> seed one kid with two parents (auth-service)"
 	@docker compose exec $(AUTH_SERVICE) python manage.py seed_dual_parent_users
 
+# One parent with two kids (parent is primary guardian of both).
+# Defaults: dev_parent_multi + dev_kid_one / dev_kid_two.
+# Override any of them:
+#   make seed-parent-two-kids PARENT=sara KID1=alice KID2=bob NAME1="Alice" NAME2="Bob"
+seed-parent-two-kids:
+	@echo "==> migrate auth-service (bio columns required)"
+	@docker compose exec $(AUTH_SERVICE) python manage.py migrate users
+	@echo "==> seed one parent with two kids (auth-service)"
+	@docker compose exec $(AUTH_SERVICE) python manage.py seed_parent_two_kids_users \
+		$(if $(PARENT),--parent $(PARENT),) \
+		$(if $(KID1),--kid1 $(KID1),) \
+		$(if $(KID2),--kid2 $(KID2),) \
+		$(if $(NAME1),--name1 "$(NAME1)",) \
+		$(if $(NAME2),--name2 "$(NAME2)",)
+
+# One parent with many kids (15 by default), all primary-guardian linked.
+# Override count, parent username, kid prefix, or print every kid's token:
+#   make seed-parent-many-kids COUNT=20 PARENT=sara PREFIX=child TOKENS=1
+seed-parent-many-kids:
+	@echo "==> migrate auth-service (bio columns required)"
+	@docker compose exec $(AUTH_SERVICE) python manage.py migrate users
+	@echo "==> seed one parent with $(or $(COUNT),15) kids (auth-service)"
+	@docker compose exec $(AUTH_SERVICE) python manage.py seed_parent_many_kids_users \
+		$(if $(COUNT),--count $(COUNT),) \
+		$(if $(PARENT),--parent $(PARENT),) \
+		$(if $(PREFIX),--prefix $(PREFIX),) \
+		$(if $(TOKENS),--tokens,)
+
 seed-catalog:
 	@echo "==> seed catalog items (catalog-service)"
 	@docker compose exec $(CATALOG_SERVICE) python manage.py seed_catalog
@@ -112,7 +141,7 @@ clean:
 	docker compose down --remove-orphans
 
 fclean:
-	docker compose down --remove-orphans --volumes
+	@bash scripts/docker-fclean.sh
 
 build:
 	docker compose build $(AUTH_SERVICE)
