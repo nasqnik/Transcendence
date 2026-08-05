@@ -999,6 +999,204 @@ class MeProfileTests(APITestCase):
     EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend",
     FRONTEND_URL="https://localhost",
 )
+class UsernameValidationTests(APITestCase):
+    """Kids and parents share one username namespace, so one rule covers both.
+
+    Kid signup used to accept anything at all — emoji, markup, bare spaces.
+    """
+
+    REJECTED = {
+        "spaces": "hi there",
+        "markup": "<script>",
+        "path": "../etc",
+        "at_sign": "user@name",
+        "dot": "first.last",
+        "hyphen": "first-last",
+        "plus": "user+tag",
+        "too_short": "ab",
+        "too_long": "a" * 21,
+        "leading_digit": "1player",
+        "leading_underscore": "_player",
+        "blank": "   ",
+    }
+
+    def _signup_kid(self, username, slug):
+        return self.client.post(
+            "/api/kids/signup/",
+            {
+                "name": "Alex",
+                "username": username,
+                "email": f"kid_{slug}@example.com",
+                "password": "secure-pass-1",
+                "parent_email": f"parent_{slug}@example.com",
+            },
+            format="json",
+        )
+
+    def _register_parent(self, username, slug):
+        return self.client.post(
+            "/api/auth/register/",
+            {
+                "username": username,
+                "email": f"reg_{slug}@example.com",
+                "password": "secure-pass-1",
+            },
+            format="json",
+        )
+
+    def test_kid_signup_rejects_unusual_usernames(self):
+        for slug, username in self.REJECTED.items():
+            with self.subTest(case=slug):
+                response = self._signup_kid(username, slug)
+                self.assertEqual(
+                    response.status_code,
+                    status.HTTP_400_BAD_REQUEST,
+                    msg=f"{username!r} should have been rejected",
+                )
+                self.assertIn("username", response.data)
+        self.assertEqual(Kid.objects.count(), 0)
+
+    def test_parent_register_rejects_unusual_usernames(self):
+        for slug, username in self.REJECTED.items():
+            with self.subTest(case=slug):
+                response = self._register_parent(username, slug)
+                self.assertEqual(
+                    response.status_code,
+                    status.HTTP_400_BAD_REQUEST,
+                    msg=f"{username!r} should have been rejected",
+                )
+                self.assertIn("username", response.data)
+        self.assertEqual(CustomUser.objects.count(), 0)
+
+    def test_emoji_is_rejected(self):
+        response = self._signup_kid("kid\U0001f389emoji", "emoji")
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_accented_letters_are_rejected(self):
+        # Django's default validator lets these through for parents; ours does not.
+        response = self._register_parent("N\u00f1o\u00f1o", "accents")
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_reserved_names_are_rejected(self):
+        for username in ("admin", "Root", "SUPPORT", "kiddopath"):
+            with self.subTest(username=username):
+                kid = self._signup_kid(username, f"res_{username.lower()}")
+                self.assertEqual(kid.status_code, status.HTTP_400_BAD_REQUEST)
+                parent = self._register_parent(username, f"resp_{username.lower()}")
+                self.assertEqual(parent.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_valid_usernames_are_accepted(self):
+        for index, username in enumerate(("abc", "alex_99", "A_1", "a" * 20)):
+            with self.subTest(username=username):
+                response = self._signup_kid(username, f"ok{index}")
+                self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+    def test_surrounding_whitespace_is_trimmed(self):
+        response = self._signup_kid("  alex_kid  ", "trim")
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(response.data["username"], "alex_kid")
+        self.assertTrue(Kid.objects.filter(username="alex_kid").exists())
+
+    def test_profile_edit_is_validated_for_both_actors(self):
+        kid = Kid.objects.create(
+            name="Alex",
+            username="alex_edit",
+            email="alex_edit@example.com",
+            registration_status=Kid.RegistrationStatus.ACTIVE,
+            email_verified=True,
+        )
+        kid.set_password("secure-pass-1")
+        kid.save(update_fields=["password_hash"])
+        kid_login = self.client.post(
+            "/api/auth/kid/token/",
+            {"emailOrUsername": "alex_edit", "password": "secure-pass-1"},
+            format="json",
+        )
+        self.client.credentials(
+            HTTP_AUTHORIZATION=f"Bearer {kid_login.data['access']}"
+        )
+        response = self.client.patch(
+            "/api/auth/me/", {"username": "not valid!"}, format="json"
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        kid.refresh_from_db()
+        self.assertEqual(kid.username, "alex_edit")
+
+        self.client.credentials()
+        self._register_parent("parent_edit", "edit")
+        _verify_parent(self.client, "reg_edit@example.com")
+        parent_login = self.client.post(
+            "/api/auth/token/",
+            {"emailOrUsername": "reg_edit@example.com", "password": "secure-pass-1"},
+            format="json",
+        )
+        self.client.credentials(
+            HTTP_AUTHORIZATION=f"Bearer {parent_login.data['access']}"
+        )
+        response = self.client.patch(
+            "/api/auth/me/", {"username": "bad.name"}, format="json"
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+
+class GoogleGeneratedUsernameTests(APITestCase):
+    """Google hands us an email local part, which rarely obeys the rules."""
+
+    def _login(self, mock_verify, email, sub):
+        mock_verify.return_value = {
+            "sub": sub,
+            "email": email,
+            "email_verified": True,
+            "iss": "accounts.google.com",
+        }
+        response = self.client.post(
+            "/api/auth/google/", {"id_token": "fake-token"}, format="json"
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        return CustomUser.objects.get(email=email)
+
+    @patch("users.serializers.verify_google_id_token")
+    def test_dots_and_plus_are_stripped(self, mock_verify):
+        user = self._login(mock_verify, "mariam.hassan+news@gmail.com", "sub-dots")
+        self.assertEqual(user.username, "mariamhassannews")
+
+    @patch("users.serializers.verify_google_id_token")
+    def test_leading_digits_are_dropped(self, mock_verify):
+        user = self._login(mock_verify, "123abc@example.com", "sub-digits")
+        self.assertEqual(user.username, "abc")
+
+    @patch("users.serializers.verify_google_id_token")
+    def test_unusable_local_part_falls_back(self, mock_verify):
+        user = self._login(mock_verify, "123.456@example.com", "sub-numeric")
+        self.assertEqual(user.username, "player")
+
+    @patch("users.serializers.verify_google_id_token")
+    def test_long_local_part_is_truncated(self, mock_verify):
+        user = self._login(mock_verify, f"{'a' * 40}@example.com", "sub-long")
+        self.assertEqual(user.username, "a" * 20)
+
+    @patch("users.serializers.verify_google_id_token")
+    def test_reserved_local_part_gets_a_suffix(self, mock_verify):
+        user = self._login(mock_verify, "admin@example.com", "sub-admin")
+        self.assertEqual(user.username, "admin_1")
+
+    @patch("users.serializers.verify_google_id_token")
+    def test_suffix_keeps_the_name_within_the_limit(self, mock_verify):
+        CustomUser.objects.create_user(
+            email="taken@example.com",
+            username="b" * 20,
+            password="secure-pass-1",
+            role="parent",
+        )
+        user = self._login(mock_verify, f"{'b' * 30}@example.com", "sub-collide")
+        self.assertEqual(user.username, f"{'b' * 18}_1")
+        self.assertLessEqual(len(user.username), 20)
+
+
+@override_settings(
+    EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend",
+    FRONTEND_URL="https://localhost",
+)
 class KidParentsInMeTests(APITestCase):
     """The kid app needs to name the kid's guardians, so /auth/me/ carries them.
 

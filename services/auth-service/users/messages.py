@@ -2,6 +2,11 @@
 
 # Registration / uniqueness
 USERNAME_ALREADY_TAKEN = "This username is already taken."
+USERNAME_INVALID = (
+    "Username must be 3-20 characters, start with a letter, and use only "
+    "letters, numbers, and underscores."
+)
+USERNAME_UNAVAILABLE = "This username isn't available."
 EMAIL_ALREADY_REGISTERED = "This email is already registered."
 EMAIL_REGISTERED_AS_KID_ACCOUNT = "This email is registered as a kid account."
 KID_EMAIL_MUST_DIFFER_FROM_PARENT = "Kid email must be different from the parent email."
