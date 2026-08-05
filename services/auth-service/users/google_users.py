@@ -8,6 +8,11 @@ from .messages import (
 )
 from .models import CustomUser, Kid
 from .services import email_belongs_to_kid, username_is_taken
+from .validators import (
+    USERNAME_MAX_LENGTH,
+    is_reserved_username,
+    sanitize_username_base,
+)
 
 # it exists because we want to raise an error if the Google account is already linked to a different account
 # and to be able to handle the error in the view
@@ -15,20 +20,26 @@ class GoogleAccountConflictError(Exception):
     pass
 
 
+def _unavailable(username: str) -> bool:
+    return username_is_taken(username) or is_reserved_username(username)
+
+
 # _unique_username is a helper function that generates a unique username by:
-# 1. Truncating the base username to 150 characters
-# 2. Checking if the username is taken
-# 3. If it is, adding a suffix to the username
+# 1. Forcing the base to obey the username rules (Google gives us an email
+#    local part, which may hold dots, plus signs, or leading digits)
+# 2. Checking if the username is taken or reserved
+# 3. If it is, adding a numbered suffix that keeps the name within the limit
 # 4. Returning the unique username
 def _unique_username(base: str) -> str:
-    username = base[:150]
-    if not username_is_taken(username):
+    username = sanitize_username_base(base)
+    if not _unavailable(username):
         return username
 
     suffix = 1
     while True:
-        candidate = f"{base[:140]}_{suffix}"
-        if not username_is_taken(candidate):
+        tail = f"_{suffix}"
+        candidate = f"{username[:USERNAME_MAX_LENGTH - len(tail)]}{tail}"
+        if not _unavailable(candidate):
             return candidate
         suffix += 1
 

@@ -10,8 +10,17 @@ from .serializers import (
     CompletionIngestSerializer,
     KidStatSerializer,
     KidProfileSerializer,
+    RewardSummarySerializer,
+    RewardsSeenSerializer,
 )
-from .engine import apply_completion, deduct_coins, get_or_create_kid_profile
+from .engine import (
+    apply_completion,
+    build_reward_summary,
+    deduct_coins,
+    get_or_create_kid_profile,
+    mark_rewards_seen,
+    pending_rewards,
+)
 
 
 @extend_schema(
@@ -31,7 +40,7 @@ from .engine import apply_completion, deduct_coins, get_or_create_kid_profile
             description='Shared internal-service secret.',
         ),
     ],
-    responses={204: None},
+    responses={200: RewardSummarySerializer},
     auth=[],
 )
 class InternalCompletionView(APIView):
@@ -43,12 +52,12 @@ class InternalCompletionView(APIView):
         serializer.is_valid(raise_exception=True)
         data = serializer.validated_data
 
-        apply_completion(
+        summary = apply_completion(
             kid_id=data['kid_id'],
             completion_id=data['completion_id'],
             category_points=data['category_points'],
         )
-        return Response(status=status.HTTP_204_NO_CONTENT)
+        return Response(RewardSummarySerializer(summary).data)
 
 
 @extend_schema(
@@ -170,6 +179,49 @@ class KidProfileView(APIView):
     def get(self, request):
         profile, _ = get_or_create_kid_profile(kid_id=request.user.kid_id)
         return Response(KidProfileSerializer(profile).data)
+
+
+@extend_schema(
+    summary="Rewards the kid has not been shown yet",
+    description=(
+        'Coin awards from completions the client has not acknowledged, oldest '
+        'first. Lets the kid see a coin popup for a task a parent confirmed '
+        'while the kid was away. Acknowledge with POST /rewards/seen/.'
+    ),
+    responses=RewardSummarySerializer(many=True),
+)
+class KidPendingRewardsView(APIView):
+    permission_classes = [IsKid]
+
+    def get(self, request):
+        profile, _ = get_or_create_kid_profile(kid_id=request.user.kid_id)
+        summaries = [
+            build_reward_summary(event, profile)
+            for event in pending_rewards(request.user.kid_id)
+        ]
+        return Response(RewardSummarySerializer(summaries, many=True).data)
+
+
+@extend_schema(
+    summary='Acknowledge shown rewards',
+    description=(
+        'Marks rewards as seen so they stop appearing in /rewards/pending/. '
+        'Send the completion_ids you displayed, or omit them to clear all.'
+    ),
+    request=RewardsSeenSerializer,
+    responses={200: None},
+)
+class KidRewardsSeenView(APIView):
+    permission_classes = [IsKid]
+
+    def post(self, request):
+        serializer = RewardsSeenSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        marked = mark_rewards_seen(
+            kid_id=request.user.kid_id,
+            completion_ids=serializer.validated_data.get('completion_ids'),
+        )
+        return Response({'marked_seen': marked})
 
 
 @extend_schema(
