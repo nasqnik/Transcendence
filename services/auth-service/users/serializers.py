@@ -35,6 +35,10 @@ from .messages import (
     KID_NOT_REFRESH_TOKEN,
     KID_VERIFY_EMAIL_FIRST,
     MAX_GUARDIANS_REACHED,
+    PASSWORD_RESET_REQUESTED,
+    PASSWORD_RESET_SUCCESS,
+    PASSWORD_RESET_TOKEN_EXPIRED,
+    PASSWORD_RESET_TOKEN_INVALID,
     USERNAME_ALREADY_TAKEN,
 )
 from .models import CustomUser, GuardianInvitation, Kid
@@ -62,11 +66,17 @@ from .services import (
     ensure_invitation_acceptable,
     guardians_of_kid,
     get_guardian_invitation_by_token,
+    PasswordResetExpired,
+    PasswordResetNotFound,
+    confirm_kid_password_reset,
+    confirm_parent_password_reset,
     issue_kid_email_change,
     issue_kid_email_verification,
     issue_parent_email_change,
     issue_parent_email_verification,
     normalize_email,
+    request_kid_password_reset,
+    request_parent_password_reset,
     username_belongs_to_kid,
     username_belongs_to_parent,
     username_is_taken,
@@ -746,6 +756,96 @@ class KidProfileSerializer(serializers.ModelSerializer):
 
     def validate_bio(self, value):
         return (value or "").strip()
+
+class PasswordResetRequestSerializer(serializers.Serializer):
+    """Public: request a parent password-reset email. Always returns the same message."""
+
+    email = serializers.EmailField()
+
+    def validate_email(self, value):
+        return normalize_email(value)
+
+    def save(self, **kwargs):
+        email = self.validated_data["email"]
+        user = request_parent_password_reset(email)
+        data = {"message": PASSWORD_RESET_REQUESTED}
+        if settings.DEBUG and user is not None and user.password_reset_token:
+            data["reset_token"] = str(user.password_reset_token)
+            data["reset_url"] = (
+                f"{settings.FRONTEND_URL.rstrip('/')}/reset-password"
+                f"?token={user.password_reset_token}"
+            )
+        return data
+
+
+class KidPasswordResetRequestSerializer(serializers.Serializer):
+    """Public: request a kid password-reset email. Always returns the same message."""
+
+    email = serializers.EmailField()
+
+    def validate_email(self, value):
+        return normalize_email(value)
+
+    def save(self, **kwargs):
+        email = self.validated_data["email"]
+        kid = request_kid_password_reset(email)
+        data = {"message": PASSWORD_RESET_REQUESTED}
+        if settings.DEBUG and kid is not None and kid.password_reset_token:
+            data["reset_token"] = str(kid.password_reset_token)
+            data["reset_url"] = (
+                f"{settings.FRONTEND_URL.rstrip('/')}/kid/reset-password"
+                f"?token={kid.password_reset_token}"
+            )
+        return data
+
+
+class PasswordResetConfirmSerializer(serializers.Serializer):
+    """Public: set a new parent password with a reset token."""
+
+    token = serializers.UUIDField()
+    new_password = serializers.CharField(write_only=True, min_length=8)
+
+    def validate_new_password(self, value):
+        validate_password(value)
+        return value
+
+    def validate(self, attrs):
+        try:
+            confirm_parent_password_reset(attrs["token"], attrs["new_password"])
+        except PasswordResetNotFound as exc:
+            raise serializers.ValidationError(
+                {"token": [PASSWORD_RESET_TOKEN_INVALID]}
+            ) from exc
+        except PasswordResetExpired as exc:
+            raise serializers.ValidationError(
+                {"token": [PASSWORD_RESET_TOKEN_EXPIRED]}
+            ) from exc
+        return {"message": PASSWORD_RESET_SUCCESS}
+
+
+class KidPasswordResetConfirmSerializer(serializers.Serializer):
+    """Public: set a new kid password with a reset token."""
+
+    token = serializers.UUIDField()
+    new_password = serializers.CharField(write_only=True, min_length=8)
+
+    def validate_new_password(self, value):
+        validate_password(value)
+        return value
+
+    def validate(self, attrs):
+        try:
+            confirm_kid_password_reset(attrs["token"], attrs["new_password"])
+        except PasswordResetNotFound as exc:
+            raise serializers.ValidationError(
+                {"token": [PASSWORD_RESET_TOKEN_INVALID]}
+            ) from exc
+        except PasswordResetExpired as exc:
+            raise serializers.ValidationError(
+                {"token": [PASSWORD_RESET_TOKEN_EXPIRED]}
+            ) from exc
+        return {"message": PASSWORD_RESET_SUCCESS}
+
 
 class MePasswordSerializer(serializers.Serializer):
     current_password = serializers.CharField(

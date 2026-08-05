@@ -6,7 +6,7 @@ parent names and vice versa — so a single rule keeps them comparable.
 
 import re
 
-from rest_framework import serializers
+from django.core.exceptions import ValidationError
 
 from .messages import USERNAME_INVALID, USERNAME_UNAVAILABLE
 
@@ -61,12 +61,16 @@ _LEADING_NON_LETTERS = re.compile(r"^[^A-Za-z]+")
 
 
 def validate_username_format(value: str) -> str:
-    """Return the cleaned username, or raise if it breaks the rules."""
+    """Return the cleaned username, or raise if it breaks the rules.
+
+    Raises Django's ValidationError, which DRF converts to a field error, so
+    that models.py can import the limits without loading DRF.
+    """
     username = (value or "").strip()
     if not USERNAME_PATTERN.match(username):
-        raise serializers.ValidationError(USERNAME_INVALID)
+        raise ValidationError(USERNAME_INVALID)
     if is_reserved_username(username):
-        raise serializers.ValidationError(USERNAME_UNAVAILABLE)
+        raise ValidationError(USERNAME_UNAVAILABLE)
     return username
 
 
