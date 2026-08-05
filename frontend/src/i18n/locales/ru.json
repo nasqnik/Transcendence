@@ -360,7 +360,20 @@
     "deleteAccountConfirmTitle": "Удалить аккаунт?",
     "deleteAccountConfirmBody": "Аккаунт будет удалён безвозвратно, отменить это действие нельзя.",
     "deleteAccountConfirm": "Удалить мой аккаунт",
-    "deleteAccountPending": "Удаление…"
+    "deleteAccountPending": "Удаление…",
+    "avatarTooLarge": "Изображение слишком большое. Выберите файл до 2 МБ.",
+    "avatarInvalidType": "Неподдерживаемый формат. Используйте изображение JPEG, PNG или WebP.",
+    "avatarUploadFailed": "Не удалось загрузить изображение. Попробуйте ещё раз.",
+    "exportCsv": "Экспорт CSV",
+    "csvGenerated": "Создано",
+    "csvSummary": "Сводка",
+    "csvMetric": "Показатель",
+    "csvValue": "Значение",
+    "csvCategory": "Категория",
+    "csvTotalXp": "Всего XP",
+    "csvLevel": "Уровень",
+    "csvDate": "Дата",
+    "csvXp": "XP"
   },
   "errors": {
     "required": "Это поле обязательно",

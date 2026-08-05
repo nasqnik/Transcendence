@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useNotifications } from '../hooks/useNotifications'
 import { useDismissable } from '../hooks/useDismissable'
+import useAuthStore from '../store/authStore'
 import LoadError from './LoadError'
 
 /**
@@ -41,6 +42,7 @@ function formatRelative(dateStr: string, locale: string): string {
 export default function NotificationBell() {
   const { t, i18n } = useTranslation()
   const navigate = useNavigate()
+  const role = useAuthStore(s => s.currentUser?.role)
   const { notifications, unreadCount, markRead, isError, refetch, pushedMessage } = useNotifications()
   const [open, setOpen] = useState(false)
   const containerRef = useRef<HTMLDivElement>(null)
@@ -125,7 +127,9 @@ export default function NotificationBell() {
                     type="button"
                     onClick={() => {
                       if (!n.is_read) markRead(n.id)
-                      const path = TYPE_PATH[n.notification_type]
+                      // A parent's notifications are all about their kids' work, so
+                      // send them to the approvals queue; kids go to the page for the type.
+                      const path = role === 'parent' ? '/parent/approvals' : TYPE_PATH[n.notification_type]
                       if (path) { close(); navigate(path) }
                     }}
                     className={`w-full text-start px-4 py-3 flex items-start gap-3 hover:bg-gray-50 transition-colors ${!n.is_read ? 'bg-primary-50/60' : ''}`}

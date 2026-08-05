@@ -360,7 +360,20 @@
     "deleteAccountConfirmTitle": "حذف حسابك؟",
     "deleteAccountConfirmBody": "سيؤدي هذا إلى حذف حسابك نهائيًا ولا يمكن التراجع عنه.",
     "deleteAccountConfirm": "حذف حسابي",
-    "deleteAccountPending": "جارٍ الحذف…"
+    "deleteAccountPending": "جارٍ الحذف…",
+    "avatarTooLarge": "الصورة كبيرة جدًا. الرجاء اختيار صورة أقل من 2 ميجابايت.",
+    "avatarInvalidType": "صيغة غير مدعومة. الرجاء استخدام صورة بصيغة JPEG أو PNG أو WebP.",
+    "avatarUploadFailed": "تعذّر رفع الصورة. حاول مرة أخرى.",
+    "exportCsv": "تصدير CSV",
+    "csvGenerated": "تاريخ الإنشاء",
+    "csvSummary": "ملخص",
+    "csvMetric": "المقياس",
+    "csvValue": "القيمة",
+    "csvCategory": "الفئة",
+    "csvTotalXp": "إجمالي النقاط",
+    "csvLevel": "المستوى",
+    "csvDate": "التاريخ",
+    "csvXp": "النقاط"
   },
   "errors": {
     "required": "هذا الحقل مطلوب",
