@@ -13,6 +13,10 @@ PUSH_TIMEOUT_SECONDS = 3
 def push_completion_confirmed(completion):
     """Notify gamification-service that a completion is confirmed.
 
+    Returns the reward summary gamification awarded (coins and category
+    level-ups) so the caller can hand it straight back to the kid's UI, or
+    None when nothing was awarded or the push failed.
+
     Best-effort: any failure is logged and swallowed. The ingest endpoint is
     idempotent (keyed on completion_id), so a dropped push can be safely
     replayed later without double-counting.
@@ -25,7 +29,7 @@ def push_completion_confirmed(completion):
 
     # Nothing to award (task has no category rewards) -> skip the call entirely.
     if not category_points:
-        return
+        return None
 
     url = f"{settings.GAMIFICATION_INTERNAL_URL}/api/gamification/internal/completions/"
     payload = {
@@ -47,6 +51,7 @@ def push_completion_confirmed(completion):
             timeout=PUSH_TIMEOUT_SECONDS,
         )
         response.raise_for_status()
+        return response.json()
     except requests.RequestException as exc:
         # Don't raise: confirming a task must succeed even if gamification is down.
         logger.warning(
@@ -54,6 +59,10 @@ def push_completion_confirmed(completion):
             completion.id,
             exc,
         )
+        return None
+    except ValueError:
+        # Older gamification builds answer 204 with an empty body.
+        return None
 
 
 def notify_task_confirmed(completion):

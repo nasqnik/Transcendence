@@ -67,6 +67,34 @@ Resulting `status` depends on the kid's category visibility:
 
 `status` must be `confirmed` or `rejected`.
 
+**The `reward` field**
+
+Confirming a completion can fill a category bar, which earns the kid coins. When
+that happens the response to the confirming request carries the award so the UI
+can animate it immediately:
+
+```json
+{
+  "id": "247e...",
+  "status": "confirmed",
+  "reward": {
+    "completion_id": "247e...",
+    "coins_awarded": 50,
+    "stat_level_ups": [{ "category": "health", "level": 3 }],
+    "coins_total": 200,
+    "overall_xp": 50,
+    "main_level": 1
+  }
+}
+```
+
+`reward` is `null` whenever the request did not award anything — on list
+responses, on submissions that go to `pending`, on confirmations that only
+partly filled a bar, and if gamification-service was unreachable. A kid whose
+task is confirmed later by a parent picks the award up from
+`GET /api/gamification/rewards/pending/` instead, since the review response goes
+to the parent.
+
 ## Settings
 
 | Method | Path | Role | Purpose |
