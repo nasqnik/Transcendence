@@ -998,6 +998,174 @@ class MeProfileTests(APITestCase):
 @override_settings(
     EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend",
     FRONTEND_URL="https://localhost",
+    PASSWORD_RESET_EXPIRY_HOURS=1,
+)
+class PasswordResetTests(APITestCase):
+    GENERIC_MESSAGE = (
+        "If an account exists for that email, we sent a password reset link."
+    )
+
+    def _register_parent(self, email="parent@example.com", username="parent_one"):
+        self.client.post(
+            "/api/auth/register/",
+            {
+                "email": email,
+                "username": username,
+                "password": "secure-pass-1",
+            },
+            format="json",
+        )
+        return _verify_parent(self.client, email)
+
+    def _active_kid(self, email="alex@example.com", username="alex_reset"):
+        kid = Kid.objects.create(
+            name="Alex",
+            username=username,
+            email=email,
+            registration_status=Kid.RegistrationStatus.ACTIVE,
+            email_verified=True,
+        )
+        kid.set_password("secure-pass-1")
+        kid.save(update_fields=["password_hash"])
+        return kid
+
+    def test_parent_request_sends_email_and_hides_existence(self):
+        self._register_parent()
+        mail.outbox.clear()
+
+        known = self.client.post(
+            "/api/auth/password-reset/",
+            {"email": "parent@example.com"},
+            format="json",
+        )
+        unknown = self.client.post(
+            "/api/auth/password-reset/",
+            {"email": "nobody@example.com"},
+            format="json",
+        )
+
+        self.assertEqual(known.status_code, status.HTTP_200_OK)
+        self.assertEqual(unknown.status_code, status.HTTP_200_OK)
+        self.assertEqual(known.data["message"], self.GENERIC_MESSAGE)
+        self.assertEqual(unknown.data["message"], self.GENERIC_MESSAGE)
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertIn("reset-password?token=", mail.outbox[0].body)
+
+    def test_parent_confirm_updates_password(self):
+        parent = self._register_parent()
+        self.client.post(
+            "/api/auth/password-reset/",
+            {"email": "parent@example.com"},
+            format="json",
+        )
+        parent.refresh_from_db()
+        token = parent.password_reset_token
+
+        response = self.client.post(
+            "/api/auth/password-reset/confirm/",
+            {"token": str(token), "new_password": "brand-new-pass-1"},
+            format="json",
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        login = self.client.post(
+            "/api/auth/token/",
+            {
+                "emailOrUsername": "parent@example.com",
+                "password": "brand-new-pass-1",
+            },
+            format="json",
+        )
+        self.assertEqual(login.status_code, status.HTTP_200_OK)
+
+        parent.refresh_from_db()
+        self.assertIsNone(parent.password_reset_token)
+
+        reuse = self.client.post(
+            "/api/auth/password-reset/confirm/",
+            {"token": str(token), "new_password": "another-pass-1"},
+            format="json",
+        )
+        self.assertEqual(reuse.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_parent_confirm_rejects_expired_token(self):
+        from datetime import timedelta
+
+        from django.utils import timezone
+
+        parent = self._register_parent()
+        self.client.post(
+            "/api/auth/password-reset/",
+            {"email": "parent@example.com"},
+            format="json",
+        )
+        parent.refresh_from_db()
+        parent.password_reset_sent_at = timezone.now() - timedelta(hours=2)
+        parent.save(update_fields=["password_reset_sent_at"])
+
+        response = self.client.post(
+            "/api/auth/password-reset/confirm/",
+            {
+                "token": str(parent.password_reset_token),
+                "new_password": "brand-new-pass-1",
+            },
+            format="json",
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("token", response.data)
+
+    def test_kid_reset_flow(self):
+        kid = self._active_kid()
+        mail.outbox.clear()
+
+        request = self.client.post(
+            "/api/auth/kid/password-reset/",
+            {"email": "alex@example.com"},
+            format="json",
+        )
+        self.assertEqual(request.status_code, status.HTTP_200_OK)
+        self.assertEqual(request.data["message"], self.GENERIC_MESSAGE)
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertIn("/kid/reset-password?token=", mail.outbox[0].body)
+
+        kid.refresh_from_db()
+        confirm = self.client.post(
+            "/api/auth/kid/password-reset/confirm/",
+            {
+                "token": str(kid.password_reset_token),
+                "new_password": "kid-new-pass-1",
+            },
+            format="json",
+        )
+        self.assertEqual(confirm.status_code, status.HTTP_200_OK)
+
+        login = self.client.post(
+            "/api/auth/kid/token/",
+            {"emailOrUsername": "alex_reset", "password": "kid-new-pass-1"},
+            format="json",
+        )
+        self.assertEqual(login.status_code, status.HTTP_200_OK)
+
+    def test_confirm_rejects_weak_password(self):
+        parent = self._register_parent()
+        self.client.post(
+            "/api/auth/password-reset/",
+            {"email": "parent@example.com"},
+            format="json",
+        )
+        parent.refresh_from_db()
+        response = self.client.post(
+            "/api/auth/password-reset/confirm/",
+            {"token": str(parent.password_reset_token), "new_password": "123"},
+            format="json",
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("new_password", response.data)
+
+
+@override_settings(
+    EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend",
+    FRONTEND_URL="https://localhost",
 )
 class UsernameValidationTests(APITestCase):
     """Kids and parents share one username namespace, so one rule covers both.

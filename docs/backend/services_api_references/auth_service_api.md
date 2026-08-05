@@ -102,6 +102,48 @@ Response includes `pending_email`. The current email stays active until confirma
 { "token": "<uuid>" }
 ```
 
+## Password reset (forgot password)
+
+Public endpoints (no JWT). Auth-service sends the email itself (same as verify-email).
+Links expire in **1 hour** (`PASSWORD_RESET_EXPIRY_HOURS`).
+
+| Method | Path | Purpose |
+| --- | --- | --- |
+| POST | `/auth/password-reset/` | Email a parent a reset link. |
+| POST | `/auth/password-reset/confirm/` | Set a new parent password with the token. |
+| POST | `/auth/kid/password-reset/` | Email a kid a reset link. |
+| POST | `/auth/kid/password-reset/confirm/` | Set a new kid password with the token. |
+
+**Request** (`POST …/password-reset/`):
+
+```json
+{ "email": "user@example.com" }
+```
+
+Always returns `200` with the same message whether or not the email exists
+(so the API does not leak which emails are registered):
+
+```json
+{ "message": "If an account exists for that email, we sent a password reset link." }
+```
+
+In `DEBUG`, a matching account also gets `reset_token` and `reset_url` in the
+response for local testing.
+
+Frontend links in the email:
+
+- Parent: `{FRONTEND_URL}/reset-password?token=<uuid>`
+- Kid: `{FRONTEND_URL}/kid/reset-password?token=<uuid>`
+
+**Confirm** (`POST …/password-reset/confirm/`):
+
+```json
+{ "token": "<uuid>", "new_password": "secure-pass-1" }
+```
+
+Success → `200` with `"Password updated. You can log in with your new password."`
+Invalid/expired token → `400` under `token`.
+
 ## Parent
 
 | Method | Path | Purpose |
@@ -112,6 +154,8 @@ Response includes `pending_email`. The current email stays active until confirma
 | POST | `/auth/token/refresh/` | Refresh a parent's access token. |
 | POST | `/auth/token/verify/` | Check a parent's access token is valid. |
 | POST | `/auth/google/` | Log in or sign up a parent via Google. |
+| POST | `/auth/password-reset/` | Request a parent password reset email. |
+| POST | `/auth/password-reset/confirm/` | Confirm a parent password reset. |
 
 The parent access token includes:
 - `kid_ids` — UUIDs of kids they guard (used by task-service and others)
@@ -129,6 +173,8 @@ The parent access token includes:
 | POST | `/auth/kid/token/refresh/` | Refresh a kid's access token. |
 | POST | `/auth/kid/token/verify/` | Check a kid's access token is valid. |
 | POST | `/auth/kid/google/` | Log in a kid via Google. |
+| POST | `/auth/kid/password-reset/` | Request a kid password reset email. |
+| POST | `/auth/kid/password-reset/confirm/` | Confirm a kid password reset. |
 
 ## Guardian invitations
 
