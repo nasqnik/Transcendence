@@ -14,7 +14,7 @@ interface Props {
 
 export default function AddTaskModal({ onClose }: Props) {
   const { t } = useTranslation()
-  const { status, streamingText, run } = useTaskStream(onClose)
+  const { status, errorKey, streamingText, run } = useTaskStream(onClose)
 
   const today = todayStr()
 
@@ -59,10 +59,12 @@ export default function AddTaskModal({ onClose }: Props) {
             <span aria-hidden="true">✨</span> {t('tasks.aiHint')}
           </p>
 
-          {/* Error */}
+          {/* Error. Keyed off the server's error code, so a task rejected by
+              content moderation says so instead of reading like a network
+              failure the kid should retry. */}
           {status === 'error' && (
             <p role="alert" className="font-body text-sm text-danger-700">
-              {t('errors.generic')}
+              {t(errorKey)}
             </p>
           )}
 

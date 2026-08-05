@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { usePageTitle } from '../hooks/usePageTitle'
+import { CONTACT_EMAIL } from '../constants/contact'
 
 export default function TermsOfService() {
   const { t } = useTranslation()
@@ -252,10 +253,10 @@ export default function TermsOfService() {
             <br />
             Email:{' '}
             <a
-              href="mailto:legal@kiddopath.app"
+              href={`mailto:${CONTACT_EMAIL}`}
               className="text-primary-600 underline hover:text-primary-700 focus-ring rounded-sm"
             >
-              legal@kiddopath.app
+              {CONTACT_EMAIL}
             </a>
           </address>
         </section>

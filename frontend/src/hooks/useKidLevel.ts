@@ -6,6 +6,7 @@ import {
   getGamificationProfile,
 } from '../api/gamification'
 import { localDateStr } from '../utils/date'
+import { MAIN_XP_PER_LEVEL } from '../constants/xp'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -47,7 +48,6 @@ const CATEGORIES: TaskCategory[] = ['health', 'learning', 'responsibility', 'cre
 // Must match gamification-service's MAIN_XP_PER_LEVEL. It moved 200 -> 100
 // when the reward curve was sped up; while these disagreed the bar read
 // "80 / 200" at 40% for a kid who was 80% of the way to the next level.
-const MAIN_XP_PER_LEVEL = 100
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 

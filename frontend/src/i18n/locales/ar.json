@@ -190,7 +190,11 @@
   "friends": {
     "title": "الأصدقاء",
     "myFriends": "أصدقائي",
-    "onlineCount": "{{count}} متصل الآن",
+    "filterLabel": "ابحث في أصدقائك",
+    "filterPlaceholder": "ابحث عن صديق…",
+    "filterEmpty": "لا أحد من أصدقائك يطابق «{{query}}».",
+    "overallXp": "إجمالي الخبرة",
+    "categoryXp": "الخبرة حسب الفئة",
     "online": "متصل",
     "offline": "غير متصل",
     "emptyTitle": "لا يوجد أصدقاء بعد",
@@ -356,7 +360,20 @@
     "deleteAccountConfirmTitle": "حذف حسابك؟",
     "deleteAccountConfirmBody": "سيؤدي هذا إلى حذف حسابك نهائيًا ولا يمكن التراجع عنه.",
     "deleteAccountConfirm": "حذف حسابي",
-    "deleteAccountPending": "جارٍ الحذف…"
+    "deleteAccountPending": "جارٍ الحذف…",
+    "avatarTooLarge": "الصورة كبيرة جدًا. الرجاء اختيار صورة أقل من 2 ميجابايت.",
+    "avatarInvalidType": "صيغة غير مدعومة. الرجاء استخدام صورة بصيغة JPEG أو PNG أو WebP.",
+    "avatarUploadFailed": "تعذّر رفع الصورة. حاول مرة أخرى.",
+    "exportCsv": "تصدير CSV",
+    "csvGenerated": "تاريخ الإنشاء",
+    "csvSummary": "ملخص",
+    "csvMetric": "المقياس",
+    "csvValue": "القيمة",
+    "csvCategory": "الفئة",
+    "csvTotalXp": "إجمالي النقاط",
+    "csvLevel": "المستوى",
+    "csvDate": "التاريخ",
+    "csvXp": "النقاط"
   },
   "errors": {
     "required": "هذا الحقل مطلوب",
@@ -403,12 +420,38 @@
       "invalidVerificationToken": "رابط التحقق هذا غير صالح.",
       "verificationExpired": "انتهت صلاحية رابط التحقق. يرجى التسجيل مرة أخرى.",
       "alreadyVerified": "بريدك الإلكتروني محقق بالفعل. يمكنك تسجيل الدخول.",
-      "parentHasLinkedKids": "لا يمكنك حذف حسابك بينما أنت ولي الأمر الوحيد لطفل. اربط كل طفل بولي أمر آخر أولاً."
+      "parentHasLinkedKids": "لا يمكنك حذف حسابك بينما أنت ولي الأمر الوحيد لطفل. اربط كل طفل بولي أمر آخر أولاً.",
+      "kidEmailSameAsParent": "لا يمكن استخدام البريد نفسه للطفل ووليّ الأمر. يحتاج كل منهما إلى بريد خاص.",
+      "kidEmailNotVerified": "لم يتم تأكيد بريد الطفل بعد. تحقق من الرسالة التي تحتوي على الرابط.",
+      "kidEmailExists": "يوجد حساب طفل يستخدم هذا البريد بالفعل.",
+      "kidGoogleAccountExists": "يوجد حساب طفل مرتبط بحساب Google هذا بالفعل.",
+      "kidGoogleAccountNotFound": "لا يوجد حساب طفل مرتبط بحساب Google هذا.",
+      "currentPasswordIncorrect": "كلمة المرور الحالية غير صحيحة.",
+      "currentPasswordRequired": "أدخل كلمة المرور الحالية.",
+      "emailSameAsCurrent": "هذا هو بريدك الإلكتروني الحالي بالفعل.",
+      "emailChangePending": "أرسلنا رابط تأكيد إلى العنوان الجديد."
+    },
+    "ai": {
+      "contentBlocked": "لا يمكن استخدام هذه المهمة. جرّب وصف شيء لطيف وآمن تريد إنجازه.",
+      "rateLimited": "هذه مهام كثيرة دفعة واحدة! انتظر قليلًا ثم حاول مجددًا.",
+      "serviceUnavailable": "المساعد الذي يتحقق من المهام نائم الآن. حاول بعد قليل.",
+      "invalidResponse": "المساعد لم يفهم. جرّب كتابة المهمة بطريقة أخرى.",
+      "generic": "لم ينجح ذلك. حاول مرة أخرى."
     }
   },
   "notifications": {
     "title": "الإشعارات",
     "empty": "ليس لديك إشعارات جديدة!",
     "newCount": "{{count}} جديد"
+  },
+  "rewards": {
+    "title": "كيف تكسب العملات",
+    "summary": "ارفع مستوى {{levels}} فئات — أي {{xp}} نقطة خبرة في كل واحدة — وستحصل على {{coins}} عملة!",
+    "stepTask": "أنجز مهمة ويوافق عليها أحد الكبار. ستكسب نقاط خبرة في ألوان تلك المهمة.",
+    "stepCategory": "املأ شريط اللون حتى {{xp}} نقطة خبرة ليرتفع مستوى ذلك اللون.",
+    "stepOverall": "كل ارتفاع في مستوى لون يضيف {{xp}} إلى خبرتك الإجمالية. وعند {{total}} ترتفع مستوى كاملًا!",
+    "stepCoins": "كل مستوى جديد يمنحك {{coins}} عملة.",
+    "stepShop": "أنفق العملات في المتجر على القبعات والنظارات والمزيد لشخصيتك.",
+    "gotIt": "فهمت!"
   }
 }
