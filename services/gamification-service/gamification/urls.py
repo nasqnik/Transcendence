@@ -4,6 +4,8 @@ from .views import (
     InternalCoinDeductView,
     InternalCompletionView,
     InternalKidsProgressView,
+    KidPendingRewardsView,
+    KidRewardsSeenView,
     KidStatListView,
     KidProfileView,
     KidStatListViewParent,
@@ -18,5 +20,7 @@ urlpatterns = [
     # read endpoints
     path('stats/', KidStatListView.as_view(), name='kid-stat-list'),
     path('profile/', KidProfileView.as_view(), name='kid-profile'),
+    path('rewards/pending/', KidPendingRewardsView.as_view(), name='kid-rewards-pending'),
+    path('rewards/seen/', KidRewardsSeenView.as_view(), name='kid-rewards-seen'),
     path('kids/<uuid:kid_id>/stats/', KidStatListViewParent.as_view(), name='parent-kid-stat-list'),
 ]
