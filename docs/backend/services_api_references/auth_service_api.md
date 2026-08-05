@@ -4,6 +4,29 @@ All paths are prefixed with `/api/`. Interactive docs: `/api/docs/`.
 
 Two account types: **parent** and **kid**. Most endpoints return JWT access/refresh tokens.
 
+## Username rules
+
+Parents and kids share one username namespace — a kid cannot take a name a
+parent already uses, or the other way round — so the same rule applies to both:
+
+- 3 to 20 characters
+- letters, digits, and underscore only (`a-z`, `A-Z`, `0-9`, `_`)
+- must start with a letter
+- reserved names (`admin`, `root`, `support`, `kiddopath`, and similar) are rejected
+
+Surrounding whitespace is trimmed before validation. Case is stored as typed but
+compared case-insensitively, so `Mariam` and `mariam` collide.
+
+Enforced on kid signup, kid Google signup, parent registration, and `PATCH
+/auth/me/` for both actors. Rejections return `400` with the message under the
+`username` key. Google sign-in derives a parent's first username from their
+email, sanitising it to fit these rules (`mariam.hassan+news@gmail.com` becomes
+`mariamhassannews`).
+
+Validation runs on create and update only. An account created before these rules
+keeps its username, but its owner must pick a conforming one to save any profile
+edit.
+
 ## Profile (parent or kid)
 
 | Method | Path | Purpose |

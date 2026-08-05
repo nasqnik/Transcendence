@@ -75,6 +75,7 @@ from .services import (
     verify_parent_email,
 )
 from .tokens import KidRefreshToken
+from .validators import USERNAME_MAX_LENGTH, validate_username_format
 
 LOGIN_IDENTIFIER_FIELD = "emailOrUsername"
 
@@ -141,15 +142,16 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
 class KidSignupSerializer(serializers.Serializer):
     # rules and validations
     name = serializers.CharField(max_length=100)
-    username = serializers.CharField(max_length=100)
+    username = serializers.CharField(max_length=USERNAME_MAX_LENGTH)
     email = serializers.EmailField()
     password = serializers.CharField(write_only=True, min_length=8)
     parent_email = serializers.EmailField()
 
     def validate_username(self, value):
-        if username_is_taken(value):
+        username = validate_username_format(value)
+        if username_is_taken(username):
             raise serializers.ValidationError(USERNAME_ALREADY_TAKEN)
-        return value
+        return username
 
     def validate_email(self, value):
         email = value.lower()
@@ -225,6 +227,9 @@ class KidSignupSerializer(serializers.Serializer):
 class ParentRegisterSerializer(serializers.ModelSerializer):
     # rules and validations
     password = serializers.CharField(write_only=True, min_length=8)
+    # Declared so our rules replace the looser one AbstractUser brings along,
+    # which allows "@ . + -" and any unicode letter.
+    username = serializers.CharField(max_length=USERNAME_MAX_LENGTH)
 
     class Meta:
         model = CustomUser
@@ -237,9 +242,10 @@ class ParentRegisterSerializer(serializers.ModelSerializer):
         return email
 
     def validate_username(self, value):
-        if username_belongs_to_kid(value):
+        username = validate_username_format(value)
+        if username_is_taken(username):
             raise serializers.ValidationError(USERNAME_ALREADY_TAKEN)
-        return value
+        return username
 
     def validate_password(self, value):
         validate_password(value)
@@ -538,13 +544,14 @@ class KidVerifyEmailSerializer(serializers.Serializer):
 class KidGoogleSignupSerializer(serializers.Serializer):
     id_token = serializers.CharField()
     name = serializers.CharField(max_length=100)
-    username = serializers.CharField(max_length=100)
+    username = serializers.CharField(max_length=USERNAME_MAX_LENGTH)
     parent_email = serializers.EmailField()
 
     def validate_username(self, value):
-        if username_is_taken(value):
+        username = validate_username_format(value)
+        if username_is_taken(username):
             raise serializers.ValidationError(USERNAME_ALREADY_TAKEN)
-        return value
+        return username
 
     def validate_parent_email(self, value):
         parent_email = value.lower()
@@ -627,6 +634,7 @@ class KidGoogleLoginSerializer(serializers.Serializer):
 
 class ParentProfileSerializer(serializers.ModelSerializer):
     has_password = serializers.SerializerMethodField()
+    username = serializers.CharField(max_length=USERNAME_MAX_LENGTH)
 
     class Meta:
         model = CustomUser
@@ -655,9 +663,7 @@ class ParentProfileSerializer(serializers.ModelSerializer):
         return actor_has_password(obj)
 
     def validate_username(self, value):
-        username = value.strip()
-        if not username:
-            raise serializers.ValidationError("Username cannot be empty.")
+        username = validate_username_format(value)
         qs = CustomUser.objects.filter(username__iexact=username)
         if self.instance is not None:
             qs = qs.exclude(pk=self.instance.pk)
@@ -685,6 +691,7 @@ class KidGuardianSerializer(serializers.Serializer):
 class KidProfileSerializer(serializers.ModelSerializer):
     has_password = serializers.SerializerMethodField()
     parents = serializers.SerializerMethodField()
+    username = serializers.CharField(max_length=USERNAME_MAX_LENGTH)
 
     class Meta:
         model = Kid
@@ -729,9 +736,7 @@ class KidProfileSerializer(serializers.ModelSerializer):
         return name
 
     def validate_username(self, value):
-        username = value.strip()
-        if not username:
-            raise serializers.ValidationError("Username cannot be empty.")
+        username = validate_username_format(value)
         qs = Kid.objects.filter(username__iexact=username)
         if self.instance is not None:
             qs = qs.exclude(pk=self.instance.pk)
