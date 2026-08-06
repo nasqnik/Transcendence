@@ -72,6 +72,20 @@ class MultiCategoryCompletionTests(EngineTestCase):
         profile = KidProfile.objects.get(kid_id=kid_id)
         self.assertEqual(profile.coins, 50)
 
+    def test_honesty_is_a_real_stat_category(self):
+        kid_id = uuid4()
+        apply_completion(
+            kid_id=kid_id,
+            completion_id=uuid4(),
+            category_points=[
+                {'category': 'health', 'points': 10},
+                {'category': 'honesty', 'points': 10},
+            ],
+        )
+        honesty = KidStat.objects.get(kid_id=kid_id, category='honesty')
+        self.assertEqual(honesty.xp_percent, 10)
+        self.assertEqual(honesty.level, 0)
+
 
 @override_settings(**ECONOMY)
 class CategoryLevelCoinsTests(EngineTestCase):
