@@ -1,3 +1,4 @@
+from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
 from .models import Task, TaskCategoryReward, TaskCompletion, KidCategoryVisibility
@@ -90,13 +91,24 @@ class TaskCompletionSerializer(serializers.ModelSerializer):
     task_title = serializers.CharField(source='task.title', read_only=True)
     task_description = serializers.CharField(source='task.description', read_only=True)
     task_due_date = serializers.DateField(source='task.due_date', read_only=True)
+    reward = serializers.SerializerMethodField()
 
     class Meta:
         model = TaskCompletion
         fields = (
             'id', 'task', 'task_title', 'task_description', 'task_due_date',
             'kid_id', 'status', 'completed_at', 'reviewed_at', 'review_note',
+            'reward',
         )
+
+    @extend_schema_field(serializers.JSONField(allow_null=True))
+    def get_reward(self, completion):
+        """Coins and category level-ups this request just earned.
+
+        Only filled in on the response to the call that confirmed the
+        completion; null everywhere else, including list responses.
+        """
+        return getattr(completion, 'reward_summary', None)
 
 
 class TaskCompletionCreateSerializer(serializers.ModelSerializer):
@@ -131,7 +143,7 @@ class TaskCompletionCreateSerializer(serializers.ModelSerializer):
 
         # Auto-confirmed completions skip parent review, so push here too.
         if new_status == TaskCompletion.Status.CONFIRMED:
-            push_completion_confirmed(completion)
+            completion.reward_summary = push_completion_confirmed(completion)
         elif new_status == TaskCompletion.Status.PENDING:
             notify_task_submitted(completion)
 

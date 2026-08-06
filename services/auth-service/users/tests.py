@@ -998,6 +998,473 @@ class MeProfileTests(APITestCase):
 @override_settings(
     EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend",
     FRONTEND_URL="https://localhost",
+    PASSWORD_RESET_EXPIRY_HOURS=1,
+)
+class PasswordResetTests(APITestCase):
+    GENERIC_MESSAGE = (
+        "If an account exists for that email, we sent a password reset link."
+    )
+
+    def _register_parent(self, email="parent@example.com", username="parent_one"):
+        self.client.post(
+            "/api/auth/register/",
+            {
+                "email": email,
+                "username": username,
+                "password": "secure-pass-1",
+            },
+            format="json",
+        )
+        return _verify_parent(self.client, email)
+
+    def _active_kid(self, email="alex@example.com", username="alex_reset"):
+        kid = Kid.objects.create(
+            name="Alex",
+            username=username,
+            email=email,
+            registration_status=Kid.RegistrationStatus.ACTIVE,
+            email_verified=True,
+        )
+        kid.set_password("secure-pass-1")
+        kid.save(update_fields=["password_hash"])
+        return kid
+
+    def test_parent_request_sends_email_and_hides_existence(self):
+        self._register_parent()
+        mail.outbox.clear()
+
+        known = self.client.post(
+            "/api/auth/password-reset/",
+            {"email": "parent@example.com"},
+            format="json",
+        )
+        unknown = self.client.post(
+            "/api/auth/password-reset/",
+            {"email": "nobody@example.com"},
+            format="json",
+        )
+
+        self.assertEqual(known.status_code, status.HTTP_200_OK)
+        self.assertEqual(unknown.status_code, status.HTTP_200_OK)
+        self.assertEqual(known.data["message"], self.GENERIC_MESSAGE)
+        self.assertEqual(unknown.data["message"], self.GENERIC_MESSAGE)
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertIn("reset-password?token=", mail.outbox[0].body)
+
+    def test_parent_confirm_updates_password(self):
+        parent = self._register_parent()
+        self.client.post(
+            "/api/auth/password-reset/",
+            {"email": "parent@example.com"},
+            format="json",
+        )
+        parent.refresh_from_db()
+        token = parent.password_reset_token
+
+        response = self.client.post(
+            "/api/auth/password-reset/confirm/",
+            {"token": str(token), "new_password": "brand-new-pass-1"},
+            format="json",
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        login = self.client.post(
+            "/api/auth/token/",
+            {
+                "emailOrUsername": "parent@example.com",
+                "password": "brand-new-pass-1",
+            },
+            format="json",
+        )
+        self.assertEqual(login.status_code, status.HTTP_200_OK)
+
+        parent.refresh_from_db()
+        self.assertIsNone(parent.password_reset_token)
+
+        reuse = self.client.post(
+            "/api/auth/password-reset/confirm/",
+            {"token": str(token), "new_password": "another-pass-1"},
+            format="json",
+        )
+        self.assertEqual(reuse.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_parent_confirm_rejects_expired_token(self):
+        from datetime import timedelta
+
+        from django.utils import timezone
+
+        parent = self._register_parent()
+        self.client.post(
+            "/api/auth/password-reset/",
+            {"email": "parent@example.com"},
+            format="json",
+        )
+        parent.refresh_from_db()
+        parent.password_reset_sent_at = timezone.now() - timedelta(hours=2)
+        parent.save(update_fields=["password_reset_sent_at"])
+
+        response = self.client.post(
+            "/api/auth/password-reset/confirm/",
+            {
+                "token": str(parent.password_reset_token),
+                "new_password": "brand-new-pass-1",
+            },
+            format="json",
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("token", response.data)
+
+    def test_kid_reset_flow(self):
+        kid = self._active_kid()
+        mail.outbox.clear()
+
+        request = self.client.post(
+            "/api/auth/kid/password-reset/",
+            {"email": "alex@example.com"},
+            format="json",
+        )
+        self.assertEqual(request.status_code, status.HTTP_200_OK)
+        self.assertEqual(request.data["message"], self.GENERIC_MESSAGE)
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertIn("/kid/reset-password?token=", mail.outbox[0].body)
+
+        kid.refresh_from_db()
+        confirm = self.client.post(
+            "/api/auth/kid/password-reset/confirm/",
+            {
+                "token": str(kid.password_reset_token),
+                "new_password": "kid-new-pass-1",
+            },
+            format="json",
+        )
+        self.assertEqual(confirm.status_code, status.HTTP_200_OK)
+
+        login = self.client.post(
+            "/api/auth/kid/token/",
+            {"emailOrUsername": "alex_reset", "password": "kid-new-pass-1"},
+            format="json",
+        )
+        self.assertEqual(login.status_code, status.HTTP_200_OK)
+
+    def test_confirm_rejects_weak_password(self):
+        parent = self._register_parent()
+        self.client.post(
+            "/api/auth/password-reset/",
+            {"email": "parent@example.com"},
+            format="json",
+        )
+        parent.refresh_from_db()
+        response = self.client.post(
+            "/api/auth/password-reset/confirm/",
+            {"token": str(parent.password_reset_token), "new_password": "123"},
+            format="json",
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("new_password", response.data)
+
+
+@override_settings(
+    EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend",
+    FRONTEND_URL="https://localhost",
+)
+class UsernameValidationTests(APITestCase):
+    """Kids and parents share one username namespace, so one rule covers both.
+
+    Kid signup used to accept anything at all — emoji, markup, bare spaces.
+    """
+
+    REJECTED = {
+        "spaces": "hi there",
+        "markup": "<script>",
+        "path": "../etc",
+        "at_sign": "user@name",
+        "dot": "first.last",
+        "hyphen": "first-last",
+        "plus": "user+tag",
+        "too_short": "ab",
+        "too_long": "a" * 21,
+        "leading_digit": "1player",
+        "leading_underscore": "_player",
+        "blank": "   ",
+    }
+
+    def _signup_kid(self, username, slug):
+        return self.client.post(
+            "/api/kids/signup/",
+            {
+                "name": "Alex",
+                "username": username,
+                "email": f"kid_{slug}@example.com",
+                "password": "secure-pass-1",
+                "parent_email": f"parent_{slug}@example.com",
+            },
+            format="json",
+        )
+
+    def _register_parent(self, username, slug):
+        return self.client.post(
+            "/api/auth/register/",
+            {
+                "username": username,
+                "email": f"reg_{slug}@example.com",
+                "password": "secure-pass-1",
+            },
+            format="json",
+        )
+
+    def test_kid_signup_rejects_unusual_usernames(self):
+        for slug, username in self.REJECTED.items():
+            with self.subTest(case=slug):
+                response = self._signup_kid(username, slug)
+                self.assertEqual(
+                    response.status_code,
+                    status.HTTP_400_BAD_REQUEST,
+                    msg=f"{username!r} should have been rejected",
+                )
+                self.assertIn("username", response.data)
+        self.assertEqual(Kid.objects.count(), 0)
+
+    def test_parent_register_rejects_unusual_usernames(self):
+        for slug, username in self.REJECTED.items():
+            with self.subTest(case=slug):
+                response = self._register_parent(username, slug)
+                self.assertEqual(
+                    response.status_code,
+                    status.HTTP_400_BAD_REQUEST,
+                    msg=f"{username!r} should have been rejected",
+                )
+                self.assertIn("username", response.data)
+        self.assertEqual(CustomUser.objects.count(), 0)
+
+    def test_emoji_is_rejected(self):
+        response = self._signup_kid("kid\U0001f389emoji", "emoji")
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_accented_letters_are_rejected(self):
+        # Django's default validator lets these through for parents; ours does not.
+        response = self._register_parent("N\u00f1o\u00f1o", "accents")
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_reserved_names_are_rejected(self):
+        for username in ("admin", "Root", "SUPPORT", "kiddopath"):
+            with self.subTest(username=username):
+                kid = self._signup_kid(username, f"res_{username.lower()}")
+                self.assertEqual(kid.status_code, status.HTTP_400_BAD_REQUEST)
+                parent = self._register_parent(username, f"resp_{username.lower()}")
+                self.assertEqual(parent.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_valid_usernames_are_accepted(self):
+        for index, username in enumerate(("abc", "alex_99", "A_1", "a" * 20)):
+            with self.subTest(username=username):
+                response = self._signup_kid(username, f"ok{index}")
+                self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+    def test_surrounding_whitespace_is_trimmed(self):
+        response = self._signup_kid("  alex_kid  ", "trim")
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(response.data["username"], "alex_kid")
+        self.assertTrue(Kid.objects.filter(username="alex_kid").exists())
+
+    def test_profile_edit_is_validated_for_both_actors(self):
+        kid = Kid.objects.create(
+            name="Alex",
+            username="alex_edit",
+            email="alex_edit@example.com",
+            registration_status=Kid.RegistrationStatus.ACTIVE,
+            email_verified=True,
+        )
+        kid.set_password("secure-pass-1")
+        kid.save(update_fields=["password_hash"])
+        kid_login = self.client.post(
+            "/api/auth/kid/token/",
+            {"emailOrUsername": "alex_edit", "password": "secure-pass-1"},
+            format="json",
+        )
+        self.client.credentials(
+            HTTP_AUTHORIZATION=f"Bearer {kid_login.data['access']}"
+        )
+        response = self.client.patch(
+            "/api/auth/me/", {"username": "not valid!"}, format="json"
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        kid.refresh_from_db()
+        self.assertEqual(kid.username, "alex_edit")
+
+        self.client.credentials()
+        self._register_parent("parent_edit", "edit")
+        _verify_parent(self.client, "reg_edit@example.com")
+        parent_login = self.client.post(
+            "/api/auth/token/",
+            {"emailOrUsername": "reg_edit@example.com", "password": "secure-pass-1"},
+            format="json",
+        )
+        self.client.credentials(
+            HTTP_AUTHORIZATION=f"Bearer {parent_login.data['access']}"
+        )
+        response = self.client.patch(
+            "/api/auth/me/", {"username": "bad.name"}, format="json"
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+
+class GoogleGeneratedUsernameTests(APITestCase):
+    """Google hands us an email local part, which rarely obeys the rules."""
+
+    def _login(self, mock_verify, email, sub):
+        mock_verify.return_value = {
+            "sub": sub,
+            "email": email,
+            "email_verified": True,
+            "iss": "accounts.google.com",
+        }
+        response = self.client.post(
+            "/api/auth/google/", {"id_token": "fake-token"}, format="json"
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        return CustomUser.objects.get(email=email)
+
+    @patch("users.serializers.verify_google_id_token")
+    def test_dots_and_plus_are_stripped(self, mock_verify):
+        user = self._login(mock_verify, "mariam.hassan+news@gmail.com", "sub-dots")
+        self.assertEqual(user.username, "mariamhassannews")
+
+    @patch("users.serializers.verify_google_id_token")
+    def test_leading_digits_are_dropped(self, mock_verify):
+        user = self._login(mock_verify, "123abc@example.com", "sub-digits")
+        self.assertEqual(user.username, "abc")
+
+    @patch("users.serializers.verify_google_id_token")
+    def test_unusable_local_part_falls_back(self, mock_verify):
+        user = self._login(mock_verify, "123.456@example.com", "sub-numeric")
+        self.assertEqual(user.username, "player")
+
+    @patch("users.serializers.verify_google_id_token")
+    def test_long_local_part_is_truncated(self, mock_verify):
+        user = self._login(mock_verify, f"{'a' * 40}@example.com", "sub-long")
+        self.assertEqual(user.username, "a" * 20)
+
+    @patch("users.serializers.verify_google_id_token")
+    def test_reserved_local_part_gets_a_suffix(self, mock_verify):
+        user = self._login(mock_verify, "admin@example.com", "sub-admin")
+        self.assertEqual(user.username, "admin_1")
+
+    @patch("users.serializers.verify_google_id_token")
+    def test_suffix_keeps_the_name_within_the_limit(self, mock_verify):
+        CustomUser.objects.create_user(
+            email="taken@example.com",
+            username="b" * 20,
+            password="secure-pass-1",
+            role="parent",
+        )
+        user = self._login(mock_verify, f"{'b' * 30}@example.com", "sub-collide")
+        self.assertEqual(user.username, f"{'b' * 18}_1")
+        self.assertLessEqual(len(user.username), 20)
+
+
+@override_settings(
+    EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend",
+    FRONTEND_URL="https://localhost",
+)
+class KidParentsInMeTests(APITestCase):
+    """The kid app needs to name the kid's guardians, so /auth/me/ carries them.
+
+    A kid can have two: the primary on the Kid.parent FK, a second only on an
+    accepted invitation.
+    """
+
+    def setUp(self):
+        self.kid = Kid.objects.create(
+            name="Alex",
+            username="alex_parents",
+            email="alex_parents@example.com",
+            registration_status=Kid.RegistrationStatus.ACTIVE,
+            email_verified=True,
+        )
+        self.kid.set_password("secure-pass-1")
+        self.kid.save(update_fields=["password_hash"])
+        login = self.client.post(
+            "/api/auth/kid/token/",
+            {"emailOrUsername": "alex_parents", "password": "secure-pass-1"},
+            format="json",
+        )
+        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {login.data['access']}")
+
+    def _parent(self, email, username, bio=""):
+        return CustomUser.objects.create_user(
+            email=email,
+            username=username,
+            password="secure-pass-1",
+            role="parent",
+            email_verified=True,
+            bio=bio,
+        )
+
+    def _parents(self):
+        response = self.client.get("/api/auth/me/")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        return response.data["parents"]
+
+    def test_kid_awaiting_a_parent_gets_an_empty_list(self):
+        self.assertEqual(self._parents(), [])
+
+    def test_primary_parent_is_listed(self):
+        parent = self._parent("mum@example.com", "mum", bio="Loves hiking")
+        self.kid.parent = parent
+        self.kid.save(update_fields=["parent"])
+
+        parents = self._parents()
+        self.assertEqual(len(parents), 1)
+        self.assertEqual(parents[0]["id"], str(parent.id))
+        self.assertEqual(parents[0]["username"], "mum")
+        self.assertEqual(parents[0]["email"], "mum@example.com")
+        self.assertEqual(parents[0]["bio"], "Loves hiking")
+        self.assertEqual(parents[0]["role"], "primary")
+
+    def test_second_guardian_is_listed_after_the_primary(self):
+        primary = self._parent("mum@example.com", "mum")
+        secondary = self._parent("dad@example.com", "dad")
+        self.kid.parent = primary
+        self.kid.save(update_fields=["parent"])
+        GuardianInvitation.objects.create(
+            kid=self.kid,
+            parent=secondary,
+            invite_email=secondary.email,
+            role="secondary",
+            status="accepted",
+        )
+
+        parents = self._parents()
+        self.assertEqual(
+            [(p["username"], p["role"]) for p in parents],
+            [("mum", "primary"), ("dad", "secondary")],
+        )
+
+    def test_pending_invitation_is_not_a_guardian_yet(self):
+        GuardianInvitation.objects.create(
+            kid=self.kid,
+            invite_email="maybe@example.com",
+            role="secondary",
+            status="pending",
+        )
+        self.assertEqual(self._parents(), [])
+
+    def test_primary_is_not_duplicated_by_its_own_invitation(self):
+        parent = self._parent("mum@example.com", "mum")
+        self.kid.parent = parent
+        self.kid.save(update_fields=["parent"])
+        GuardianInvitation.objects.create(
+            kid=self.kid,
+            parent=parent,
+            invite_email=parent.email,
+            role="primary",
+            status="accepted",
+        )
+        self.assertEqual(len(self._parents()), 1)
+
+
+@override_settings(
+    EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend",
+    FRONTEND_URL="https://localhost",
 )
 class MePasswordAndEmailTests(APITestCase):
     def _login_parent(self):

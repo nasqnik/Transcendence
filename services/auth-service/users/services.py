@@ -109,6 +109,45 @@ def kids_linked_to_parent(parent: CustomUser):
     return Kid.objects.filter(id__in=kid_ids)
 
 
+def guardians_of_kid(kid: Kid) -> list[dict]:
+    """The kid's accepted guardians, primary first.
+
+    The reverse of kids_linked_to_parent, and linked the same two ways: the
+    primary sits on the Kid.parent FK, a second guardian only on an accepted
+    invitation. Seeded kids can have the FK without a matching invitation, so
+    both sources are unioned rather than trusting either alone.
+    """
+    guardians = []
+    seen = set()
+
+    if kid.parent_id is not None:
+        guardians.append({'parent': kid.parent, 'role': 'primary'})
+        seen.add(kid.parent_id)
+
+    invitations = (
+        kid.guardian_invitations
+        .filter(status='accepted', parent__isnull=False)
+        .select_related('parent')
+        .order_by('responded_at')
+    )
+    for invitation in invitations:
+        if invitation.parent_id in seen:
+            continue
+        seen.add(invitation.parent_id)
+        guardians.append({'parent': invitation.parent, 'role': invitation.role})
+
+    return [
+        {
+            'id': entry['parent'].id,
+            'username': entry['parent'].username,
+            'email': entry['parent'].email,
+            'bio': entry['parent'].bio,
+            'role': entry['role'],
+        }
+        for entry in guardians
+    ]
+
+
 def parent_is_sole_guardian_of_any_kid(parent: CustomUser) -> bool:
     """
     True if this parent is linked to any kid that does not have
@@ -529,3 +568,120 @@ def verify_email_change(token):
         ]
     )
     return kid, "kid"
+
+
+class PasswordResetNotFound(Exception):
+    pass
+
+
+class PasswordResetExpired(Exception):
+    pass
+
+
+def build_parent_password_reset_url(token) -> str:
+    base = settings.FRONTEND_URL.rstrip("/")
+    return f"{base}/reset-password?token={token}"
+
+
+def build_kid_password_reset_url(token) -> str:
+    base = settings.FRONTEND_URL.rstrip("/")
+    return f"{base}/kid/reset-password?token={token}"
+
+
+def _password_reset_expired(sent_at) -> bool:
+    if not sent_at:
+        return True
+    expiry = sent_at + timedelta(hours=settings.PASSWORD_RESET_EXPIRY_HOURS)
+    return timezone.now() > expiry
+
+
+def _send_password_reset_email(*, to_email, reset_url, display_name="") -> None:
+    context = {
+        "app_name": settings.APP_NAME,
+        "reset_url": reset_url,
+        "email": to_email,
+        "display_name": display_name,
+        "expires_hours": settings.PASSWORD_RESET_EXPIRY_HOURS,
+    }
+    subject = f"Reset your {settings.APP_NAME} password"
+    text_body = render_to_string("emails/password_reset.txt", context)
+    html_body = render_to_string("emails/password_reset.html", context)
+    message = EmailMultiAlternatives(
+        subject=subject,
+        body=text_body,
+        from_email=settings.DEFAULT_FROM_EMAIL,
+        to=[to_email],
+    )
+    message.attach_alternative(html_body, "text/html")
+    message.send(fail_silently=False)
+
+
+def request_parent_password_reset(email: str) -> CustomUser | None:
+    """Issue a reset token if a parent exists. Returns the user, or None.
+
+    Callers must not reveal whether the email matched an account.
+    """
+    user = CustomUser.objects.filter(email__iexact=normalize_email(email)).first()
+    if user is None or not user.is_active:
+        return None
+
+    user.password_reset_token = uuid4()
+    user.password_reset_sent_at = timezone.now()
+    user.save(update_fields=["password_reset_token", "password_reset_sent_at"])
+    _send_password_reset_email(
+        to_email=user.email,
+        reset_url=build_parent_password_reset_url(user.password_reset_token),
+        display_name=user.username,
+    )
+    return user
+
+
+def request_kid_password_reset(email: str) -> Kid | None:
+    """Issue a reset token if a kid with that email exists. Returns the kid, or None."""
+    kid = Kid.objects.filter(email__iexact=normalize_email(email)).first()
+    if kid is None or not kid.email:
+        return None
+
+    kid.password_reset_token = uuid4()
+    kid.password_reset_sent_at = timezone.now()
+    kid.save(update_fields=["password_reset_token", "password_reset_sent_at"])
+    _send_password_reset_email(
+        to_email=kid.email,
+        reset_url=build_kid_password_reset_url(kid.password_reset_token),
+        display_name=kid.name or kid.username,
+    )
+    return kid
+
+
+def confirm_parent_password_reset(token, new_password: str) -> CustomUser:
+    try:
+        user = CustomUser.objects.get(password_reset_token=token)
+    except CustomUser.DoesNotExist as exc:
+        raise PasswordResetNotFound from exc
+
+    if _password_reset_expired(user.password_reset_sent_at):
+        raise PasswordResetExpired
+
+    user.set_password(new_password)
+    user.password_reset_token = None
+    user.password_reset_sent_at = None
+    user.save(update_fields=["password", "password_reset_token", "password_reset_sent_at"])
+    return user
+
+
+def confirm_kid_password_reset(token, new_password: str) -> Kid:
+    try:
+        kid = Kid.objects.get(password_reset_token=token)
+    except Kid.DoesNotExist as exc:
+        raise PasswordResetNotFound from exc
+
+    if _password_reset_expired(kid.password_reset_sent_at):
+        raise PasswordResetExpired
+
+    kid.set_password(new_password)
+    kid.password_reset_token = None
+    kid.password_reset_sent_at = None
+    kid.save(
+        update_fields=["password_hash", "password_reset_token", "password_reset_sent_at"]
+    )
+    return kid
