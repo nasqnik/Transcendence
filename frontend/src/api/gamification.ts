@@ -1,10 +1,10 @@
 import client from './client'
-import { type TaskCategory } from '../constants/categories'
+import { type StatCategory } from '../constants/categories'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 export interface GamificationStat {
-  category: TaskCategory
+  category: StatCategory
   /** Levels completed in this category */
   level: number
   /** XP within current level (0 – 99) */
@@ -22,7 +22,7 @@ export interface GamificationProfile {
 
 /** One category that gained a level as part of a single award. */
 export interface StatLevelUp {
-  category: TaskCategory
+  category: StatCategory
   level: number
 }
 

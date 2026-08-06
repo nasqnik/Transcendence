@@ -15,7 +15,7 @@ import { useKidLevel } from '../../hooks/useKidLevel'
  */
 export default function KidProgressBand() {
   const { t, i18n } = useTranslation()
-  const { level, progress, xpCurrent, xpMax, coins, streak, week, isLoading, isError, refetch } = useKidLevel()
+  const { level, progress, xpCurrent, xpMax, coins, streak, week, isLoading, isError, activityError, refetch } = useKidLevel()
   // Shares AvatarStudio's cache, so customising there updates this immediately.
   const { data: avatar } = useQuery({ queryKey: ['kidAvatar'], queryFn: getKidAvatar })
 
@@ -129,7 +129,14 @@ export default function KidProgressBand() {
 
           {/* The week made visible, so a gap is something you can see. Label
               sits above the tiles so this block mirrors the coin chip beside
-              it — count on top, detail underneath. */}
+              it — count on top, detail underneath.
+
+              Hidden on its own when tasks/completions fail: the streak and week
+              come from those, while the level and coins beside them come from
+              gamification. A 0-day streak drawn from a failed fetch is a claim
+              about the kid rather than about the network — but blanking the
+              whole band for it would throw away numbers that loaded fine. */}
+          {!activityError && (
           <div className="shrink-0">
           <p className="font-body text-xs text-white mb-1.5">
             <span aria-hidden="true">🔥</span> {t('kidDash.streakLabel', { count: streak })}
@@ -157,6 +164,7 @@ export default function KidProgressBand() {
             ))}
           </ul>
           </div>
+          )}
         </div>
       )}
     </section>

@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
-import { type TaskCategory } from '../constants/categories'
+import { type TaskCategory, type StatCategory, STAT_CATEGORIES, TASK_CATEGORIES } from '../constants/categories'
 import { getTasks, getCompletions, type Completion } from '../api/tasks'
 import {
   getGamificationStats,
@@ -12,7 +12,7 @@ import { MAIN_XP_PER_LEVEL } from '../constants/xp'
 
 export interface KidLevelData {
   /** Per-category level + XP progress, straight from the backend */
-  stats: Record<TaskCategory, { level: number; xp_percent: number }>
+  stats: Record<StatCategory, { level: number; xp_percent: number }>
   /** XP from pending (unconfirmed) completions, per category */
   pendingXpByCategory: Record<TaskCategory, number>
   /** Kid's overall (main) level */
@@ -30,8 +30,10 @@ export interface KidLevelData {
   /** The last 7 local days, oldest first, for the streak strip */
   week: DayMark[]
   isLoading: boolean
-  /** The gamification fetches failed — the numbers below are placeholders, not facts. */
+  /** The gamification fetches failed — level, XP and coins are placeholders. */
   isError: boolean
+  /** Tasks/completions failed — the streak, week and pending XP are placeholders. */
+  activityError: boolean
   /** Re-runs the failed gamification queries. */
   refetch: () => void
 }
@@ -44,21 +46,22 @@ export interface DayMark {
   isToday: boolean
 }
 
-const CATEGORIES: TaskCategory[] = ['health', 'learning', 'responsibility', 'creativity']
 // Must match gamification-service's MAIN_XP_PER_LEVEL. It moved 200 -> 100
 // when the reward curve was sped up; while these disagreed the bar read
 // "80 / 200" at 40% for a kid who was 80% of the way to the next level.
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-function emptyStats(): Record<TaskCategory, { level: number; xp_percent: number }> {
+function emptyStats(): Record<StatCategory, { level: number; xp_percent: number }> {
   return Object.fromEntries(
-    CATEGORIES.map(cat => [cat, { level: 0, xp_percent: 0 }])
-  ) as Record<TaskCategory, { level: number; xp_percent: number }>
+    STAT_CATEGORIES.map(cat => [cat, { level: 0, xp_percent: 0 }])
+  ) as Record<StatCategory, { level: number; xp_percent: number }>
 }
 
+// Only the four: pending XP is summed from a task's category rewards, and
+// honesty is never on a task — it arrives when a parent confirms.
 function emptyPending(): Record<TaskCategory, number> {
-  return Object.fromEntries(CATEGORIES.map(cat => [cat, 0])) as Record<TaskCategory, number>
+  return Object.fromEntries(TASK_CATEGORIES.map(cat => [cat, 0])) as Record<TaskCategory, number>
 }
 
 /**
@@ -112,14 +115,16 @@ export function useKidLevel(): KidLevelData {
   const { data: rawStats = [], isLoading: statsLoading } = statsQuery
   const { data: profile, isLoading: profileLoading } = profileQuery
   // Tasks + completions already cached by TodaysTasks — no extra requests
-  const { data: tasks       = [] } = useQuery({ queryKey: ['tasks'],       queryFn: getTasks })
-  const { data: completions = [] } = useQuery({ queryKey: ['completions'], queryFn: getCompletions })
+  const tasksQuery       = useQuery({ queryKey: ['tasks'],       queryFn: getTasks })
+  const completionsQuery = useQuery({ queryKey: ['completions'], queryFn: getCompletions })
+  const { data: tasks       = [] } = tasksQuery
+  const { data: completions = [] } = completionsQuery
 
   // Build per-category map, defaulting to zeros for categories not yet started
   const stats = emptyStats()
   for (const s of rawStats) {
     if (s.category in stats) {
-      stats[s.category as TaskCategory] = { level: s.level, xp_percent: s.xp_percent }
+      stats[s.category as StatCategory] = { level: s.level, xp_percent: s.xp_percent }
     }
   }
 
@@ -147,10 +152,21 @@ export function useKidLevel(): KidLevelData {
 
   return {
     stats, pendingXpByCategory, level, progress, xpCurrent, xpMax, coins, streak, week,
-    isLoading: statsLoading || profileLoading,
+    isLoading: statsLoading || profileLoading
+      || tasksQuery.isLoading || completionsQuery.isLoading,
     // Every number above falls back to 0, so a failed fetch renders as a real
     // Level 0 with no XP. Callers need to be able to tell those apart.
+    //
+    // Two flags, not one. The streak, week strip and pending XP come from
+    // tasks/completions; level, XP and coins come from gamification. Folding
+    // them together fixed a zero streak masquerading as fact but created the
+    // opposite problem — a failed completions fetch blanked a level and coin
+    // balance that had loaded perfectly well.
     isError: statsQuery.isError || profileQuery.isError,
-    refetch: () => { statsQuery.refetch(); profileQuery.refetch() },
+    activityError: tasksQuery.isError || completionsQuery.isError,
+    refetch: () => {
+      statsQuery.refetch(); profileQuery.refetch()
+      tasksQuery.refetch(); completionsQuery.refetch()
+    },
   }
 }

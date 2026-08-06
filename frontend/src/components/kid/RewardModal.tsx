@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next'
 import Modal from '../Modal'
-import { CATEGORY_STYLE, type TaskCategory } from '../../constants/categories'
+import { CATEGORY_STYLE, type StatCategory } from '../../constants/categories'
 import { type RewardSummary } from '../../api/gamification'
 import { useCountUp } from '../../hooks/useCountUp'
 
@@ -64,9 +64,9 @@ export default function RewardModal({ reward, remaining, onClose }: Props) {
       {levelUps.length > 0 && (
         <ul className="flex flex-wrap justify-center gap-1.5">
           {levelUps.map(up => {
-            const style = CATEGORY_STYLE[up.category as TaskCategory]
+            const style = CATEGORY_STYLE[up.category as StatCategory]
             if (!style) return null
-            const label = t(`kidDash.categories.${up.category}` as `kidDash.categories.${TaskCategory}`)
+            const label = t(`kidDash.categories.${up.category}` as `kidDash.categories.${StatCategory}`)
             return (
               <li
                 key={up.category}
