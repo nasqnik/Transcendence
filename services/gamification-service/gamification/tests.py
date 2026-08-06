@@ -1,6 +1,7 @@
 from unittest.mock import patch
 from uuid import uuid4
 
+import requests
 from django.conf import settings
 from django.test import TestCase, override_settings
 from django.urls import reverse
@@ -287,3 +288,45 @@ class InternalCompletionApiTests(EngineTestCase):
         self.assertEqual(response.data['coins_awarded'], 50)
         self.assertEqual(response.data['coins_total'], 100)
         self.assertEqual(CompletionEvent.objects.filter(kid_id=kid_id).count(), 1)
+
+
+@override_settings(
+    NOTIFICATION_INTERNAL_URL='http://notification-service:8000',
+    ANALYTICS_INTERNAL_URL='http://analytics-service:8000',
+    INTERNAL_SERVICE_TOKEN='test-internal-token',
+)
+class NotifyHttpErrorTests(TestCase):
+    """4xx/5xx from internal POSTs must be logged, not silently ignored."""
+
+    @patch('gamification.engine.requests.post')
+    def test_notify_kid_logs_http_error(self, mock_post):
+        from gamification.engine import notify_kid
+
+        mock_post.return_value.raise_for_status.side_effect = requests.HTTPError(
+            '400 Client Error'
+        )
+        with self.assertLogs('gamification.engine', level='WARNING') as logs:
+            notify_kid(uuid4(), 'You leveled up.')
+        self.assertTrue(
+            any('Failed to notify kid' in r.getMessage() for r in logs.records)
+        )
+
+    @patch('gamification.engine.requests.post')
+    def test_analytics_push_logs_http_error(self, mock_post):
+        from gamification.engine import apply_completion
+
+        # First post is analytics after the award; make it fail with HTTPError.
+        mock_post.return_value.raise_for_status.side_effect = requests.HTTPError(
+            '500 Server Error'
+        )
+        with self.assertLogs('gamification.engine', level='WARNING') as logs:
+            apply_completion(
+                kid_id=uuid4(),
+                completion_id=uuid4(),
+                category_points=[{'category': 'health', 'points': 10}],
+            )
+        self.assertTrue(
+            any('Failed to push completion' in r.getMessage() for r in logs.records)
+        )
+        # XP still saved even when analytics fails.
+        self.assertEqual(CompletionEvent.objects.count(), 1)
