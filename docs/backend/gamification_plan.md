@@ -37,7 +37,10 @@ When a kid's task completion becomes `confirmed` in task-service, push an event 
 
 ## Domain model (core scope only)
 
-Categories mirror task-service `CATEGORY_CHOICES`: `health`, `learning`, `responsibility`, `creativity`.
+Task categories: `health`, `learning`, `responsibility`, `creativity`.
+Gamification also has `honesty` — not on tasks / not AI-scored. task-service
+adds Honesty XP when a parent confirms a pending completion (points = sum of
+that task's category rewards). Auto-confirm does not award Honesty.
 
 - `KidProfile` (one row per kid): `kid_id` (UUID, unique), `main_level`, `overall_xp`, `coins`, `created_at`, `updated_at`.
 - `KidStat` (one row per kid+category): `kid_id`, `category`, `level`, `xp_percent` (0-100), unique `(kid_id, category)`.
@@ -117,4 +120,5 @@ Add `requests` to `[task-service/requirements.txt](services/task-service/require
 
 ## Deferred (per scope decision)
 
-`streaks`, `honesty`, `quests`, and the catalog/coins-spending side stay out of this plan.
+`streaks`, `quests`, and the catalog/coins-spending side stay out of this plan.
+(`honesty` is implemented — see above.)
