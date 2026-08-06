@@ -48,7 +48,24 @@
     "tryLoginAgain": "Try logging in again",
     "completeProfile": "Complete your profile",
     "back": "Back",
-    "agreeToTermsPrefix": "I agree to the"
+    "agreeToTermsPrefix": "I agree to the",
+    "forgotPassword": "Forgot your password?",
+    "forgotPasswordHint": "Enter your email and we'll send you a link to set a new password.",
+    "sendResetLink": "Send reset link",
+    "sending": "Sending…",
+    "backToLogin": "Back to log in",
+    "resetSentTitle": "Check your email",
+    "resetSentHint": "If an account exists for that address, a reset link is on its way. The link works once and expires after a while.",
+    "resetPassword": "Set a new password",
+    "resetPasswordHint": "Choose a new password for your account.",
+    "newPassword": "New password",
+    "confirmPassword": "Confirm new password",
+    "passwordsDoNotMatch": "Both passwords need to match.",
+    "saving": "Saving…",
+    "resetDoneTitle": "Password updated",
+    "resetDoneHint": "You can now log in with your new password.",
+    "resetLinkInvalidTitle": "That link doesn't work",
+    "requestNewLink": "Request a new link"
   },
   "dashboard": {
     "greeting": "Hey, {{name}}!",
@@ -429,7 +446,12 @@
       "currentPasswordIncorrect": "That current password isn't right.",
       "currentPasswordRequired": "Please enter your current password.",
       "emailSameAsCurrent": "That's already your email address.",
-      "emailChangePending": "We sent a confirmation link to the new address."
+      "emailChangePending": "We sent a confirmation link to the new address.",
+      "usernameInvalid": "Usernames need 3-20 characters, must start with a letter, and can only use letters, numbers and underscores.",
+      "passwordResetRequested": "If an account exists for that email, we've sent a reset link.",
+      "passwordResetSuccess": "Password updated. You can log in with your new one.",
+      "passwordResetTokenInvalid": "That reset link isn't valid. Request a new one.",
+      "passwordResetTokenExpired": "That reset link has expired. Request a new one."
     },
     "ai": {
       "contentBlocked": "That task can't be used. Try describing something kind and safe you want to get done.",
@@ -446,12 +468,26 @@
   },
   "rewards": {
     "title": "How to earn coins",
-    "summary": "Level up {{levels}} categories — that's {{xp}} XP in each — and you get {{coins}} coins!",
+    "summary": "Fill any colour bar to {{xp}} XP and you get {{coins}} coins!",
     "stepTask": "Finish a task and a grown-up says yes. You earn XP in that task's colours.",
     "stepCategory": "Fill a colour bar to {{xp}} XP and that colour levels up.",
-    "stepOverall": "Every colour level-up adds {{xp}} to your Overall XP. At {{total}} you go up a whole level!",
-    "stepCoins": "Each new level gives you {{coins}} coins.",
+    "stepOverall": "It also adds {{xp}} to your Overall XP. At {{total}} you go up a whole level!",
+    "stepCoins": "Every colour level-up gives you {{coins}} coins straight away.",
     "stepShop": "Spend coins in the shop on hats, glasses and more for your character.",
     "gotIt": "Got it!"
+  },
+  "grownUps": {
+    "title": "My grown-ups",
+    "intro": "These are the grown-ups who look after your account.",
+    "primary": "Main",
+    "secondary": "Second",
+    "waitingTitle": "Waiting for your grown-up",
+    "waitingHint": "We sent them an invite. Once they accept, they'll show up here."
+  },
+  "reward": {
+    "coinsEarned": "You earned {{coins}} coins",
+    "newTotal": "You now have {{total}} coins",
+    "next": "Next!",
+    "levelChip": "{{category}} Level {{level}}"
   }
 }

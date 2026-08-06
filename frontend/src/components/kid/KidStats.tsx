@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { type TaskCategory, CATEGORY_STYLE } from '../../constants/categories'
 import { useKidLevel } from '../../hooks/useKidLevel'
@@ -6,8 +6,6 @@ import { STAT_XP_PER_LEVEL } from '../../constants/xp'
 import LoadError from '../LoadError'
 import StatsLog from './StatsLog'
 import HowRewardsWork from './HowRewardsWork'
-import LevelUpModal from './LevelUpModal'
-import { levelUpsBetween, type LevelUp } from '../../utils/levelUps'
 
 const CATEGORIES: TaskCategory[] = ['health', 'learning', 'responsibility', 'creativity']
 
@@ -15,29 +13,9 @@ export default function KidStats() {
   const { t } = useTranslation()
   const [logOpen, setLogOpen] = useState(false)
   const [helpOpen, setHelpOpen] = useState(false)
-  // A queue, not a single value: finishing one task can raise two categories
-  // at once, and `break` after the first meant the kid was congratulated for
-  // one and never told about the other.
-  const [levelUps, setLevelUps] = useState<LevelUp[]>([])
 
   const { stats, pendingXpByCategory, isLoading, isError, refetch } = useKidLevel()
 
-  // Detect level-ups by comparing category levels before and after each refetch
-  const prevLevelsRef = useRef<Record<TaskCategory, number> | null>(null)
-
-  useEffect(() => {
-    if (isLoading) return
-    const currentLevels = Object.fromEntries(
-      CATEGORIES.map(cat => [cat, stats[cat].level])
-    ) as Record<TaskCategory, number>
-
-    if (prevLevelsRef.current) {
-      const gained = levelUpsBetween(prevLevelsRef.current, currentLevels)
-      if (gained.length > 0) setLevelUps(queue => [...queue, ...gained])
-    }
-
-    prevLevelsRef.current = currentLevels
-  }, [stats, isLoading])
 
   return (
     <>
@@ -166,16 +144,6 @@ export default function KidStats() {
 
       {helpOpen && <HowRewardsWork onClose={() => setHelpOpen(false)} />}
 
-      {/* One at a time; closing reveals the next so a double level-up is two
-          celebrations rather than one silently dropped. */}
-      {levelUps.length > 0 && (
-        <LevelUpModal
-          key={`${levelUps[0].category}-${levelUps[0].level}`}
-          category={levelUps[0].category}
-          level={levelUps[0].level}
-          onClose={() => setLevelUps(queue => queue.slice(1))}
-        />
-      )}
     </>
   )
 }
