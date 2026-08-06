@@ -1,5 +1,6 @@
 import { useTranslation } from 'react-i18next'
 import Modal from '../Modal'
+import { CATEGORY_STYLE } from '../../constants/categories'
 import {
   STAT_XP_PER_LEVEL,
   MAIN_XP_PER_LEVEL,
@@ -26,6 +27,11 @@ export default function HowRewardsWork({ onClose }: Props) {
   // the main level that follows is prestige with no coins attached.
   const steps = [
     { icon: '✅', text: t('rewards.stepTask') },
+    // Honesty sits right after the task step because that is when it is
+    // granted. Without it the rose bar is a mystery: it never appears on a
+    // task, never shows pending XP, and only moves when a grown-up confirms —
+    // which reads as broken rather than different.
+    { icon: CATEGORY_STYLE.honesty.icon, text: t('rewards.stepHonesty') },
     { icon: '⭐', text: t('rewards.stepCategory', { xp: STAT_XP_PER_LEVEL }) },
     { icon: '🪙', text: t('rewards.stepCoins', { coins: COINS_PER_STAT_LEVEL }) },
     { icon: '🚀', text: t('rewards.stepOverall', { xp: OVERALL_XP_PER_STAT_LEVEL, total: MAIN_XP_PER_LEVEL }) },

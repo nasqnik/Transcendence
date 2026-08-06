@@ -210,9 +210,12 @@ export async function signupKid(
  * message either way so nothing is revealed.
  */
 export async function requestPasswordReset(email: string): Promise<void> {
+  // skipAuth on both: this is reachable from settings while signed in, and a
+  // stale or wrong-role token attached to a public endpoint can only turn a
+  // working request into a 401.
   const results = await Promise.allSettled([
-    client.post('/auth/password-reset/', { email }),
-    client.post('/auth/kid/password-reset/', { email }),
+    client.post('/auth/password-reset/', { email }, { skipAuth: true }),
+    client.post('/auth/kid/password-reset/', { email }, { skipAuth: true }),
   ])
   // One success is enough: an address belongs to a parent or a kid, never both,
   // and the endpoint answers 200 either way — so a single rejection says
@@ -234,5 +237,7 @@ export async function confirmPasswordReset(
   const path = role === 'kid'
     ? '/auth/kid/password-reset/confirm/'
     : '/auth/password-reset/confirm/'
-  await client.post(path, { token, new_password: newPassword })
+  // skipAuth: the link is followed from an inbox, possibly on a device already
+  // signed in as someone else. The reset token in the body is the credential.
+  await client.post(path, { token, new_password: newPassword }, { skipAuth: true })
 }

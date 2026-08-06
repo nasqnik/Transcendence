@@ -1,13 +1,12 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { type TaskCategory, CATEGORY_STYLE } from '../../constants/categories'
+import { type StatCategory, CATEGORY_STYLE, STAT_CATEGORIES } from '../../constants/categories'
 import { useKidLevel } from '../../hooks/useKidLevel'
 import { STAT_XP_PER_LEVEL } from '../../constants/xp'
 import LoadError from '../LoadError'
 import StatsLog from './StatsLog'
 import HowRewardsWork from './HowRewardsWork'
 
-const CATEGORIES: TaskCategory[] = ['health', 'learning', 'responsibility', 'creativity']
 
 export default function KidStats() {
   const { t } = useTranslation()
@@ -51,7 +50,7 @@ export default function KidStats() {
 
         {isError ? <LoadError onRetry={refetch} /> : (
         <div className="flex flex-col gap-3">
-          {isLoading ? CATEGORIES.map(cat => (
+          {isLoading ? STAT_CATEGORIES.map(cat => (
             <div key={cat} className="animate-pulse rounded-2xl bg-gray-50 p-3">
               <div className="flex items-center gap-3 mb-2">
                 <div className="w-10 h-10 rounded-xl bg-gray-100 shrink-0" />
@@ -60,10 +59,15 @@ export default function KidStats() {
               </div>
               <div className="h-3 rounded-full bg-gray-100" />
             </div>
-          )) : CATEGORIES.map(category => {
+          )) : STAT_CATEGORIES.map(category => {
             const style      = CATEGORY_STYLE[category]
             const { level, xp_percent } = stats[category]
-            const pending = pendingXpByCategory[category] ?? 0
+            // Honesty has no pending state: it is granted at the moment a parent
+            // confirms, never sitting unconfirmed the way a task's own XP does.
+            // Checked rather than cast — the cast happened to work because the
+            // key is absent, which is the type split papered over rather than
+            // expressed.
+            const pending = category === 'honesty' ? 0 : pendingXpByCategory[category]
             // xp_percent and pending are both raw XP, so the clamp happens in
             // XP and only the widths are converted to percentages. Comparing
             // one against the other as a percentage mixed the two units.
@@ -74,9 +78,9 @@ export default function KidStats() {
             return (
               // Each category gets its own tinted card. The colours already
               // existed but only as a thin bar and a small icon, so the panel
-              // read as four grey rows — the flattest block on a page meant
-              // for a child. The tint is what makes a category recognisable
-              // at a glance before the label is even read.
+              // read as a stack of grey rows — the flattest block on a page
+              // meant for a child. The tint is what makes a category
+              // recognisable at a glance before the label is even read.
               <div key={category} className={`${style.bg} rounded-2xl p-3`}>
                 <div className="flex items-center gap-3 mb-2">
                   <div
@@ -86,7 +90,7 @@ export default function KidStats() {
                     {style.icon}
                   </div>
                   <span className="font-body text-sm font-semibold text-gray-900 flex-1">
-                    {t(`kidDash.categories.${category}` as `kidDash.categories.${TaskCategory}`)}
+                    {t(`kidDash.categories.${category}` as `kidDash.categories.${StatCategory}`)}
                   </span>
                   <span className={`font-body text-xs font-bold ${style.text}`}>
                     {t('kidDash.level', { level })}
@@ -94,7 +98,7 @@ export default function KidStats() {
                 </div>
                 <div
                   role="progressbar"
-                  aria-label={t(`kidDash.categories.${category}` as `kidDash.categories.${TaskCategory}`)}
+                  aria-label={t(`kidDash.categories.${category}` as `kidDash.categories.${StatCategory}`)}
                   aria-valuenow={xp_percent}
                   aria-valuemin={0}
                   aria-valuemax={STAT_XP_PER_LEVEL}

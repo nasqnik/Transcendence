@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { CATEGORY_STYLE, type TaskCategory } from '../../constants/categories'
+import { CATEGORY_STYLE, STAT_CATEGORIES, type StatCategory } from '../../constants/categories'
 import { MAIN_XP_PER_LEVEL, STAT_XP_PER_LEVEL } from '../../constants/xp'
 import { type Friend } from '../../api/social'
 import { useFocusOnSwap } from '../../hooks/useFocusOnSwap'
@@ -11,7 +11,6 @@ interface Props {
   disabled?: boolean
 }
 
-const CATEGORIES: TaskCategory[] = ['health', 'learning', 'responsibility', 'creativity']
 
 export default function FriendCard({ friend, onRemove, disabled }: Props) {
   const { t } = useTranslation()
@@ -24,10 +23,10 @@ export default function FriendCard({ friend, onRemove, disabled }: Props) {
   // wardrobe a friend actually bought is included.
   const avatarUrl = friend.avatar?.avatar_url ?? null
 
-  // All four categories, not just the ones the friend has started. A missing
-  // row means zero XP, and a card that lists three categories for one friend
-  // and four for another can't be read across at a glance — which is the whole
-  // point of looking someone up.
+  // Every category, not just the ones the friend has started. A missing row
+  // means zero XP, and a card that lists three for one friend and five for
+  // another can't be read across at a glance — which is the whole point of
+  // looking someone up.
   const byCategory = new Map(friend.stats.map(s => [s.category, s]))
   const overallPct = Math.min(100, (friend.overall_xp / MAIN_XP_PER_LEVEL) * 100)
 
@@ -145,12 +144,12 @@ export default function FriendCard({ friend, onRemove, disabled }: Props) {
       <div>
         <p className="font-body text-xs text-gray-700 mb-1">{t('friends.categoryXp')}</p>
         <ul className="flex flex-col gap-1">
-          {CATEGORIES.map(category => {
+          {STAT_CATEGORIES.map(category => {
             const style = CATEGORY_STYLE[category]
             const stat  = byCategory.get(category)
             const xp    = stat?.xp_percent ?? 0
             const level = stat?.level ?? 0
-            const name  = t(`kidDash.categories.${category}` as `kidDash.categories.${TaskCategory}`)
+            const name  = t(`kidDash.categories.${category}` as `kidDash.categories.${StatCategory}`)
 
             return (
               <li key={category} className="flex items-center gap-2">
