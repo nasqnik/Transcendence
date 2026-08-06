@@ -1,4 +1,4 @@
-FROM python:3.12-slim
+FROM python:3.12.13-slim
 
 # From project .env via docker-compose build.args (see DOCKER_UID / DOCKER_GID)
 ARG DOCKER_UID
