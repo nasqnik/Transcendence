@@ -2,6 +2,11 @@
 
 # Registration / uniqueness
 USERNAME_ALREADY_TAKEN = "This username is already taken."
+USERNAME_INVALID = (
+    "Username must be 3-20 characters, start with a letter, and use only "
+    "letters, numbers, and underscores."
+)
+USERNAME_UNAVAILABLE = "This username isn't available."
 EMAIL_ALREADY_REGISTERED = "This email is already registered."
 EMAIL_REGISTERED_AS_KID_ACCOUNT = "This email is registered as a kid account."
 KID_EMAIL_MUST_DIFFER_FROM_PARENT = "Kid email must be different from the parent email."
@@ -41,6 +46,12 @@ CURRENT_PASSWORD_INCORRECT = "Current password is incorrect."
 CURRENT_PASSWORD_REQUIRED = "Current password is required."
 EMAIL_SAME_AS_CURRENT = "This is already your current email."
 EMAIL_CHANGE_PENDING = "A confirmation email was sent to the new address."
+PASSWORD_RESET_REQUESTED = (
+    "If an account exists for that email, we sent a password reset link."
+)
+PASSWORD_RESET_SUCCESS = "Password updated. You can log in with your new password."
+PASSWORD_RESET_TOKEN_INVALID = "Invalid or expired reset link."
+PASSWORD_RESET_TOKEN_EXPIRED = "This reset link has expired. Request a new one."
 
 # Guardians
 MAX_GUARDIANS_REACHED = "This kid already has the maximum number of guardians."

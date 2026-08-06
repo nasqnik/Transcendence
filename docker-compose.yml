@@ -20,7 +20,7 @@ services:
   # ---------------------------------------------------------------------------
 
   db:
-    image: postgres:16
+    image: postgres:16.14
     container_name: django_db
     environment:
       POSTGRES_DB: ${DB_NAME}
@@ -36,7 +36,7 @@ services:
       retries: 10
 
   redis:
-    image: redis:7-alpine
+    image: redis:7.4.9-alpine
     container_name: redis_broker
     restart: unless-stopped
 

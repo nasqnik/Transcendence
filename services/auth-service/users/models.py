@@ -3,6 +3,8 @@ from django.contrib.auth.models import AbstractUser, UserManager
 from django.contrib.auth.hashers import check_password, make_password
 from uuid import uuid4
 
+from .validators import USERNAME_MAX_LENGTH
+
 # In Django, a model is a Python class that represents a database table
 
 class CustomUserManager(UserManager):
@@ -18,6 +20,9 @@ class CustomUser(AbstractUser):
     )
 
     id = models.UUIDField(primary_key=True, default=uuid4, editable=False)
+
+    # Narrowed from the 150 AbstractUser gives us, to match the shared rules.
+    username = models.CharField(max_length=USERNAME_MAX_LENGTH, unique=True)
 
     email = models.EmailField(unique=True)
 
@@ -47,6 +52,15 @@ class CustomUser(AbstractUser):
     )
 
     email_verification_sent_at = models.DateTimeField(null=True, blank=True)
+
+    password_reset_token = models.UUIDField(
+        null=True,
+        blank=True,
+        unique=True,
+        editable=False,
+    )
+
+    password_reset_sent_at = models.DateTimeField(null=True, blank=True)
 
     bio = models.CharField(max_length=300, blank=True, default="")
 
@@ -93,7 +107,7 @@ class Kid(models.Model):
 
     name = models.CharField(max_length=100)
 
-    username = models.CharField(max_length=100, unique=True)
+    username = models.CharField(max_length=USERNAME_MAX_LENGTH, unique=True)
 
     email = models.EmailField(unique=True, null=True, blank=True)
 
@@ -116,6 +130,15 @@ class Kid(models.Model):
     )
 
     email_verification_sent_at = models.DateTimeField(null=True, blank=True)
+
+    password_reset_token = models.UUIDField(
+        null=True,
+        blank=True,
+        unique=True,
+        editable=False,
+    )
+
+    password_reset_sent_at = models.DateTimeField(null=True, blank=True)
 
     password_hash = models.TextField(null=True, blank=True)
 
