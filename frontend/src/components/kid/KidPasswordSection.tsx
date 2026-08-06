@@ -6,6 +6,7 @@ import { getFieldErrors } from '../../api/errors'
 import { useFormErrors } from '../../hooks/useFormErrors'
 import FormField from '../FormField'
 import FormActions from '../FormActions'
+import { Link } from 'react-router-dom'
 
 interface Props {
   /** False for a Google-only account, which sets a first password instead. */
@@ -80,15 +81,26 @@ export default function KidPasswordSection({ hasPassword }: Props) {
     <form onSubmit={submit} className="flex flex-col gap-3">
       <p className="font-body text-sm font-semibold text-gray-700">{heading}</p>
       {hasPassword && (
-        <FormField
-          id="kid-current-password"
-          label={t('parentDash.currentPassword')}
-          type="password"
-          value={current}
-          autoComplete="current-password"
-          error={fieldErrors.current_password}
-          onChange={(e) => { setCurrent(e.target.value); clearFieldError('current_password') }}
-        />
+        <div className="flex flex-col gap-1">
+          <FormField
+            id="kid-current-password"
+            label={t('parentDash.currentPassword')}
+            type="password"
+            value={current}
+            autoComplete="current-password"
+            error={fieldErrors.current_password}
+            onChange={(e) => { setCurrent(e.target.value); clearFieldError('current_password') }}
+          />
+          {/* The way out of the one dead end this form has: changing a password
+              needs the old one, so a kid who has forgotten it cannot proceed
+              and has nothing else to try. */}
+          <Link
+            to="/forgot-password"
+            className="self-start min-h-11 -my-1 inline-flex items-center font-body text-xs font-semibold text-primary-600 hover:text-primary-700 focus-ring rounded"
+          >
+            {t('auth.forgotPassword')}
+          </Link>
+        </div>
       )}
       <FormField
         id="kid-new-password"

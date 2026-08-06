@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { postCompletion, type CompletionInfo } from '../api/tasks'
+import { PENDING_REWARDS_KEY } from './useRewards'
 import { type Task } from '../constants/categories'
 
 /** How long a ticked task stays on screen before it drops out of the list. */
@@ -59,6 +60,11 @@ export function useTaskCompletion(tasks: Task[]) {
       queryClient.invalidateQueries({ queryKey: ['completions'] })
       queryClient.invalidateQueries({ queryKey: ['gamificationStats'] })
       queryClient.invalidateQueries({ queryKey: ['gamificationProfile'] })
+      // task-service returns the award inline, but that response does not mark
+      // it seen — so it is also waiting in the pending feed. Refetching that is
+      // what triggers the celebration, keeping one source of truth rather than
+      // two paths that would have to agree on what was already shown.
+      queryClient.invalidateQueries({ queryKey: PENDING_REWARDS_KEY })
       const xp = tasks.find(t => t.id === taskId)?.xp_reward ?? 0
       if (xp > 0) {
         if (xpTimer.current) clearTimeout(xpTimer.current)

@@ -4,8 +4,7 @@ import {
   STAT_XP_PER_LEVEL,
   MAIN_XP_PER_LEVEL,
   OVERALL_XP_PER_STAT_LEVEL,
-  COINS_PER_MAIN_LEVEL,
-  STAT_LEVELS_PER_MAIN_LEVEL,
+  COINS_PER_STAT_LEVEL,
 } from '../../constants/xp'
 
 interface Props {
@@ -22,11 +21,14 @@ interface Props {
 export default function HowRewardsWork({ onClose }: Props) {
   const { t } = useTranslation()
 
+  // Coins come before the overall-XP step because that is the order they
+  // happen in now: the server pays out on the category level-up itself, and
+  // the main level that follows is prestige with no coins attached.
   const steps = [
     { icon: '✅', text: t('rewards.stepTask') },
     { icon: '⭐', text: t('rewards.stepCategory', { xp: STAT_XP_PER_LEVEL }) },
+    { icon: '🪙', text: t('rewards.stepCoins', { coins: COINS_PER_STAT_LEVEL }) },
     { icon: '🚀', text: t('rewards.stepOverall', { xp: OVERALL_XP_PER_STAT_LEVEL, total: MAIN_XP_PER_LEVEL }) },
-    { icon: '🪙', text: t('rewards.stepCoins', { coins: COINS_PER_MAIN_LEVEL }) },
     { icon: '🎨', text: t('rewards.stepShop') },
   ]
 
@@ -46,9 +48,8 @@ export default function HowRewardsWork({ onClose }: Props) {
           bullet points. */}
       <p id="rewards-summary" className="rounded-xl bg-primary-50 p-3 font-body text-sm text-primary-700">
         {t('rewards.summary', {
-          levels: STAT_LEVELS_PER_MAIN_LEVEL,
           xp: STAT_XP_PER_LEVEL,
-          coins: COINS_PER_MAIN_LEVEL,
+          coins: COINS_PER_STAT_LEVEL,
         })}
       </p>
 
