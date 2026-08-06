@@ -22,7 +22,7 @@ def notify_friend_request(*, recipient_id, sender_username):
     )
     label = (sender_username or '').strip() or 'Someone'
     try:
-        requests.post(
+        response = requests.post(
             url,
             json={
                 'recipient_id': str(recipient_id),
@@ -32,5 +32,6 @@ def notify_friend_request(*, recipient_id, sender_username):
             headers={'X-Internal-Token': settings.INTERNAL_SERVICE_TOKEN},
             timeout=NOTIFY_TIMEOUT_SECONDS,
         )
+        response.raise_for_status()
     except requests.RequestException as exc:
         logger.warning('Friend-request notify failed: %s', exc)

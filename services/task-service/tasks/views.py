@@ -315,7 +315,10 @@ class TaskCompletionReviewView(APIView):
         )
 
         if became_confirmed:
-            completion.reward_summary = push_completion_confirmed(completion)
+            completion.reward_summary = push_completion_confirmed(
+                completion,
+                award_honesty=True,
+            )
             notify_task_confirmed(completion)
         elif became_rejected:
             notify_task_rejected(completion)

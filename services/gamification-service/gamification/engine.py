@@ -1,9 +1,13 @@
+import logging
+
 import requests
 
 from .models import CATEGORY_CHOICES, KidProfile, KidStat, CompletionEvent
 from django.db import transaction
 from django.conf import settings
 from django.utils import timezone
+
+logger = logging.getLogger(__name__)
 
 
 def get_or_create_kid_profile(*, kid_id, for_update=False):
@@ -36,8 +40,9 @@ def build_reward_summary(completion_event, kid_profile=None):
 
 
 def notify_kid(kid_id, message):
+    """Best-effort level-up notify. HTTP errors are logged, never raised."""
     try:
-        requests.post(
+        response = requests.post(
             f"{settings.NOTIFICATION_INTERNAL_URL}/api/notification/internal/notify/",
             json={
                 'recipient_id': str(kid_id),
@@ -47,8 +52,9 @@ def notify_kid(kid_id, message):
             headers={'X-Internal-Token': settings.INTERNAL_SERVICE_TOKEN},
             timeout=3,
         )
-    except requests.RequestException:
-        pass
+        response.raise_for_status()
+    except requests.RequestException as exc:
+        logger.warning('Failed to notify kid %s of level-up: %s', kid_id, exc)
 
 
 def apply_completion(kid_id, completion_id, category_points):
@@ -106,7 +112,7 @@ def apply_completion(kid_id, completion_id, category_points):
         summary = build_reward_summary(completion_event, kid_profile)
 
     try:
-        requests.post(
+        response = requests.post(
             f"{settings.ANALYTICS_INTERNAL_URL}/api/analytics/internal/activity/",
             json={
                 'completion_id': str(completion_id),
@@ -116,8 +122,13 @@ def apply_completion(kid_id, completion_id, category_points):
             headers={'X-Internal-Token': settings.INTERNAL_SERVICE_TOKEN},
             timeout=3,
         )
-    except requests.RequestException:
-        pass
+        response.raise_for_status()
+    except requests.RequestException as exc:
+        logger.warning(
+            'Failed to push completion %s to analytics: %s',
+            completion_id,
+            exc,
+        )
 
     category_labels = dict(CATEGORY_CHOICES)
     for entry in stat_level_ups:
