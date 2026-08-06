@@ -13,7 +13,7 @@ SOCIAL_SERVICE := social-service
 
 SERVICES := $(AUTH_SERVICE) $(TASK_SERVICE) $(GAMIFICATION_SERVICE) $(ANALYTICS_SERVICE) $(NOTIFICATION_SERVICE) $(CATALOG_SERVICE) $(SOCIAL_SERVICE)
 
-.PHONY: all up down build build-all restart logs ps shell clean fclean ssl ssl-if-missing migrate init-dbs seed-dev \
+.PHONY: all up down build build-all restart logs ps shell clean fclean re ssl ssl-if-missing migrate init-dbs seed-dev \
         seed-dev-friend seed-custom-friend seed-dual-parent seed-parent-two-kids \
         seed-parent-many-kids \
         up-front build-front restart-front logs-front shell-front \
@@ -142,6 +142,10 @@ clean:
 
 fclean:
 	@bash scripts/docker-fclean.sh
+
+re:
+	$(MAKE) fclean
+	$(MAKE) all
 
 build:
 	docker compose build $(AUTH_SERVICE)
