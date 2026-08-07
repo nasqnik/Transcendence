@@ -11,7 +11,7 @@ import SignupParentPending from '../components/SignupParentPending'
 import SignupKidPending from '../components/SignupKidPending'
 import SignupKidGoogleProfile from '../components/SignupKidGoogleProfile'
 import { establishParentSession } from '../auth/session'
-import { registerParent, loginWithGoogle, signupKid, type KidSignupResponse } from '../api/auth'
+import { registerParent, signupParentWithGoogle, signupKid, type KidSignupResponse } from '../api/auth'
 import { getApiErrorKey, getFieldErrors } from '../api/errors'
 import { useFormErrors } from '../hooks/useFormErrors'
 import { usePageTitle } from '../hooks/usePageTitle'
@@ -188,7 +188,7 @@ export default function Signup() {
               if (role === 'parent') {
                 setIsLoading(true)
                 try {
-                  const tokens = await loginWithGoogle(credential)
+                  const tokens = await signupParentWithGoogle(credential)
                   establishParentSession(tokens, navigate)
                 } catch (err) {
                   setErrorKey(getApiErrorKey(err))

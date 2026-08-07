@@ -15,7 +15,12 @@ from .google_kids import (
     login_kid_from_google,
     signup_kid_from_google,
 )
-from .google_users import GoogleAccountConflictError, get_or_create_parent_from_google
+from .google_users import (
+    GoogleAccountConflictError,
+    GoogleUserNotFoundError,
+    login_parent_from_google,
+    signup_parent_from_google,
+)
 from .messages import (
     ACCOUNT_INACTIVE,
     CURRENT_PASSWORD_INCORRECT,
@@ -473,7 +478,19 @@ class InviteSecondParentSerializer(serializers.Serializer):
         return data
 
 
+def _parent_google_tokens(user):
+    if not user.is_active:
+        raise serializers.ValidationError(ACCOUNT_INACTIVE)
+    refresh = CustomTokenObtainPairSerializer.get_token(user)
+    return {
+        "refresh": str(refresh),
+        "access": str(refresh.access_token),
+    }
+
+
 class GoogleLoginSerializer(serializers.Serializer):
+    """Login only — never creates a parent. Unknown Google users must sign up."""
+
     id_token = serializers.CharField()
 
     def validate(self, attrs):
@@ -483,18 +500,32 @@ class GoogleLoginSerializer(serializers.Serializer):
             raise serializers.ValidationError(str(exc)) from exc
 
         try:
-            user = get_or_create_parent_from_google(idinfo)
+            user = login_parent_from_google(idinfo)
+        except GoogleUserNotFoundError as exc:
+            raise serializers.ValidationError(str(exc)) from exc
         except GoogleAccountConflictError as exc:
             raise serializers.ValidationError(str(exc)) from exc
 
-        if not user.is_active:
-            raise serializers.ValidationError(ACCOUNT_INACTIVE)
+        return _parent_google_tokens(user)
 
-        refresh = CustomTokenObtainPairSerializer.get_token(user)
-        return {
-            "refresh": str(refresh),
-            "access": str(refresh.access_token),
-        }
+
+class GoogleSignupSerializer(serializers.Serializer):
+    """Sign up (or return tokens if the Google parent already exists)."""
+
+    id_token = serializers.CharField()
+
+    def validate(self, attrs):
+        try:
+            idinfo = verify_google_id_token(attrs["id_token"])
+        except GoogleAuthError as exc:
+            raise serializers.ValidationError(str(exc)) from exc
+
+        try:
+            user = signup_parent_from_google(idinfo)
+        except GoogleAccountConflictError as exc:
+            raise serializers.ValidationError(str(exc)) from exc
+
+        return _parent_google_tokens(user)
 
 
 class ParentVerifyEmailSerializer(serializers.Serializer):

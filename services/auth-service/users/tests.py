@@ -515,7 +515,7 @@ class KidAuthAndSecondParentInviteTests(APITestCase):
 
 class GoogleLoginTests(APITestCase):
     @patch("users.serializers.verify_google_id_token")
-    def test_google_login_creates_parent_and_returns_jwt(self, mock_verify):
+    def test_google_login_rejects_unknown_user(self, mock_verify):
         mock_verify.return_value = {
             "sub": "google-sub-123",
             "email": "google.parent@example.com",
@@ -529,9 +529,52 @@ class GoogleLoginTests(APITestCase):
             format="json",
         )
 
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("Sign up instead", str(response.data))
+        self.assertFalse(
+            CustomUser.objects.filter(email="google.parent@example.com").exists()
+        )
+
+    @patch("users.serializers.verify_google_id_token")
+    def test_google_signup_creates_parent_and_returns_jwt(self, mock_verify):
+        mock_verify.return_value = {
+            "sub": "google-sub-123",
+            "email": "google.parent@example.com",
+            "email_verified": True,
+            "iss": "accounts.google.com",
+        }
+
+        response = self.client.post(
+            "/api/auth/google/signup/",
+            {"id_token": "fake-google-token"},
+            format="json",
+        )
+
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         user = CustomUser.objects.get(email="google.parent@example.com")
         self.assertTrue(user.email_verified)
+
+    @patch("users.serializers.verify_google_id_token")
+    def test_google_login_works_after_signup(self, mock_verify):
+        mock_verify.return_value = {
+            "sub": "google-sub-123",
+            "email": "google.parent@example.com",
+            "email_verified": True,
+            "iss": "accounts.google.com",
+        }
+        self.client.post(
+            "/api/auth/google/signup/",
+            {"id_token": "fake-google-token"},
+            format="json",
+        )
+
+        response = self.client.post(
+            "/api/auth/google/",
+            {"id_token": "fake-google-token"},
+            format="json",
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn("access", response.data)
 
     @patch("users.serializers.verify_google_id_token")
     def test_google_login_links_existing_email_user(self, mock_verify):
@@ -716,7 +759,7 @@ class KidGoogleAuthTests(APITestCase):
         }
 
         response = self.client.post(
-            "/api/auth/google/",
+            "/api/auth/google/signup/",
             {"id_token": "fake-google-token"},
             format="json",
         )
@@ -1310,7 +1353,7 @@ class UsernameValidationTests(APITestCase):
 class GoogleGeneratedUsernameTests(APITestCase):
     """Google hands us an email local part, which rarely obeys the rules."""
 
-    def _login(self, mock_verify, email, sub):
+    def _signup(self, mock_verify, email, sub):
         mock_verify.return_value = {
             "sub": sub,
             "email": email,
@@ -1318,34 +1361,34 @@ class GoogleGeneratedUsernameTests(APITestCase):
             "iss": "accounts.google.com",
         }
         response = self.client.post(
-            "/api/auth/google/", {"id_token": "fake-token"}, format="json"
+            "/api/auth/google/signup/", {"id_token": "fake-token"}, format="json"
         )
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         return CustomUser.objects.get(email=email)
 
     @patch("users.serializers.verify_google_id_token")
     def test_dots_and_plus_are_stripped(self, mock_verify):
-        user = self._login(mock_verify, "mariam.hassan+news@gmail.com", "sub-dots")
+        user = self._signup(mock_verify, "mariam.hassan+news@gmail.com", "sub-dots")
         self.assertEqual(user.username, "mariamhassannews")
 
     @patch("users.serializers.verify_google_id_token")
     def test_leading_digits_are_dropped(self, mock_verify):
-        user = self._login(mock_verify, "123abc@example.com", "sub-digits")
+        user = self._signup(mock_verify, "123abc@example.com", "sub-digits")
         self.assertEqual(user.username, "abc")
 
     @patch("users.serializers.verify_google_id_token")
     def test_unusable_local_part_falls_back(self, mock_verify):
-        user = self._login(mock_verify, "123.456@example.com", "sub-numeric")
+        user = self._signup(mock_verify, "123.456@example.com", "sub-numeric")
         self.assertEqual(user.username, "player")
 
     @patch("users.serializers.verify_google_id_token")
     def test_long_local_part_is_truncated(self, mock_verify):
-        user = self._login(mock_verify, f"{'a' * 40}@example.com", "sub-long")
+        user = self._signup(mock_verify, f"{'a' * 40}@example.com", "sub-long")
         self.assertEqual(user.username, "a" * 20)
 
     @patch("users.serializers.verify_google_id_token")
     def test_reserved_local_part_gets_a_suffix(self, mock_verify):
-        user = self._login(mock_verify, "admin@example.com", "sub-admin")
+        user = self._signup(mock_verify, "admin@example.com", "sub-admin")
         self.assertEqual(user.username, "admin_1")
 
     @patch("users.serializers.verify_google_id_token")
@@ -1356,7 +1399,7 @@ class GoogleGeneratedUsernameTests(APITestCase):
             password="secure-pass-1",
             role="parent",
         )
-        user = self._login(mock_verify, f"{'b' * 30}@example.com", "sub-collide")
+        user = self._signup(mock_verify, f"{'b' * 30}@example.com", "sub-collide")
         self.assertEqual(user.username, f"{'b' * 18}_1")
         self.assertLessEqual(len(user.username), 20)
 
