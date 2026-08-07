@@ -16,7 +16,7 @@ export default function KidFriends() {
   const {
     friends, requests, isLoading,
     accept, decline, remove, sendRequest,
-    isBusy, actionError, dismissError, isError, refetch,
+    isBusy, actionError, dismissError, isError, requestsError, refetch,
   } = useFriends()
 
   // Live online dots, and it marks this kid online for their friends too.
@@ -75,6 +75,11 @@ export default function KidFriends() {
       aria-labelledby="friends-heading"
       className="flex-1 w-full flex flex-col gap-4 sm:gap-6 p-4 sm:p-6 overflow-auto"
     >
+      {/* The page heading comes first even though Friend Requests is drawn
+          above it: an h2 preceding the h1 leaves the document outline starting
+          mid-tree. Visually hidden so the requests panel keeps the top slot. */}
+      <h1 id="friends-heading" className="sr-only">{t('friends.title')}</h1>
+
       {/* Dismissible: this banner has no timer, so without a way to close it
           it sat on the page for the rest of the session. */}
       {actionError && (
@@ -95,7 +100,21 @@ export default function KidFriends() {
           requests are the one thing on this page waiting on the kid, and they
           disappear once answered. Below the friends they were a footnote to a
           list the kid scrolls past. */}
-      {!isLoading && !isError && requests.length > 0 && (
+      {/* Gated on the requests fetch alone. When this checked the combined
+          error, a failed friends list also hid requests that had loaded fine —
+          hiding the only thing on the page waiting on the kid because a
+          different request failed. */}
+      {/* Its own retry, not silence. Splitting the error states for F3 fixed
+          requests being hidden by a failed friends list, but left the mirror
+          image: a failed requests fetch just vanished, so a kid waiting on an
+          invitation saw nothing and had nothing to retry. */}
+      {!isLoading && requestsError && (
+        <div className="bg-white rounded-2xl p-4">
+          <LoadError variant="inline" onRetry={refetch} />
+        </div>
+      )}
+
+      {!isLoading && !requestsError && requests.length > 0 && (
         <section
           aria-labelledby="requests-heading"
           className="bg-white rounded-2xl p-4 sm:p-5 border-2 border-primary-100"
@@ -165,9 +184,9 @@ export default function KidFriends() {
           merging the two boxes quietly lost it. Shown with no friends yet too
           — the empty state tells the kid to search. */}
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 id="friends-heading" className="font-heading text-2xl font-bold text-gray-900">
+        <h2 className="font-heading text-2xl font-bold text-gray-900">
           {t('friends.title')}
-        </h1>
+        </h2>
         {!isLoading && (
           <div className="w-full sm:w-auto sm:min-w-72">
             <label htmlFor={filterId} className="sr-only">{t('friends.filterLabel')}</label>

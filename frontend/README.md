@@ -1,520 +1,421 @@
 # KiddoPath — Frontend
 
-A gamified task and learning app for children aged 8–12. This document covers everything you need to know to work on the frontend.
+A gamified task app for children aged 8–12. React 19 + TypeScript single-page
+app, served by nginx at **https://localhost/**, talking to seven Django
+microservices under `/api/`.
+
+Two roles, **kid** and **parent**, decided by the JWT. The same bundle serves
+both; routing and layout branch on `role`.
+
+Backend contracts live in [`docs/backend/services_api_references/`](../docs/backend/services_api_references/).
+Interactive docs per service are listed in the [root Readme](../Readme.md).
 
 ---
 
-## Current status
+## Running
 
-| Area | Status |
-|------|--------|
-| Project scaffolding | ✅ Done |
-| Tailwind design tokens (colors, fonts) | ✅ Done |
-| i18n — EN / RU / AR + RTL | ✅ Done |
-| React Router (layout routes + guards) | ✅ Done |
-| Unit tests (Vitest) | ✅ Done |
-| Zustand auth store | ✅ Done |
-| Axios client with auth token | ✅ Done |
-| Error boundary | ✅ Done |
-| Landing page | ✅ Done |
-| Login page | ✅ Done |
-| Signup page (parent + kid) | ✅ Done |
-| Accept-invite page | ✅ Done |
-| Parent dashboard (placeholder) | ✅ Done |
-| Kid dashboard — layout + shared KidLayout | ✅ Done |
-| Kid dashboard — TodaysTasks wired to API | ✅ Done |
-| Kid dashboard — Add New Task (AI classification) | ✅ Done |
-| Kid dashboard — TasksAll modal + status + expand | ✅ Done |
-| Kid dashboard — rejected tasks with parent note | ✅ Done |
-| Kid dashboard — KidStats — XP bars + levels | ✅ Done |
-| Kid dashboard — StatsLog (points history) | ✅ Done |
-| Kid dashboard — Level-up celebration modal | ✅ Done |
-| Kid dashboard — Overall level + streak in topbar | ✅ Done |
-| Kid dashboard — KidSettings (category visibility) | ✅ Done |
-| Kid dashboard — Invite parent (moved to settings) | ✅ Done |
-| Forgot password | — Not planned (no route) |
-| Character creation | 🔲 Placeholder only |
-| Parent dashboard — pending approvals | 🔲 Not started |
-| Username / avatar change | 🔲 Needs backend |
-| Rewards system | 🔲 Not started |
-| Avatar builder | 🔲 Not started |
-| Google sign-in (login, signup, accept-invite) | ✅ Done |
+The frontend is a container in the compose stack — it is not run standalone.
+
+```bash
+make all          # start everything + migrate
+```
+
+Then open **https://localhost/** and accept the self-signed certificate.
+
+> `make all` seeds the **catalog only** — it creates no accounts. After a
+> `make re` or `make fclean` the database has zero users. Run `make seed-dev`
+> (or `seed-dev-friend` / `seed-dual-parent`) before testing anything.
+
+| Command | What it does |
+|---|---|
+| `make up-front` | Start just the frontend container |
+| `make build-front` | Rebuild the frontend image (needed after adding a package) |
+| `make logs-front` | Tail the Vite dev server |
+| `make shell-front` | Shell into the container |
+
+### Tests
+
+```bash
+npm run test:run    # 300 tests across 42 files
+npm run lint
+npx tsc -b          # typecheck
+```
+
+Tests run on the host, not in Docker. `npm install` locally first.
+
+### Adding a package
+
+Add it to `package.json`, then rebuild the image so it is baked in —
+installing inside a running container does not survive a restart.
+
+```bash
+make build-front
+```
 
 ---
 
-## Tech stack
+## Architecture
 
 | Tool | Purpose |
-|------|---------|
-| React 19 + TypeScript | UI framework |
+|---|---|
+| React 19 + TypeScript | UI |
 | Vite | Dev server + bundler |
-| Tailwind CSS v4 | Styling |
-| React Router v7 | Routing (layout routes + `<Outlet />`) |
-| Zustand | Global auth state |
-| TanStack Query | Data fetching + caching |
-| Axios | HTTP client |
-| i18next + react-i18next | Internationalization |
-
----
-
-## Running the full stack
-
-The frontend runs behind nginx. Always use **https://localhost** in the browser — not `http://localhost:5173`. API calls are blocked by CORS when accessed directly from the Vite port.
-
-```bash
-# First time setup
-cp .env.example .env       # then set DOCKER_UID / DOCKER_GID (run: id -u && id -g)
-make all                   # builds everything + runs DB migrations
-```
-
-Open **https://localhost** — accept the self-signed certificate warning once.
-
-```bash
-# Everyday commands
-make all                   # start everything
-make down                  # stop everything
-make logs-front            # frontend logs
-make logs                  # backend logs
-make shell-front           # shell inside frontend container
-```
-
-### Frontend tests
-
-```bash
-cd frontend
-npm run test:run    # single run (CI)
-npm test            # watch mode
-```
-
----
-
-### Adding new npm packages
-
-Packages install inside Docker — you can't just run `npm install` locally.
-
-```bash
-# 1. Add the package to frontend/package.json manually, or:
-docker compose exec frontend npm install <package-name>
-
-# 2. Rebuild the container to bake the new package into the image
-make fclean && make build-front && make up-front
-```
-
----
-
-## Auth flow
-
-Two account types — **parent** and **kid** — with separate API endpoints.
-
-**Route groups in `App.tsx`:**
-- **`GuestRoute`** — `/`, `/login`, `/signup` (guests only; logged-in users go to their dashboard)
-- **Open** — `/accept-invite`, `/verify-email`, `/kid/verify-email` (usable while logged in or out)
-- **`ProtectedRoute role="kid"`** — `/dashboard`, `/tasks`, `/friends`, `/avatar`, `/settings`
-- **`ProtectedRoute role="parent"`** — `/parent/dashboard`, `/parent/profile`
-- **`*`** — `NotFound` page
-
-### Parent signup (password)
-1. `POST /auth/register/` → account created (email not verified yet)
-2. UI shows “check your email” (no auto-login)
-3. Parent opens `/verify-email?token=...` → `POST /auth/verify-email/`
-4. Parent logs in at `/login`
-
-Parent signup via **Google** on `/signup` logs in immediately and goes to `/parent/dashboard`.
-
-### Kid signup
-1. `POST /kids/signup/` or `POST /kids/signup/google/` → `awaiting_primary_parent`
-2. Kid verifies email (password path) via `/kid/verify-email?token=...`
-3. Backend emails parent → `/accept-invite?token=...`
-4. Kid **cannot log in** until a parent accepts
-
-### Parent accepts invite
-1. Parent opens `/accept-invite?token=<uuid>`
-2. If logged in as parent with matching email → auto-accept
-3. Else: password and/or Google on the invite page → accept
-4. New parent: register → verify email → return to invite link
-5. Kid becomes `active`
-
-`sessionStorage` keeps the invite token across parent email verification (same browser). Re-open the invite email if needed on another device.
-
-### Login
-Single form; frontend tries **parent** first, then **kid** (password and Google via `auth/loginFlow.ts`):
-- Parent success → `/parent/dashboard`
-- Kid success → `/dashboard`
-- Kid not active yet → waiting-for-parent screen
-
-Password reset is not planned for the current scope.
-
-### Logout
-Clears Zustand persist → redirects to `/`.
-
-### Manual E2E test checklist
-
-Run with Docker stack up, mail catcher or backend logs for links, and `VITE_GOOGLE_CLIENT_ID` if testing Google.
-
-**English (LTR) — happy path**
-- [ ] Child signup (password) → kid verify email → waiting UI
-- [ ] Parent accept invite (password, new account) → verify → return to invite → success → dashboard
-- [ ] Child login → `/dashboard`
-- [ ] Parent signup (password) → verify → login → `/parent/dashboard`
-- [ ] Logout from dashboard returns home
-
-**Arabic (RTL)**
-- [ ] Switch language to AR on login/signup/invite; layout mirrors, labels readable
-- [ ] Email fields type left-to-right correctly
-- [ ] Submit forms still succeed
-
-**Keyboard & screen reader (spot check)**
-- [ ] Tab through login form, Google button, language switcher
-- [ ] Signup: choose role with Tab + Space on radio labels; form fields reachable
-- [ ] Submit empty form → field errors announced (`role="alert"`)
-- [ ] Invite loading → success or error updates announced (`aria-live`)
-
-**Edge cases**
-- [ ] Unknown URL (e.g. `/nope`) → 404 page with “Back to home”
-- [ ] Hard-refresh `/login` or `/parent/dashboard` while logged in → brief spinner, no login/dashboard flash
-- [ ] Open invite link twice after accept → success + “Log in” if not signed in
-- [ ] Wrong invite token → error, no stale “return to invite” from verify
-- [ ] Signup: fill parent fields, switch to child → fields cleared
-- [ ] Logged-in kid opens invite link → parent-only error
-
----
-
-## Folder structure
+| Tailwind CSS v4 | Styling (tokens in `src/index.css` under `@theme`) |
+| React Router v7 | Routing — layout routes + `<Outlet />` |
+| Zustand | Auth state, persisted to `localStorage` |
+| TanStack Query | Server state, caching, invalidation |
+| Axios | HTTP, with token attach + refresh interceptors |
+| i18next | EN / RU / AR with RTL |
+| Recharts | Parent insight charts |
 
 ```
 src/
-├── api/
-│   ├── client.ts       ← axios instance (auto-attaches token to every request)
-│   └── auth.ts         ← all auth API functions (login, signup, invite...)
-├── auth/
-│   ├── session.ts      ← JWT → auth store (+ optional navigate)
-│   └── loginFlow.ts    ← parent-then-kid login (password + Google)
-├── api/
-│   ├── client.ts       ← axios instance (auto-attaches token)
-│   ├── auth.ts         ← all auth API functions
-│   ├── errors.ts       ← API error key parsing
-│   └── tasks.ts        ← task + completion + category settings API
-├── components/
-│   ├── AuthHydrationFallback.tsx
-│   ├── AuthMessageLayout.tsx
-│   ├── GoogleSignInSection.tsx
-│   ├── GuestRoute.tsx
-│   ├── ProtectedRoute.tsx
-│   ├── Button.tsx
-│   ├── Input.tsx
-│   ├── FormField.tsx
-│   ├── LanguageSwitcher.tsx
-│   ├── ErrorBoundary.tsx
-│   └── kid/                        ← all kid dashboard components
-│       ├── KidLayout.tsx           ← shared sidebar + topbar shell (Outlet)
-│       ├── KidSidebar.tsx          ← left nav
-│       ├── KidTopbar.tsx           ← greeting + overall level + streak + user menu
-│       ├── KidUserMenu.tsx         ← avatar dropdown (logout)
-│       ├── TodaysTasks.tsx         ← task list; pending/done/rejected/empty states
-│       ├── TasksAll.tsx            ← "View all" modal; status icons + expand
-│       ├── AddTaskModal.tsx        ← add task form with AI classification
-│       ├── KidStats.tsx            ← XP bars per category + level badges
-│       ├── StatsLog.tsx            ← points history modal
-│       └── LevelUpModal.tsx        ← level-up celebration overlay
-├── constants/
-│   └── categories.ts               ← TaskCategory, Task, Completion types + CATEGORY_STYLE
-├── hooks/
-│   ├── useAuthHydrated.ts
-│   ├── useFormErrors.ts
-│   ├── useKidLevel.ts              ← XP/level/streak computed from TanStack cache
-│   └── usePageTitle.ts
-│   ├── useAuthHydrated.ts  ← true after Zustand rehydrates from localStorage
-│   ├── useFormErrors.ts
-│   └── usePageTitle.ts
-├── i18n/
-│   ├── config.ts
-│   └── locales/
-│       ├── en.json
-│       ├── ru.json
-│       └── ar.json
-├── pages/
-│   ├── Landing.tsx
-│   ├── Login.tsx
-│   ├── Signup.tsx
-│   ├── AcceptInvite.tsx
-│   ├── VerifyEmail.tsx
-│   ├── VerifyKidEmail.tsx
-│   ├── NotFound.tsx
-│   ├── ChildDashboard.tsx   ← main content only; layout via KidLayout
-│   ├── KidSettings.tsx      ← category visibility + invite parent
-│   ├── ParentDashboard.tsx  ← placeholder
-│   └── ParentProfile.tsx
-├── store/
-│   └── authStore.ts    ← Zustand store (persists to localStorage)
-├── tests/              ← Vitest (api, auth, components, pages, utils)
-├── App.tsx             ← routes, startup token verify, `<html>` lang/dir
-├── main.tsx            ← entry point, providers
-└── index.css           ← Tailwind + design tokens
+├── api/          one file per backend service, all through client.ts
+├── auth/         session + login orchestration
+├── components/   shared, then kid/ and parent/
+├── constants/    categories, XP economy, contact
+├── hooks/        data hooks and a11y primitives
+├── i18n/         config + en/ru/ar locales
+├── pages/        one per route
+├── store/        authStore
+├── utils/        pure helpers (validation, dates, ws, tokens)
+└── tests/        Vitest, mirrors the tree above
 ```
 
 ---
 
-## Tailwind design tokens
+## Routes
 
-Colors and fonts are defined once in `src/index.css` under `@theme`. Use them as regular Tailwind classes.
+Defined in `src/App.tsx`. Guards are **layout routes** — they render
+`<Outlet />` rather than wrapping each page.
 
-### Colors
+| Path | Access | Page | Purpose |
+|---|---|---|---|
+| `/` | guest | `Landing` | Marketing page |
+| `/login` | guest | `Login` | Parent or kid login |
+| `/signup` | guest | `Signup` | Parent or kid signup |
+| `/forgot-password` | open | `ForgotPassword` | Request a reset link |
+| `/reset-password` | open | `ResetPassword role="parent"` | Set a new password |
+| `/kid/reset-password` | open | `ResetPassword role="kid"` | Same, kid endpoints |
+| `/accept-invite` | open | `AcceptInvite` | Parent accepts a guardian invite |
+| `/verify-email` | open | `VerifyEmail` | Parent email verification |
+| `/kid/verify-email` | open | `VerifyKidEmail` | Kid email verification |
+| `/verify-email-change` | open | `VerifyEmailChange` | Confirm an email change |
+| `/privacy`, `/terms` | open | `PrivacyPolicy`, `TermsOfService` | Legal |
+| `/dashboard` | kid | `ChildDashboard` | Tasks, stats, streak |
+| `/tasks` | kid | `KidTasks` | Full task list |
+| `/friends` | kid | `KidFriends` | Friends + requests + search |
+| `/avatar` | kid | `AvatarStudio` | Buy and equip items with coins |
+| `/settings` | kid | `KidSettings` | Visibility, password, email, guardians |
+| `/parent/dashboard` | parent | `ParentDashboard` | Kid overview |
+| `/parent/approvals` | parent | `ParentApprovals` | Confirm or reject completions |
+| `/parent/profile` | parent | `ParentProfile` | Profile + avatar |
+| `/parent/settings` | parent | `ParentSettings` | Account settings |
+| `*` | — | `NotFound` | 404 |
 
-| Token | Class example | Usage |
-|-------|--------------|-------|
-| `primary` | `bg-primary-500` | Main brand color (purple) |
-| `teal` | `text-teal-500` | Success, positive actions |
-| `amber` | `bg-amber-500` | Warnings, XP, rewards |
-| `danger` | `text-danger-500` | Errors, destructive actions |
-| `gray` | `bg-gray-50` | Backgrounds, text, borders |
+Kid routes render inside `KidLayout`, parent routes inside `ParentLayout`
+(sidebar on desktop, bottom nav on mobile).
 
-Each color has shades: `50`, `100`, `500`, `600`, `700`.
+**Why the reset and legal routes are `open`, not `GuestRoute`:** a signed-in
+user following a reset link from their mail, or a footer link to the terms,
+should reach the page. `GuestRoute` would bounce them to their dashboard.
 
-### Fonts
-
-```tsx
-<h1 className="font-heading">KiddoPath</h1>  // Fredoka
-<p className="font-body">Hello</p>            // Nunito
-```
-
-### RTL padding — always use logical properties
-
-```tsx
-// ✅ correct — works in both LTR and RTL
-<div className="ps-4 pe-4">
-
-// ❌ wrong — breaks in RTL
-<div className="pl-4 pr-4">
-```
-
----
-
-## Internationalization (i18n)
-
-Every user-facing string must go through `t()`. Never hardcode text.
-
-```tsx
-import { useTranslation } from 'react-i18next'
-
-export default function MyPage() {
-  const { t } = useTranslation()
-  return <button>{t('auth.login')}</button>
-}
-```
-
-### Adding a new string
-
-Add the key to **all three** locale files, then use it:
-
-```json
-// en.json  →  "mySection": { "myKey": "Hello" }
-// ru.json  →  "mySection": { "myKey": "Привет" }
-// ar.json  →  "mySection": { "myKey": "مرحبا" }
-```
-
-```tsx
-t('mySection.myKey')
-```
-
-### Interpolation (variables inside strings)
-
-```json
-{ "greeting": "Hello, {{name}}!" }
-```
-```tsx
-t('greeting', { name: 'Ana' })  // → "Hello, Ana!"
-```
+`/reset-password` and `/kid/reset-password` render the same component with a
+`role` prop — only the token endpoints differ.
 
 ---
 
-## React Router
+## Auth
 
-Routes live in `src/App.tsx`. Guards are **layout routes**: they render `<Outlet />` for child routes instead of wrapping each page in JSX.
+### Store
 
-`App` does **not** subscribe to the auth store (only reads `getState()` once for startup token verify). Guards and pages subscribe where needed.
-
-### Route map
-
-| Group | Paths | Guard |
-|-------|--------|--------|
-| Guest | `/`, `/login`, `/signup` | `GuestRoute` |
-| Open | `/accept-invite`, `/verify-email`, `/kid/verify-email` | — |
-| Kid | `/dashboard`, `/tasks`, `/friends`, `/avatar`, `/settings` | `ProtectedRoute role="kid"` |
-| Parent | `/parent/dashboard`, `/parent/profile` | `ProtectedRoute role="parent"` |
-| Fallback | anything else | `NotFound` |
-
-### Adding a new page
-
-```tsx
-// 1. Create src/pages/MyPage.tsx
-export default function MyPage() {
-  return <div>My Page</div>
-}
-
-// 2. Public page (anyone)
-import MyPage from './pages/MyPage'
-<Route path="/my-page" element={<MyPage />} />
-
-// 3. Guest-only (login/signup style)
-<Route element={<GuestRoute />}>
-  <Route path="/my-page" element={<MyPage />} />
-</Route>
-
-// 4. Kid-only (add inside existing kid group)
-<Route element={<ProtectedRoute role="kid" />}>
-  <Route path="/my-page" element={<MyPage />} />
-</Route>
-```
-
-### Navigating between pages
-
-```tsx
-import { Link, useNavigate } from 'react-router-dom'
-
-<Link to="/login">Go to login</Link>
-
-const navigate = useNavigate()
-navigate('/dashboard')
-```
-
----
-
-## Route guards
-
-`ProtectedRoute` and `GuestRoute` use `useAuthHydrated()` and show `AuthHydrationFallback` until Zustand has rehydrated from `localStorage` (avoids redirect flash on refresh).
-
-| Guard | When hydrated |
-|--------|----------------|
-| **GuestRoute** | Logged in → dashboard for role; else → `<Outlet />` (child page) |
-| **ProtectedRoute** | Not logged in → `/login`; wrong role → other dashboard; else → `<Outlet />` |
-
-```tsx
-// App.tsx — layout route pattern (not children props)
-<Route element={<GuestRoute />}>
-  <Route path="/login" element={<Login />} />
-</Route>
-
-<Route element={<ProtectedRoute role="kid" />}>
-  <Route path="/dashboard" element={<ChildDashboard />} />
-</Route>
-```
-
-### RTL / `lang` on `<html>`
-
-`App.tsx` sets `document.documentElement.lang` and `.dir` in `useLayoutEffect` from `i18n` (no extra wrapper div). Field-level `dir="ltr"` is still used for email/username inputs in RTL locales.
-
----
-
-## Zustand auth store
-
-`src/store/authStore.ts` holds the global auth state. It persists to `localStorage` so the user stays logged in after a page refresh.
-
-### User shape
+`src/store/authStore.ts` — Zustand, persisted to `localStorage` under the key
+`auth`, so a refresh keeps the session.
 
 ```ts
 interface User {
   id: string
   username: string
-  email?: string   // parents have email, kids don't
+  email?: string          // parents have one, kids may not
   role: 'parent' | 'kid'
 }
 ```
 
-### Reading state
+### Guards and the hydration flash
 
-```tsx
-import useAuthStore from '../store/authStore'
+`ProtectedRoute` and `GuestRoute` call `useAuthHydrated()` and render
+`AuthHydrationFallback` until Zustand has rehydrated. Without this, a hard
+refresh on `/dashboard` briefly shows the login page before the store loads.
 
-const { currentUser, isAuthenticated, logout } = useAuthStore()
-```
+| Guard | Once hydrated |
+|---|---|
+| `GuestRoute` | Logged in → role's dashboard; else → `<Outlet />` |
+| `ProtectedRoute` | Not logged in → `/login`; wrong role → other dashboard; else → `<Outlet />` |
 
-### Logging in (called after a successful API response)
+`App` deliberately does **not** subscribe to the auth store — it reads
+`getState()` once for the startup token verify. Guards and pages subscribe
+where they actually need to re-render.
 
-```tsx
-const login = useAuthStore(state => state.login)
+### Login
 
-login(
-  { id: 'uuid', username: 'ana', email: 'ana@email.com', role: 'parent' },
-  'access-token',
-  'refresh-token',
-)
-```
+`src/auth/loginFlow.ts` handles that one form serves both roles. A single
+email/username field cannot say which it is, so the parent endpoint is tried
+and the kid endpoint is the fallback — for both password and Google. The
+combined failure is mapped by `dualLoginErrorKey` so the user sees one honest
+message rather than whichever call failed last.
 
-### Logging out
+`src/auth/session.ts` turns a token pair into store state.
 
-```tsx
-const logout = useAuthStore(state => state.logout)
-logout()
-navigate('/')
-```
+### Password reset
+
+Both the parent and kid request endpoints are called, for the same reason: an
+address cannot say which kind of account it belongs to, and asking would leak
+which accounts exist. The request only reports failure when **every** call
+failed, so an offline device is never told to go check mail that never left.
 
 ---
 
-## API layer
+## Data layer
 
 ### `src/api/client.ts`
 
-A pre-configured axios instance that:
-- Points to `VITE_API_URL` (set to `https://localhost/api` via docker-compose)
-- Automatically attaches `Authorization: Bearer <token>` to every request
+The single axios instance. Points at `VITE_API_URL` (`https://localhost/api`).
+Never call `fetch()` directly.
 
-Never use `fetch()` directly — always use this client.
+- **Request interceptor** attaches `Authorization: Bearer <token>`, unless the
+  call opts out with `skipAuth`.
+- **Response interceptor** refreshes on `401` and replays the request. Login
+  and register paths are excluded — a `401` there means bad credentials, not an
+  expired session, and refreshing would swallow the real error.
 
-### `src/api/auth.ts`
+### API files map to backend services
 
-All auth-related API calls live here. Functions available:
+| File | Service | Covers |
+|---|---|---|
+| `auth.ts` | auth | login, signup, Google, invites, verification, password reset |
+| `account.ts` | auth | parent profile, username, password, email change, deletion |
+| `kidAccount.ts` | auth | kid profile reads and updates |
+| `tasks.ts` | task | tasks, completions, category visibility, AI streaming |
+| `gamification.ts` | gamification | stats, profile, pending rewards |
+| `social.ts` | social | friends, requests, search |
+| `notifications.ts` | notification | list and mark-read |
+| `catalog.ts` | catalog | shop items, base characters, purchase, equip |
+| `avatar.ts` | auth | parent avatar upload |
+| `parent.ts` | several | parent-side reads across task, gamification, analytics |
+| `errors.ts` | — | maps backend error keys to translated messages |
 
-| Function | Endpoint | Description |
-|----------|----------|-------------|
-| `loginParent(email, password)` | `POST /auth/token/` | Parent login → tokens |
-| `loginKid(username, password)` | `POST /auth/kid/token/` | Kid login → tokens |
-| `registerParent(email, username, password)` | `POST /auth/register/` | Parent signup |
-| `signupKid(name, username, password, parent_email)` | `POST /kids/signup/` | Kid signup |
-| `getInvitation(token)` | `GET /guardian-invitations/{token}/` | Fetch invite details |
-| `acceptInvitation(token)` | `POST /guardian-invitations/accept/` | Accept invite (parent JWT required) |
-| `decodeJWT(token)` | — | Decode JWT payload (no library needed) |
-| `parseApiError(error)` | — | Turn backend error into a plain string |
+### Query keys
 
-### Adding a new API file
+TanStack Query keys are the cache contract — invalidate these, not ad-hoc
+refetches.
+
+| Key | Holds |
+|---|---|
+| `['tasks']` | Kid's task list |
+| `['completions']` | Kid's completions (drives streak and pending XP) |
+| `['gamificationStats']` | Per-category level and XP |
+| `['gamificationProfile']` | Main level, overall XP, coin balance |
+| `['categorySettings']` | Which categories the parent can see |
+| `['me']` / `['kidMe']` | Current parent / kid profile |
+| `['friendRequests']` | Incoming and outgoing requests |
+| `['kidSearch', query]` | Debounced friend search |
+| `['kidAvatar']` / `['parentAvatar']` / `['kidsAvatars']` | Avatars |
+| `['shopItems']` / `['baseCharacters']` | Catalog |
+| `['parentCompletions']` | Pending approvals |
+| `['kidStats', kidId]` / `['kidAnalytics', kidId]` | Parent's per-kid views |
+
+### Errors
+
+`src/api/errors.ts` turns backend error keys into translated strings and
+exposes predicates (`isEmailNotVerified`, `isAccountNotFound`, …) for the cases
+the UI branches on. An unmapped key falls back to a generic message — if a
+backend string surfaces as "Something went wrong", it needs a mapping here.
+
+---
+
+## Kid features
+
+### Tasks
+
+`TodaysTasks` groups by state (pending, done, rejected) via `utils/taskGroups`.
+Adding a task streams the AI classification back as it is produced
+(`createTaskStream`, rendered by `StreamingView`), so the kid sees categories
+appear rather than waiting on a spinner. Rejected tasks show the parent's note.
+
+### Stats, XP and coins
+
+`useKidLevel` composes one view from four queries — stats, profile, tasks and
+completions — reusing the cache `TodaysTasks` already filled, so the dashboard
+costs no extra requests.
+
+It returns **two** error flags, deliberately:
+
+| Flag | Meaning |
+|---|---|
+| `isError` | Gamification failed — level, XP and coins are placeholders |
+| `activityError` | Tasks/completions failed — streak, week strip and pending XP are placeholders |
+
+Every number falls back to `0`, so a failed fetch would otherwise render as a
+real "Level 0". One combined flag fixed a zero streak masquerading as fact but
+created the opposite bug: a failed completions fetch blanked a level and coin
+balance that had loaded perfectly well.
+
+`constants/xp.ts` mirrors the backend economy — category bar 50, 50 XP and 50
+coins per stat level, main level at 100 XP. **These must match
+gamification-service.** While they disagreed, the bar read "80 / 200" at 40%
+for a kid who was 80% of the way to the next level.
+
+### Categories
+
+Four categories can appear on a task: health, learning, responsibility,
+creativity. A fifth, **honesty**, is a stat a kid holds but that never appears
+on a task — it is awarded when a parent *confirms* a pending completion, worth
+the sum of that task's rewards. Auto-confirmed tasks earn none.
+
+That is why `constants/categories.ts` splits the types:
 
 ```ts
-// src/api/tasks.ts
-import client from './client'
-
-export async function getTasks() {
-  const res = await client.get('/tasks/')
-  return res.data
-}
+type TaskCategory = 'health' | 'learning' | 'responsibility' | 'creativity'
+type StatCategory = TaskCategory | 'honesty'
 ```
 
-### Using it in a component with TanStack Query
+`TaskCategory` gates anything offerable in a task form or a visibility toggle —
+there is no `show_honesty` setting. `StatCategory` gates anything that renders
+progress.
+
+> **Backend dependency.** Honesty requires gamification-service migration
+> `0003_honesty_category`, which is on `backend_as_microservices` and not yet
+> in `main`. Against a `main` backend the honesty bar renders at level 0
+> permanently, because the stats serializer's `ChoiceField` cannot return it.
+
+### Reward celebrations
+
+`RewardModal` lives in `KidLayout`, not on the dashboard, so it fires wherever
+the kid is. Awards come from gamification's pending feed
+(`/rewards/pending/`), which means one earned while the kid was not looking —
+a parent confirming overnight, where the response goes to the parent — is
+replayed on next open, then acknowledged via `/rewards/seen/`.
+
+This replaced a level-up modal rather than sitting beside it: the server grants
+coins at the exact moment a category bar fills, so a coin popup and a level-up
+popup would be two dialogs over one event. It also closed a real gap —
+level-ups were detected by diffing stats between refetches, which could never
+fire on the first load after opening the app.
+
+`useCountUp` animates the balance and respects `prefers-reduced-motion`.
+
+### Friends
+
+Search is debounced and queries with status `all`, so someone the kid already
+knows is still findable rather than silently missing. Each result offers only
+the action that applies to it. Presence is stated in **text**, not colour
+alone. A failed list shows a retry block while search and add stay usable.
+
+### Guardians
+
+`MyGrownUps` lists a kid's grown-ups in place, marks the primary, shows a
+waiting state for an unaccepted invitation, and hides the invite form once both
+slots are taken.
+
+### Avatar studio
+
+Buy and equip items with coins. Coin balance lives in gamification;
+catalog-service deducts internally on purchase, so the balance is re-read from
+`['gamificationProfile']` rather than tracked locally.
+
+---
+
+## Parent features
+
+- **Dashboard** — per-kid cards, switcher for multiple children.
+- **Approvals** — confirm or reject a completion with a note; notification
+  clicks route straight here.
+- **Insights** — Recharts category breakdowns with empty states, plus CSV
+  export.
+- **Settings and profile** — account details and avatar upload, with explicit
+  errors for oversized or wrong-type files.
+
+---
+
+## Real-time
+
+Two WebSockets, both deriving their origin from `utils/wsBase.ts` — a single
+place that rewrites the REST base to `ws`/`wss` and strips `/api`. Both hooks
+derived this identically before; a change to the scheme had to be made twice or
+one socket silently pointed at the wrong host.
+
+- **Notifications** (`useNotifications`) — the list is server-owned. There is
+  **no** client-side persistence; that was a workaround for an older
+  unread-only endpoint and must not come back. Incoming frames are deduped by
+  id and then **explicitly sorted by `created_at` descending**, because the
+  backend pushes unread items on connect with no ordering guarantee.
+- **Task streaming** (`useTaskStream`) — AI classification as it is generated.
+
+---
+
+## Conventions
+
+### i18n
+
+Every user-facing string goes through `t()`. Add the key to **all three**
+locale files (`en`, `ru`, `ar`) — a missing key renders the key itself.
 
 ```tsx
-import { useQuery } from '@tanstack/react-query'
-import { getTasks } from '../api/tasks'
-
-const { data: tasks, isLoading, error } = useQuery({
-  queryKey: ['tasks'],
-  queryFn: getTasks,
-})
+const { t } = useTranslation()
+t('auth.login')
+t('greeting', { name: 'Ana' })   // "Hello, {{name}}!"
 ```
 
+### Design tokens
+
+Defined once in `src/index.css` under `@theme`, used as normal Tailwind
+classes.
+
+| Token | Used for |
+|---|---|
+| `primary` (purple) | Brand, creativity |
+| `teal` | Success, health |
+| `blue` | Learning |
+| `amber` | Warnings, XP, responsibility |
+| `rose` | Honesty |
+| `danger` | Errors, destructive actions |
+| `gray` | Backgrounds, text, borders |
+
+Fonts: `font-heading` (Fredoka), `font-body` (Nunito).
+
+Category colours are contrast-checked. The `-700` shades run 6.70–10.01:1 for
+text; the `-500` shades are used only for progress fills, held to the looser
+3:1 non-text rule. Do not put white text on a `-500`.
+
+### RTL
+
+Always use logical properties — `ps-4` / `pe-4`, never `pl-4` / `pr-4`.
+`App.tsx` sets `documentElement.lang` and `.dir` in a `useLayoutEffect`. Email
+and username inputs keep `dir="ltr"` even in RTL locales.
+
+### Accessibility
+
+WCAG 2.1 AA:
+
+- Semantic HTML — `<button>`, `<main>`, a `<label>` for every input
+- `aria-labelledby` on `<main>` pointing at the page `<h1>`
+- `role="alert"` on errors, `aria-live="polite"` on dynamic regions
+- `focus-ring` on every interactive element; never remove `outline`
+- Colour is never the only carrier of meaning
+- `useFocusTrap` in modals, `useFocusOnSwap` when a view replaces another
+
+### Testing
+
+Vitest + Testing Library, `src/tests/` mirroring the source tree. Tests assert
+what a user sees — text and roles, not classes.
+
 ---
 
-## Error boundary
+## Known gaps
 
-`src/components/ErrorBoundary.tsx` wraps the entire app. If any component crashes, it shows a friendly error message instead of a blank screen. No action needed — it works automatically.
-
----
-
-## Accessibility rules
-
-Every component follows WCAG 2.1 AA:
-
-- Semantic HTML — `<button>` for buttons, `<main>` for main content, `<label>` for every input
-- `aria-labelledby` on `<main>` pointing to the page `<h1>`
-- `aria-live="polite"` for dynamic content changes (e.g. form appearing after role selection)
-- `role="alert"` on error messages
-- `focus-ring` class on every interactive element (keyboard navigation)
-- Never remove `outline` on focused elements
-- Color is never the only way to convey information
+- **Honesty needs backend PR #89** merged (see above).
+- **The bundle is one 1.06 MB chunk** (299 kB gzip), mostly Recharts. No
+  route-level code splitting yet.
+- **`act()` warnings** in the `useNotifications` tests — unwrapped state
+  updates in the WebSocket mock. Tests pass.
+- **Character creation** is a base-character picker, not a builder.
