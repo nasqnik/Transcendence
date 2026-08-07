@@ -4,9 +4,12 @@ import KidSidebar from './KidSidebar'
 import KidTopbar from './KidTopbar'
 import KidBottomNav from './KidBottomNav'
 import LegalLinks from '../LegalLinks'
+import RewardModal from './RewardModal'
+import { useRewards } from '../../hooks/useRewards'
 
 export default function KidLayout() {
   const { t } = useTranslation()
+  const { current: reward, remaining, dismiss } = useRewards()
 
   return (
     <div className="flex min-h-screen bg-primary-50">
@@ -27,6 +30,18 @@ export default function KidLayout() {
         </footer>
       </div>
       <KidBottomNav />
+
+      {/* Here rather than inside the dashboard: coins are earned by completing
+          a task, which happens on the tasks page, and the catch-up feed can
+          deliver an award earned overnight whichever page the kid opens. */}
+      {reward && (
+        <RewardModal
+          key={reward.completion_id}
+          reward={reward}
+          remaining={remaining}
+          onClose={() => dismiss(reward.completion_id)}
+        />
+      )}
     </div>
   )
 }
