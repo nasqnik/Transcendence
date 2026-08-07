@@ -399,6 +399,7 @@
       "googleAccountIsKid": "This Google account is linked to a child account. Try signing in with your password instead.",
       "emailIsKidAccount": "This email is linked to a child account. Try signing in with your password instead.",
       "googleAccountConflict": "This email is linked to a different Google account.",
+      "googleUserDoesNotExist": "User doesn't exist. Sign up instead.",
       "emailNotVerified": "Please verify your email before logging in.",
       "invalidVerificationToken": "This verification link is invalid.",
       "verificationExpired": "This verification link has expired. Please sign up again.",

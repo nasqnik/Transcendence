@@ -399,6 +399,7 @@
       "googleAccountIsKid": "Этот аккаунт Google привязан к детскому аккаунту. Попробуйте войти с паролем.",
       "emailIsKidAccount": "Этот email привязан к детскому аккаунту. Попробуйте войти с паролем.",
       "googleAccountConflict": "Этот email привязан к другому аккаунту Google.",
+      "googleUserDoesNotExist": "Пользователь не найден. Зарегистрируйтесь.",
       "emailNotVerified": "Подтвердите вашу почту перед входом.",
       "invalidVerificationToken": "Эта ссылка для подтверждения недействительна.",
       "verificationExpired": "Срок ссылки истёк. Пожалуйста, зарегистрируйтесь снова.",

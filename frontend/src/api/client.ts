@@ -14,6 +14,7 @@ const AUTH_PATHS_NO_REFRESH = [
   '/auth/kid/token/',
   '/auth/register/',
   '/auth/google/',
+  '/auth/google/signup/',
   '/auth/kid/google/',
 ]
 
