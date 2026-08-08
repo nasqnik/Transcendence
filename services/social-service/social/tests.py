@@ -1,6 +1,7 @@
 from unittest.mock import patch
 from uuid import uuid4
 
+import requests
 from django.test import override_settings
 from rest_framework import status
 from rest_framework.exceptions import ValidationError
@@ -390,3 +391,34 @@ class KidSearchApiTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data['results']), 1)
         self.assertEqual(response.data['results'][0]['username'], 'online_kid')
+
+
+@override_settings(
+    NOTIFICATION_INTERNAL_URL='http://notification-service:8000',
+    INTERNAL_SERVICE_TOKEN='test-internal-token',
+)
+class NotifyFriendRequestTests(APITestCase):
+    """HTTP error responses must be treated as failures (and logged), not success."""
+
+    @patch('social.notification_client.requests.post')
+    def test_success_checks_status(self, mock_post):
+        from social.notification_client import notify_friend_request
+
+        mock_post.return_value.raise_for_status.return_value = None
+        notify_friend_request(recipient_id=uuid4(), sender_username='alex')
+        mock_post.return_value.raise_for_status.assert_called_once()
+
+    @patch('social.notification_client.requests.post')
+    def test_http_400_is_logged_and_swallowed(self, mock_post):
+        from social.notification_client import notify_friend_request
+
+        mock_post.return_value.raise_for_status.side_effect = requests.HTTPError(
+            '400 Client Error'
+        )
+
+        with self.assertLogs('social.notification_client', level='WARNING') as logs:
+            notify_friend_request(recipient_id=uuid4(), sender_username='alex')
+
+        self.assertTrue(
+            any('Friend-request notify failed' in r.getMessage() for r in logs.records)
+        )

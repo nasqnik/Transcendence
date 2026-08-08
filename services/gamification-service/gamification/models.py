@@ -10,6 +10,9 @@ CATEGORY_CHOICES = [
     ('learning', 'Learning'),
     ('responsibility', 'Responsibility'),
     ('creativity', 'Creativity'),
+    # Not assigned on tasks / by AI. Awarded by task-service when a parent
+    # confirms a pending completion (points = sum of that task's rewards).
+    ('honesty', 'Honesty'),
 ]
 
 class KidProfile(models.Model):

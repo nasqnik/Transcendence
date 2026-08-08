@@ -66,6 +66,44 @@ class RewardPassThroughTests(TestCase):
         self.assertIsNone(push_completion_confirmed(self.completion))
         post.assert_not_called()
 
+    @patch('tasks.notifications.requests.post')
+    def test_auto_confirm_does_not_award_honesty(self, post):
+        self._add_reward_row()
+        TaskCategoryReward.objects.create(
+            task=self.task,
+            category='learning',
+            points_value=10,
+        )
+        post.return_value = Mock(json=Mock(return_value=REWARD))
+
+        push_completion_confirmed(self.completion, award_honesty=False)
+
+        payload = post.call_args.kwargs['json']
+        categories = [item['category'] for item in payload['category_points']]
+        self.assertEqual(set(categories), {'health', 'learning'})
+        self.assertNotIn('honesty', categories)
+
+    @patch('tasks.notifications.requests.post')
+    def test_parent_confirm_adds_honesty_equal_to_task_points(self, post):
+        self._add_reward_row()
+        TaskCategoryReward.objects.create(
+            task=self.task,
+            category='learning',
+            points_value=10,
+        )
+        post.return_value = Mock(json=Mock(return_value=REWARD))
+
+        push_completion_confirmed(self.completion, award_honesty=True)
+
+        payload = post.call_args.kwargs['json']
+        points_by_category = {
+            item['category']: item['points']
+            for item in payload['category_points']
+        }
+        self.assertEqual(points_by_category['health'], 50)
+        self.assertEqual(points_by_category['learning'], 10)
+        self.assertEqual(points_by_category['honesty'], 60)
+
 
 class CompletionSerializerRewardTests(TestCase):
     def setUp(self):

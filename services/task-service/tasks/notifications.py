@@ -10,7 +10,7 @@ logger = logging.getLogger(__name__)
 PUSH_TIMEOUT_SECONDS = 3
 
 
-def push_completion_confirmed(completion):
+def push_completion_confirmed(completion, *, award_honesty=False):
     """Notify gamification-service that a completion is confirmed.
 
     Returns the reward summary gamification awarded (coins and category
@@ -20,12 +20,24 @@ def push_completion_confirmed(completion):
     Best-effort: any failure is logged and swallowed. The ingest endpoint is
     idempotent (keyed on completion_id), so a dropped push can be safely
     replayed later without double-counting.
+
+    When ``award_honesty`` is True (parent approved a pending completion),
+    also grant Honesty XP equal to the sum of this task's category points.
+    Auto-confirm must leave it False — Honesty is not a task/AI category.
     """
+    rewards = list(completion.task.category_rewards.all())
     # Each reward row maps a category to the points the kid earns for it.
     category_points = [
         {'category': reward.category, 'points': reward.points_value}
-        for reward in completion.task.category_rewards.all()
+        for reward in rewards
     ]
+
+    if award_honesty:
+        honesty_points = sum(reward.points_value for reward in rewards)
+        if honesty_points > 0:
+            category_points.append(
+                {'category': 'honesty', 'points': honesty_points},
+            )
 
     # Nothing to award (task has no category rewards) -> skip the call entirely.
     if not category_points:
