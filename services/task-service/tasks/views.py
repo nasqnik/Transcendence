@@ -1,7 +1,9 @@
+from uuid import UUID
+
 from django.http import StreamingHttpResponse
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
-from drf_spectacular.utils import extend_schema, extend_schema_view
+from drf_spectacular.utils import OpenApiParameter, extend_schema, extend_schema_view
 from rest_framework import generics, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -195,8 +197,20 @@ class TaskDetailView(generics.RetrieveUpdateDestroyAPIView):
         summary='List completions',
         description=(
             "Kid lists their own completions. Parent lists completions for "
-            "the kids they guard."
+            "the kids they guard, or for one of them via ?kid_id=."
         ),
+        parameters=[
+            OpenApiParameter(
+                name='kid_id',
+                type=str,
+                location=OpenApiParameter.QUERY,
+                required=False,
+                description=(
+                    'Parent only: narrow the list to a single guarded kid. '
+                    'Returns an empty list for a kid the parent does not guard.'
+                ),
+            ),
+        ],
         responses=TaskCompletionSerializer(many=True),
     ),
     post=extend_schema(
@@ -212,8 +226,31 @@ class TaskCompletionListCreateView(generics.ListCreateAPIView):
         if isinstance(user, KidActor):
             return TaskCompletion.objects.select_related('task').filter(kid_id=user.kid_id)
         if isinstance(user, ParentActor):
-            return TaskCompletion.objects.select_related('task').filter(kid_id__in=user.kid_ids)
+            return self._parent_queryset(user)
         return TaskCompletion.objects.none()
+
+    def _parent_queryset(self, user):
+        """Every guarded kid by default, or one of them via ?kid_id=.
+
+        analytics-service asks for a single kid when it builds the parent
+        dashboard. While the parameter was ignored, each kid's completion
+        rate was computed from all the parent's kids, so finishing a task
+        moved the numbers for every sibling.
+        """
+        completions = TaskCompletion.objects.select_related('task')
+        requested = self.request.query_params.get('kid_id')
+        if not requested:
+            return completions.filter(kid_id__in=user.kid_ids)
+
+        try:
+            kid_id = UUID(requested)
+        except ValueError:
+            return TaskCompletion.objects.none()
+        # Silent empty rather than 403: a parent should not be able to tell
+        # an unguarded kid from one that does not exist.
+        if kid_id not in user.kid_ids:
+            return TaskCompletion.objects.none()
+        return completions.filter(kid_id=kid_id)
 
     def get_serializer_class(self):
         if self.request.method == 'POST':
@@ -278,7 +315,10 @@ class TaskCompletionReviewView(APIView):
         )
 
         if became_confirmed:
-            push_completion_confirmed(completion)
+            completion.reward_summary = push_completion_confirmed(
+                completion,
+                award_honesty=True,
+            )
             notify_task_confirmed(completion)
         elif became_rejected:
             notify_task_rejected(completion)

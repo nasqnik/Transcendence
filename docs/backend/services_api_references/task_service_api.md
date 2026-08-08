@@ -43,6 +43,7 @@ Only send `send_for_review` when `review_mode === "optional"`; it is ignored oth
 | Method | Path | Role | Purpose |
 | --- | --- | --- | --- |
 | GET | `/completions/` | kid / parent | Kid lists own; parent lists completions for their guarded kids. |
+| GET | `/completions/?kid_id=<uuid>` | parent | Narrow the list to one guarded kid. |
 | POST | `/completions/` | kid | Submit a task as completed. |
 | POST | `/completions/{completion_id}/review/` | parent | Confirm or reject a completion. 404 if not a guarded kid's. |
 
@@ -53,6 +54,16 @@ Only send `send_for_review` when `review_mode === "optional"`; it is ignored oth
 ```
 
 List/create/review responses include nested task fields: `task_title`, `task_description`, `task_due_date`.
+
+**`?kid_id=` on GET `/completions/` (parent only)**
+
+Without it a parent gets every guarded kid's completions, which is what the
+approvals inbox wants. With it the list is narrowed to that one kid — this is
+how analytics-service builds a per-kid completion rate for the parent
+dashboard. A kid the parent does not guard, or a malformed UUID, returns an
+empty list rather than an error, so the endpoint can't be used to probe for
+kids outside the family. The parameter is ignored for kid tokens, which are
+always scoped to themselves.
 
 Resulting `status` depends on the kid's category visibility:
 - all the task's categories shown to parent -> `pending`
@@ -66,6 +77,38 @@ Resulting `status` depends on the kid's category visibility:
 ```
 
 `status` must be `confirmed` or `rejected`.
+
+**The `reward` field**
+
+Confirming a completion can fill a category bar, which earns the kid coins. When
+that happens the response to the confirming request carries the award so the UI
+can animate it immediately:
+
+```json
+{
+  "id": "247e...",
+  "status": "confirmed",
+  "reward": {
+    "completion_id": "247e...",
+    "coins_awarded": 50,
+    "stat_level_ups": [{ "category": "health", "level": 3 }],
+    "coins_total": 200,
+    "overall_xp": 50,
+    "main_level": 1
+  }
+}
+```
+
+`reward` is `null` whenever the request did not award anything — on list
+responses, on submissions that go to `pending`, on confirmations that only
+partly filled a bar, and if gamification-service was unreachable. A kid whose
+task is confirmed later by a parent picks the award up from
+`GET /api/gamification/rewards/pending/` instead, since the review response goes
+to the parent.
+
+**Honesty:** not a task category and never AI-scored. When a parent confirms a
+pending completion, gamification also gets `honesty` points equal to the sum of
+that task's `category_rewards`. Auto-confirmed completions do not award Honesty.
 
 ## Settings
 

@@ -58,6 +58,49 @@ Profile is created automatically on first read if it does not exist yet.
 `xp_percent` is progress toward the next category level (0–100).  
 `level` is the current category level for that kid.
 
+## Rewards (coin popup)
+
+| Method | Path | Role | Purpose |
+| --- | --- | --- | --- |
+| GET | `/rewards/pending/` | kid | Coin awards the client has not shown yet, oldest first. |
+| POST | `/rewards/seen/` | kid | Acknowledge rewards so they stop being returned. |
+
+A kid earns coins the moment a category bar fills. That can happen while the kid
+is not looking at the app — a parent may confirm a task hours later. This feed
+lets the client replay those awards and play the coin animation on next open.
+
+**GET `/rewards/pending/` response**
+
+```json
+[
+  {
+    "completion_id": "9f1c...",
+    "coins_awarded": 50,
+    "stat_level_ups": [{ "category": "health", "level": 3 }],
+    "coins_total": 200,
+    "overall_xp": 50,
+    "main_level": 1
+  }
+]
+```
+
+`coins_awarded` and `stat_level_ups` are the delta to animate; `coins_total`,
+`overall_xp`, and `main_level` are the resulting totals to display afterwards.
+Completions that earned no coins never appear here.
+
+**POST `/rewards/seen/` body**
+
+```json
+{ "completion_ids": ["9f1c..."] }
+```
+
+Omit `completion_ids` to acknowledge everything pending. Responds with
+`{"marked_seen": 1}`.
+
+The same reward object is returned inline by task-service on `POST
+/api/task/completions/` (as the `reward` field) when a task auto-confirms, so
+the common case needs no extra request — this feed is the catch-up path.
+
 ## Parent read
 
 | Method | Path | Role | Purpose |
@@ -109,9 +152,11 @@ Kids without a profile row still appear with `main_level`/`overall_xp` of `0` an
 }
 ```
 
-- Called by task-service when a parent confirms a completion.
-- Idempotent on `completion_id` — duplicate calls are ignored.
-- Returns `204 No Content` on success.
+- Called by task-service when a completion is confirmed.
+- Idempotent on `completion_id` — a duplicate call awards nothing a second time
+  and replies with what the original call awarded.
+- Returns `200` with the reward summary (same shape as `/rewards/pending/`
+  entries), which task-service passes straight back to the kid.
 
 **POST `/internal/coins/deduct/` body**
 
@@ -157,6 +202,10 @@ Called by catalog-service on avatar purchase. Uses row locking to prevent double
 - New profiles start with `STARTER_COINS` (default **50**) so kids can buy something before grinding.
 - Category stats start empty until the kid completes confirmed tasks (task-service pushes completions internally).
 - A single completion can award points to **multiple** categories (`category_points` is a list).
-- Main level increases when `overall_xp` crosses the configured threshold; coins are awarded on main level-up.
+- Categories: `health`, `learning`, `responsibility`, `creativity`, and `honesty`.
+  Honesty is only pushed by task-service when a **parent confirms** a pending
+  completion (XP = sum of that task's category points). It is never on the task
+  itself and never scored by AI. Auto-confirm does not award Honesty.
+- Completing a category bar awards coins **and** overall XP; main level increases when `overall_xp` crosses the configured threshold but grants no coins of its own.
 - After a main level-up, gamification-service notifies the kid via notification-service (`level_up`).
-- Economy defaults: category bar **50**, **50** overall XP per stat level, main level at **100** XP, **50** coins per main level.
+- Economy defaults: category bar **50**, **50** overall XP and **50** coins per stat level, main level at **100** XP.

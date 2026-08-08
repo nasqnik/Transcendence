@@ -10,6 +10,9 @@ CATEGORY_CHOICES = [
     ('learning', 'Learning'),
     ('responsibility', 'Responsibility'),
     ('creativity', 'Creativity'),
+    # Not assigned on tasks / by AI. Awarded by task-service when a parent
+    # confirms a pending completion (points = sum of that task's rewards).
+    ('honesty', 'Honesty'),
 ]
 
 class KidProfile(models.Model):
@@ -47,9 +50,21 @@ class KidStat(models.Model):
             )
         ]
 
-# history of completion events for idempotency
+# history of completion events for idempotency, and the reward the kid earned
+# from each one so the UI can replay it (coin popup) even if the kid was away
+# when a parent confirmed the task.
 class CompletionEvent(models.Model):
     completion_id = models.UUIDField(primary_key=True, default=uuid4, editable=False)
     kid_id = models.UUIDField(db_index=True)
     payload = models.JSONField(default=dict)
+    coins_awarded = models.PositiveIntegerField(default=0)
+    # [{'category': 'health', 'level': 2}, ...] - one entry per category level-up.
+    stat_level_ups = models.JSONField(default=list)
+    # Null until the kid's client acknowledges it has shown the reward.
+    seen_at = models.DateTimeField(null=True, blank=True)
     processed_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        indexes = [
+            models.Index(fields=['kid_id', 'seen_at']),
+        ]

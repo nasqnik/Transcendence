@@ -4,6 +4,7 @@ import { getNotifications, markNotificationRead, type Notification } from '../ap
 import useAuthStore from '../store/authStore'
 import { closeSocket } from '../utils/closeSocket'
 import { WS_BASE } from '../utils/wsBase'
+import { PENDING_REWARDS_KEY } from './useRewards'
 
 const KEY = ['notifications'] as const
 
@@ -62,6 +63,15 @@ export function useNotifications() {
           if (notification.notification_type === 'task_confirmed' ||
               notification.notification_type === 'task_rejected') {
             queryClient.invalidateQueries({ queryKey: ['completions'] })
+            // A confirmation is the moment the server grants XP, coins and
+            // honesty, so the numbers on screen are now stale and an award is
+            // waiting in the pending feed. Refetching only `completions` left
+            // the headline case broken: a parent confirming while the kid has
+            // the app open banked coins with no celebration and a frozen bar,
+            // recovering only on a cold open or a refocus.
+            queryClient.invalidateQueries({ queryKey: PENDING_REWARDS_KEY })
+            queryClient.invalidateQueries({ queryKey: ['gamificationStats'] })
+            queryClient.invalidateQueries({ queryKey: ['gamificationProfile'] })
           }
           // A friend request arrives over this socket and nowhere else — the
           // presence socket only carries friend_online/friend_offline. Without
