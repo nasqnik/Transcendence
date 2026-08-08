@@ -394,7 +394,8 @@
     "csvTotalXp": "Всего XP",
     "csvLevel": "Уровень",
     "csvDate": "Дата",
-    "csvXp": "XP"
+    "csvXp": "XP",
+    "approvalRate": "Доля одобрений"
   },
   "errors": {
     "required": "Это поле обязательно",

@@ -394,7 +394,8 @@
     "csvTotalXp": "إجمالي النقاط",
     "csvLevel": "المستوى",
     "csvDate": "التاريخ",
-    "csvXp": "النقاط"
+    "csvXp": "النقاط",
+    "approvalRate": "معدل الموافقة"
   },
   "errors": {
     "required": "هذا الحقل مطلوب",
