@@ -394,7 +394,8 @@
     "csvTotalXp": "Total XP",
     "csvLevel": "Level",
     "csvDate": "Date",
-    "csvXp": "XP"
+    "csvXp": "XP",
+    "approvalRate": "Approval Rate"
   },
   "errors": {
     "required": "This field is required",
