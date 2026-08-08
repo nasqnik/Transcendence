@@ -59,6 +59,13 @@ export async function loginParent(identifier: string, password: string): Promise
   return res.data
 }
 
+// POST /auth/token/refresh/  — exchange a parent refresh token for a fresh
+// access token (e.g. after linking a kid, so the new kid_ids land in the JWT).
+export async function refreshParentToken(refresh: string): Promise<TokenResponse> {
+  const res = await client.post<TokenResponse>('/auth/token/refresh/', { refresh })
+  return res.data
+}
+
 // POST /auth/kid/token/  — kid login with emailOrUsername + password
 export async function loginKid(identifier: string, password: string): Promise<TokenResponse> {
   const res = await client.post<TokenResponse>('/auth/kid/token/', {
