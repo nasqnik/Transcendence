@@ -429,7 +429,9 @@
       "currentPasswordIncorrect": "That current password isn't right.",
       "currentPasswordRequired": "Please enter your current password.",
       "emailSameAsCurrent": "That's already your email address.",
-      "emailChangePending": "We sent a confirmation link to the new address."
+      "emailChangePending": "We sent a confirmation link to the new address.",
+      "tooLong": "This is too long.",
+      "fieldRequired": "This field can’t be empty."
     },
     "ai": {
       "contentBlocked": "That task can't be used. Try describing something kind and safe you want to get done.",
