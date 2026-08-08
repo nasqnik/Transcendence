@@ -394,7 +394,8 @@
     "csvTotalXp": "Total XP",
     "csvLevel": "Level",
     "csvDate": "Date",
-    "csvXp": "XP"
+    "csvXp": "XP",
+    "approvalRate": "Approval Rate"
   },
   "errors": {
     "required": "This field is required",
@@ -455,7 +456,9 @@
       "passwordResetRequested": "If an account exists for that email, we've sent a reset link.",
       "passwordResetSuccess": "Password updated. You can log in with your new one.",
       "passwordResetTokenInvalid": "That reset link isn't valid. Request a new one.",
-      "passwordResetTokenExpired": "That reset link has expired. Request a new one."
+      "passwordResetTokenExpired": "That reset link has expired. Request a new one.",
+      "tooLong": "This is too long.",
+      "fieldRequired": "This field can’t be empty."
     },
     "ai": {
       "contentBlocked": "That task can't be used. Try describing something kind and safe you want to get done.",

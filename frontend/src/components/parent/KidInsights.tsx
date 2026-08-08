@@ -145,7 +145,7 @@ export default function KidInsights({ kidId, kidName, stats, statsLoading }: Kid
 
   const totalXp = breakdown.reduce((s, c) => s + c.total_points, 0)
   const tasksCompleted = rates?.confirmed ?? 0
-  const honestyRate = rates?.rate ?? 0
+  const approvalRate = rates?.rate ?? 0
   const { current: streak, best } = computeStreak(data?.daily_trend ?? [])
 
   const errText = <p className="font-body text-sm text-danger-700 py-6 text-center">{t('errors.generic')}</p>
@@ -161,7 +161,7 @@ export default function KidInsights({ kidId, kidName, stats, statsLoading }: Kid
     rows.push([t('parentDash.csvMetric'), t('parentDash.csvValue')])
     rows.push([t('parentDash.tasksCompleted'), tasksCompleted])
     rows.push([t('parentDash.xpEarned'), totalXp])
-    rows.push([t('parentDash.honesty'), `${honestyRate}%`])
+    rows.push([t('parentDash.approvalRate'), `${approvalRate}%`])
     rows.push([t('parentDash.dayStreak'), streak])
     rows.push([])
 
@@ -213,7 +213,7 @@ export default function KidInsights({ kidId, kidName, stats, statsLoading }: Kid
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         <StatTile loading={isLoading} icon="✅" iconBg="bg-teal-50"    value={tasksCompleted}   label={t('parentDash.tasksCompleted')} />
         <StatTile loading={isLoading} icon="⭐" iconBg="bg-amber-50"   value={totalXp}          label={t('parentDash.xpEarned')} />
-        <StatTile loading={isLoading} icon="🛡️" iconBg="bg-primary-50" value={`${honestyRate}%`} label={t('parentDash.honesty')} />
+        <StatTile loading={isLoading} icon="🛡️" iconBg="bg-primary-50" value={`${approvalRate}%`} label={t('parentDash.approvalRate')} />
         <StatTile loading={isLoading} icon="🔥" iconBg="bg-danger-50"  value={streak}           label={t('parentDash.dayStreak')} caption={t('parentDash.bestStreak', { n: best })} />
       </div>
 
