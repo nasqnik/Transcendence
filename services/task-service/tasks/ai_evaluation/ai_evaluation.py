@@ -66,6 +66,9 @@ Tasks related to exercise, hygiene, sleep, healthy habits, or physical activity.
 4. creativity
 Tasks involving imagination, artistic work, writing stories, drawing, music, etc.
 
+Do NOT invent or score an "honesty" category. Honesty is awarded later when a
+parent confirms a task — it is never part of AI task scoring.
+
 {SCORING_SYSTEM_PROMPT}
 
 Required JSON format:

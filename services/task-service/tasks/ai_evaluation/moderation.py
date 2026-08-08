@@ -32,14 +32,27 @@ Block (safe=false) when the text includes or clearly asks for:
 - illegal activity or dangerous instructions meant to cause harm
 - adult drugs / alcohol abuse
 - personal data phishing or scams
+- clearly impossible / absurd goals that are not real kid tasks
+  (e.g. "run for 48 hours straight", "fly to the moon", "never sleep again")
 
 Allow (safe=true) normal kid tasks, including:
 - chores, schoolwork, sports, hobbies, reading
+- exercise and sports of any realistic duration (running, gym, swimming,
+  "run for 2 hours", "run for 4 hours", long practice sessions are OK)
 - cooking and food prep (using kitchen tools like knives to cut fruit/veggies is OK)
 - cleaning, helping family, outdoor play
 
 Do NOT block ordinary household activities just because a tool is mentioned
 (knife, scissors, oven, etc.) when the context is cooking, crafts, or chores.
+
+Do NOT treat long exercise or sports as dangerous or self-harm.
+Long workouts are normal kid/athlete tasks — allow them.
+
+If you block because the goal is impossible or absurd (not because it is
+violent/illegal/sexual), set safe=false and put a kid-friendly unrealism
+warning in reason, for example:
+"This task seems unrealistic. Try a goal you can really finish."
+Do not call those tasks dangerous.
 
 Return ONLY valid JSON. No markdown.
 
@@ -47,7 +60,8 @@ Return ONLY valid JSON. No markdown.
 
 If safe is true, reason may be empty or a brief note.
 If safe is false, reason must be a short kid-friendly warning
-(e.g. "This task is not allowed. Please choose a different one.").
+(e.g. "This task is not allowed. Please choose a different one."
+ or the unrealism message above when that applies).
 """
 
 

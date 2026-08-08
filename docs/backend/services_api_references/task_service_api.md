@@ -106,6 +106,10 @@ task is confirmed later by a parent picks the award up from
 `GET /api/gamification/rewards/pending/` instead, since the review response goes
 to the parent.
 
+**Honesty:** not a task category and never AI-scored. When a parent confirms a
+pending completion, gamification also gets `honesty` points equal to the sum of
+that task's `category_rewards`. Auto-confirmed completions do not award Honesty.
+
 ## Settings
 
 | Method | Path | Role | Purpose |

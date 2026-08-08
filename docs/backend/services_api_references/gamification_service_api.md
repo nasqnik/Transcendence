@@ -202,6 +202,10 @@ Called by catalog-service on avatar purchase. Uses row locking to prevent double
 - New profiles start with `STARTER_COINS` (default **50**) so kids can buy something before grinding.
 - Category stats start empty until the kid completes confirmed tasks (task-service pushes completions internally).
 - A single completion can award points to **multiple** categories (`category_points` is a list).
+- Categories: `health`, `learning`, `responsibility`, `creativity`, and `honesty`.
+  Honesty is only pushed by task-service when a **parent confirms** a pending
+  completion (XP = sum of that task's category points). It is never on the task
+  itself and never scored by AI. Auto-confirm does not award Honesty.
 - Completing a category bar awards coins **and** overall XP; main level increases when `overall_xp` crosses the configured threshold but grants no coins of its own.
 - After a main level-up, gamification-service notifies the kid via notification-service (`level_up`).
 - Economy defaults: category bar **50**, **50** overall XP and **50** coins per stat level, main level at **100** XP.
