@@ -6,7 +6,7 @@ import LoadError from '../components/LoadError'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { type TaskCategory, CATEGORY_STYLE } from '../constants/categories'
 import { getCategorySettings, updateCategorySettings, type CategorySettings } from '../api/tasks'
-import { getKidMe, updateKidProfile } from '../api/kidAccount'
+import { getKidMe, updateKidProfile, MAX_GUARDIANS } from '../api/kidAccount'
 import { deleteAccount } from '../api/account'
 import { inviteParent } from '../api/auth'
 import { getApiErrorKey } from '../api/errors'
@@ -22,6 +22,7 @@ import LanguageSwitcher from '../components/LanguageSwitcher'
 import KidAccountRow from '../components/kid/KidAccountRow'
 import KidEmailRow from '../components/kid/KidEmailRow'
 import KidPasswordSection from '../components/kid/KidPasswordSection'
+import MyGrownUps from '../components/kid/MyGrownUps'
 import Modal from '../components/Modal'
 import { usePageTitle } from '../hooks/usePageTitle'
 
@@ -267,6 +268,10 @@ export default function KidSettings() {
   const { data: avatar } = useQuery({ queryKey: ['kidAvatar'], queryFn: getKidAvatar })
 
   const displaySettings = settings ?? serverSettings
+  // `?? []` rather than trusting the field: an auth-service that predates the
+  // `parents` work omits it entirely, and `.length` on undefined would take
+  // the whole settings page down instead of degrading to "no guardians yet".
+  const parents = profile?.parents ?? []
   const displayName = profile?.name || profile?.username || currentUser?.username
   const initial = displayName?.[0]?.toUpperCase() ?? '?'
 
@@ -428,8 +433,20 @@ export default function KidSettings() {
             )}
           </Section>
 
+          {/* ── My grown-ups ─────────────────────────────────────────────────────── */}
+          {profile && (
+            <Section id="grownups-heading" icon="👨‍👩‍👧" title={t('grownUps.title')}>
+              <p className="font-body text-sm text-gray-500 mb-3">{t('grownUps.intro')}</p>
+              <MyGrownUps parents={parents} />
+            </Section>
+          )}
+
           {/* ── Invite a parent ───────────────────────────────────────────────────── */}
-          <Section id="invite-heading" icon="👨‍👩‍👧" title={t('inviteParent.title')}>
+          {/* Hidden once the kid already has both guardians. The form used to be
+              always visible, so a kid at the limit could fill it in and submit,
+              and only then learn from the error that there was never a slot. */}
+          {profile && parents.length < MAX_GUARDIANS && (
+          <Section id="invite-heading" icon="✉️" title={t('inviteParent.title')}>
             {sentTo ? (
               <div className="flex flex-col items-center gap-3 py-4 text-center">
                 <div className="text-3xl" aria-hidden="true">📬</div>
@@ -494,9 +511,11 @@ export default function KidSettings() {
               </form>
             )}
           </Section>
+          )}
         </div>
 
       </div>
+
 
     </main>
   )

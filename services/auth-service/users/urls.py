@@ -16,6 +16,8 @@ from .views import (
     KidInternalDetailView,
     KidInternalSearchView,
     KidParentInternalView,
+    KidPasswordResetConfirmView,
+    KidPasswordResetRequestView,
     KidSignupView,
     KidTokenObtainView,
     KidTokenRefreshView,
@@ -26,6 +28,8 @@ from .views import (
     MeView,
     ParentRegisterView,
     ParentVerifyEmailView,
+    PasswordResetConfirmView,
+    PasswordResetRequestView,
     VerifyEmailChangeView,
 )
 
@@ -45,11 +49,18 @@ urlpatterns = [
     path("auth/token/refresh/", TokenRefreshView.as_view()),
     path("auth/token/verify/", TokenVerifyView.as_view()),
     path("auth/google/", GoogleLoginView.as_view()),
+    path("auth/password-reset/", PasswordResetRequestView.as_view()),
+    path("auth/password-reset/confirm/", PasswordResetConfirmView.as_view()),
 
     # Kid registration
     path("kids/signup/", KidSignupView.as_view()),
     path("kids/signup/google/", KidGoogleSignupView.as_view()),
     path("auth/kid/verify-email/", KidVerifyEmailView.as_view()),
+    path("auth/kid/password-reset/", KidPasswordResetRequestView.as_view()),
+    path(
+        "auth/kid/password-reset/confirm/",
+        KidPasswordResetConfirmView.as_view(),
+    ),
 
     # Kid — invite second parent
     path("kids/invite-parent/", InviteSecondParentView.as_view()),
@@ -101,11 +112,15 @@ urlpatterns = [
 # - /auth/token/refresh/:   "refresh a parent's JWT"
 # - /auth/token/verify/:    "check if a parent's access token is still valid"
 # - /auth/google/:          "log in or sign up a parent using Google"
+# - /auth/password-reset/:          "email a parent a password-reset link"
+# - /auth/password-reset/confirm/:  "set a new parent password with the token"
 
 # Kid registration
 # - /kids/signup/:            "register a kid and invite the primary parent"
 # - /kids/signup/google/:     "not used yet — register a kid using Google"
 # - /auth/kid/verify-email/:  "verify a kid's email"
+# - /auth/kid/password-reset/:          "email a kid a password-reset link"
+# - /auth/kid/password-reset/confirm/:  "set a new kid password with the token"
 
 # Kid — invite second parent
 # - /kids/invite-parent/:     "logged-in kid invites a second parent"

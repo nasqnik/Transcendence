@@ -68,6 +68,13 @@ const API_ERROR_KEYS: Record<string, string> = {
   // Both mean the session is no longer usable; the distinction is for logs.
   'Invalid token.': 'errors.api.tokenNotValid',
   'Not a kid access token.': 'errors.api.tokenNotValid',
+  // Added by the backend's username-rules and password-reset work.
+  'Username must be 3-20 characters, start with a letter, and use only letters, numbers, and underscores.': 'errors.api.usernameInvalid',
+  "This username isn't available.": 'errors.api.usernameTaken',
+  'If an account exists for that email, we sent a password reset link.': 'errors.api.passwordResetRequested',
+  'Password updated. You can log in with your new password.': 'errors.api.passwordResetSuccess',
+  'Invalid or expired reset link.': 'errors.api.passwordResetTokenInvalid',
+  'This reset link has expired. Request a new one.': 'errors.api.passwordResetTokenExpired',
 }
 
 const PASSWORD_ERROR_PREFIXES: Array<{ prefix: string; key: string }> = [
