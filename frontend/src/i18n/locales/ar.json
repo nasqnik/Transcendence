@@ -429,7 +429,9 @@
       "currentPasswordIncorrect": "كلمة المرور الحالية غير صحيحة.",
       "currentPasswordRequired": "أدخل كلمة المرور الحالية.",
       "emailSameAsCurrent": "هذا هو بريدك الإلكتروني الحالي بالفعل.",
-      "emailChangePending": "أرسلنا رابط تأكيد إلى العنوان الجديد."
+      "emailChangePending": "أرسلنا رابط تأكيد إلى العنوان الجديد.",
+      "tooLong": "هذا طويل جدًا.",
+      "fieldRequired": "لا يمكن ترك هذا الحقل فارغًا."
     },
     "ai": {
       "contentBlocked": "لا يمكن استخدام هذه المهمة. جرّب وصف شيء لطيف وآمن تريد إنجازه.",
