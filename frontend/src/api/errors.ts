@@ -40,6 +40,7 @@ const API_ERROR_KEYS: Record<string, string> = {
   'This Google account is registered as a kid account. Use kid sign-in instead.': 'errors.api.googleAccountIsKid',
   'This email is registered as a kid account. Use kid sign-in instead.': 'errors.api.emailIsKidAccount',
   'This email is linked to a different Google account.': 'errors.api.googleAccountConflict',
+  "User doesn't exist. Sign up instead.": 'errors.api.googleUserDoesNotExist',
   'Email not verified.': 'errors.api.emailNotVerified',
   'Verify your email first.': 'errors.api.emailNotVerified',
   'Please verify your email before logging in.': 'errors.api.emailNotVerified',
