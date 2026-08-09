@@ -5,7 +5,7 @@ import { CONTACT_EMAIL } from '../constants/contact'
 
 export default function PrivacyPolicy() {
   const { t } = useTranslation()
-  usePageTitle(`${t('legal.privacy')} — ${t('app.name')}`)
+  usePageTitle(t('legal.privacy'))
 
   return (
     <main className="min-h-screen bg-primary-50 py-12 px-4">
