@@ -10,7 +10,7 @@ import { ALREADY_VERIFIED_KEYS } from '../hooks/useTokenVerification'
 import useAuthStore from '../store/authStore'
 import { PARENT_DASHBOARD_PATH } from '../auth/session'
 
-type PageState = 'loading' | 'success' | 'active' | 'error'
+type PageState = 'loading' | 'success' | 'active' | 'already' | 'error'
 
 export default function VerifyKidEmail() {
   const { t } = useTranslation()
@@ -48,7 +48,11 @@ export default function VerifyKidEmail() {
         // effect because it has a fourth state ('active') taken from the
         // response body, which the shared hook does not model.
         if (ALREADY_VERIFIED_KEYS.includes(key)) {
-          setState('success')
+          // Not 'success': that copy tells the kid to go and ask their parent
+          // to accept the invitation. This response carries no
+          // registration_status, so whether the parent has already accepted is
+          // unknown — and for a kid whose account is active it is simply wrong.
+          setState('already')
           return
         }
         setErrorMessageKey(key)
@@ -89,9 +93,15 @@ export default function VerifyKidEmail() {
     }
     return (
       <>
-        <p className="font-body text-sm text-gray-700 text-center w-full">
-          {state === 'active' ? t('verify.allSetHint') : t('verify.kidSuccessHint')}
-        </p>
+        {/* 'already' supplies its own hint above, because what happens next is
+            genuinely unknown for that state. Emitting one here too printed the
+            neutral line and the "ask your parent" line together — the exact
+            claim the separate state exists to avoid. */}
+        {state !== 'already' && (
+          <p className="font-body text-sm text-gray-700 text-center w-full">
+            {state === 'active' ? t('verify.allSetHint') : t('verify.kidSuccessHint')}
+          </p>
+        )}
         <Button variant="primary" onClick={() => navigate(loginPrimary ? '/login' : '/')}>
           {loginPrimary ? t('auth.login') : t('auth.backToHome')}
         </Button>
@@ -108,6 +118,22 @@ export default function VerifyKidEmail() {
         statusMessage={t('verify.successTitle')}
       >
         {kidVerifyActions(false)}
+      </AuthMessageLayout>
+    )
+  }
+
+  if (state === 'already') {
+    return (
+      <AuthMessageLayout
+        headingId="verify-heading"
+        icon="✅"
+        title={t('verify.successTitle')}
+        statusMessage={t('verify.successTitle')}
+      >
+        <p className="font-body text-sm text-gray-700 text-center w-full">
+          {t('verify.alreadyVerifiedHint')}
+        </p>
+        {kidVerifyActions(true)}
       </AuthMessageLayout>
     )
   }

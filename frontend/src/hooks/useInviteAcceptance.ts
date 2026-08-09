@@ -9,6 +9,7 @@ import {
   loginParent,
   loginWithGoogle,
   registerParent,
+  refreshParentToken,
   type InvitationDetails,
 } from '../api/auth'
 import {
@@ -37,18 +38,17 @@ export type InviteState =
   | { status: 'accepting' }
   | { status: 'success'; kidName: string }
 
-/**
- * Everything that decides *what* the accept-invite page shows: loading the
- * invitation, the three ways a parent can end up accepting it (already signed
- * in, password, Google), and the side effects that survive a round trip
- * through email verification.
- *
- * Lifted out of the page because it is the most branching flow in the app —
- * seven states, three async entry points, and sessionStorage that has to
- * outlive a redirect — with the rendering wrapped around it, none of it could
- * be tested without driving the whole screen. The page below is now only
- * markup per state.
- */
+
+async function refreshParentKidIds() {
+  const { refreshToken, currentUser } = useAuthStore.getState()
+  if (!refreshToken || currentUser?.role !== 'parent') return
+  try {
+    establishParentSession(await refreshParentToken(refreshToken))
+  } catch {
+    // ignore — see doc comment
+  }
+}
+
 export function useInviteAcceptance() {
   const { t } = useTranslation()
   const [searchParams] = useSearchParams()
@@ -80,11 +80,13 @@ export function useInviteAcceptance() {
     setState({ status: 'accepting' })
     try {
       await acceptInvitation(invitation.token)
+      await refreshParentKidIds()
       clearPendingInviteToken()
       setState({ status: 'success', kidName: invitation.kid_name })
     } catch (err) {
       // Already accepted is the same outcome from the user's point of view.
       if (isInvitationAlreadyAccepted(err)) {
+        await refreshParentKidIds()
         clearPendingInviteToken()
         setState({ status: 'success', kidName: invitation.kid_name })
         return

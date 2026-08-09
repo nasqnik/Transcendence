@@ -80,6 +80,10 @@ export default function AcceptInvite() {
         headingId="invite-heading"
         icon="📬"
         title={t('auth.verifyYourEmail')}
+        // Announced as well as focused: the invite form is swapped for a status
+        // screen, and without this a screen reader learns only that focus
+        // moved, not that the page changed under it.
+        statusMessage={t('auth.verifyYourEmail')}
       >
         <p className="font-body text-sm text-gray-700 text-center w-full">
           {t('invite.verifyThenReturn', { email: state.email })}
@@ -174,14 +178,17 @@ export default function AcceptInvite() {
       <AuthMessageLayout
         headingId="invite-heading"
         icon="⚠️"
-        title={t('invite.title')}
+        // Its own title rather than the generic "You've been invited!": a
+        // warning icon under a celebratory heading reads as success, and this
+        // state needs the person to act — they are signed in as someone else.
+        title={t('invite.wrongAccountTitle')}
+        // As an alert, not body text: it is the reason the invitation cannot
+        // proceed, and it was previously neither announced nor focused.
+        alertMessage={t('invite.wrongAccount', {
+          email: state.loggedInEmail,
+          inviteEmail: state.invitation.invite_email,
+        })}
       >
-        <p className="font-body text-sm text-gray-700 text-center w-full">
-          {t('invite.wrongAccount', {
-            email: state.loggedInEmail,
-            inviteEmail: state.invitation.invite_email,
-          })}
-        </p>
         <Button
           variant="secondary"
           onClick={() => {

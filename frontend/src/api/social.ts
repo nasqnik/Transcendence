@@ -1,5 +1,5 @@
 import client from './client'
-import { type TaskCategory } from '../constants/categories'
+import { type StatCategory } from '../constants/categories'
 
 /**
  * social-service: friends, friend requests, and kid search.
@@ -9,7 +9,7 @@ import { type TaskCategory } from '../constants/categories'
 export type FriendshipStatus = 'none' | 'pending_sent' | 'pending_received' | 'friends'
 
 export interface FriendStat {
-  category: TaskCategory
+  category: StatCategory
   level: number
   xp_percent: number
 }

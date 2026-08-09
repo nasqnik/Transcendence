@@ -73,7 +73,11 @@ export function useFriends() {
     isLoading: friendsLoading || requestsLoading,
     // Both lists fall back to [], which renders as "No friends yet" — a claim
     // the page has no business making when the request failed.
-    isError: friendsQuery.isError || requestsQuery.isError,
+    // Reported separately: they are two requests, and ORing them meant a
+    // failed friends list also hid a perfectly good set of incoming requests —
+    // the one thing on the page actually waiting on the kid.
+    isError: friendsQuery.isError,
+    requestsError: requestsQuery.isError,
     refetch: () => { friendsQuery.refetch(); requestsQuery.refetch() },
     accept,
     decline,

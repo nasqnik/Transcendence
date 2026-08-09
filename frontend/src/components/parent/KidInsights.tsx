@@ -42,6 +42,27 @@ function computeStreak(trend: DailyTrend[]): { current: number; best: number } {
   return { current, best }
 }
 
+// ─── CSV export ────────────────────────────────────────────────────────────────
+
+function csvValue(v: string | number): string {
+  const s = String(v)
+  return /[",\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s
+}
+
+function downloadCsv(filename: string, rows: (string | number)[][]) {
+  // Lead with a BOM so Excel opens it as UTF-8 (keeps Arabic labels readable).
+  const body = '﻿' + rows.map(r => r.map(csvValue).join(',')).join('\r\n')
+  const blob = new Blob([body], { type: 'text/csv;charset=utf-8;' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = filename
+  document.body.appendChild(a)
+  a.click()
+  a.remove()
+  URL.revokeObjectURL(url)
+}
+
 function StatTile({ icon, iconBg, value, label, caption, loading }: {
   icon: string
   iconBg: string
@@ -99,7 +120,8 @@ export default function KidInsights({ kidId, kidName, stats, statsLoading }: Kid
   const catMap: Record<string, number> = {}
   for (const c of breakdown) catMap[c.category] = c.total_points
   const radarData = CATEGORY_ORDER.map(cat => ({ category: catLabel(cat), points: catMap[cat] ?? 0 }))
-  const hasCategoryData = breakdown.some(c => c.total_points > 0)
+  // Keep the radar web visible even with no data (all-zero points would collapse it).
+  const radarMax = Math.max(10, ...radarData.map(d => d.points))
 
   const trendData = (data?.daily_trend ?? []).map(d => {
     const [y, m, day] = d.date.split('-').map(Number)
@@ -108,6 +130,8 @@ export default function KidInsights({ kidId, kidName, stats, statsLoading }: Kid
       points: d.points,
     }
   })
+  // Give the empty line chart a sensible Y scale so its gridlines still show.
+  const trendYMax = trendData.length > 0 ? ('auto' as const) : 5
 
   const rates = data?.completion_rates ?? null
   const pieData =
@@ -121,33 +145,67 @@ export default function KidInsights({ kidId, kidName, stats, statsLoading }: Kid
 
   const totalXp = breakdown.reduce((s, c) => s + c.total_points, 0)
   const tasksCompleted = rates?.confirmed ?? 0
-  const honestyRate = rates?.rate ?? 0
+  const approvalRate = rates?.rate ?? 0
   const { current: streak, best } = computeStreak(data?.daily_trend ?? [])
 
   const errText = <p className="font-body text-sm text-danger-700 py-6 text-center">{t('errors.generic')}</p>
 
+  function exportCsv() {
+    const rows: (string | number)[][] = []
+    rows.push([`${kidName ?? t('parentDash.yourChild')} — ${t('parentDash.progressReport')}`])
+    rows.push([t('parentDash.csvGenerated'), new Date().toLocaleDateString(i18n.language)])
+    rows.push([])
+
+    // Summary
+    rows.push([t('parentDash.csvSummary')])
+    rows.push([t('parentDash.csvMetric'), t('parentDash.csvValue')])
+    rows.push([t('parentDash.tasksCompleted'), tasksCompleted])
+    rows.push([t('parentDash.xpEarned'), totalXp])
+    rows.push([t('parentDash.approvalRate'), `${approvalRate}%`])
+    rows.push([t('parentDash.dayStreak'), streak])
+    rows.push([])
+
+    // Completion rate
+    if (rates) {
+      rows.push([t('parentDash.completionRate')])
+      rows.push([t('parentDash.csvMetric'), t('parentDash.csvValue')])
+      rows.push([t('parentDash.confirmed'), rates.confirmed])
+      rows.push([t('parentDash.pending'), rates.pending])
+      rows.push([t('parentDash.rejected'), rates.rejected])
+      rows.push([t('parentDash.completionRate'), `${rates.rate}%`])
+      rows.push([])
+    }
+
+    // Category progress
+    rows.push([t('parentDash.categoryProgress')])
+    rows.push([t('parentDash.csvCategory'), t('parentDash.csvTotalXp'), t('parentDash.csvLevel')])
+    for (const cat of CATEGORY_ORDER) {
+      const level = stats.find(s => s.category === cat)?.level ?? 0
+      rows.push([catLabel(cat), catMap[cat] ?? 0, level])
+    }
+    rows.push([])
+
+    // Daily XP
+    rows.push([t('parentDash.weeklyProgress')])
+    rows.push([t('parentDash.csvDate'), t('parentDash.csvXp')])
+    for (const d of data?.daily_trend ?? []) rows.push([d.date, d.points])
+
+    const safeName = (kidName ?? 'kid').replace(/[^\p{L}\p{N}_-]+/gu, '_')
+    downloadCsv(`${safeName}-progress-${new Date().toISOString().slice(0, 10)}.csv`, rows)
+  }
+
   return (
     <div id="insights-print" className="flex flex-col gap-4 sm:gap-6">
 
-      {/* Report header — only rendered in the printed PDF */}
-      <div className="print-only mb-2">
-        <p className="font-heading text-2xl font-bold text-gray-900">
-          {kidName ? `${kidName} — ` : ''}{t('parentDash.progressReport')}
-        </p>
-        <p className="font-body text-sm text-gray-500">
-          {new Date().toLocaleDateString(i18n.language)}
-        </p>
-      </div>
-
-      {/* Toolbar (hidden in print) */}
-      <div className="flex items-center justify-between gap-3 no-print">
+      {/* Toolbar */}
+      <div className="flex items-center justify-between gap-3">
         <h2 className="font-heading text-xl font-bold text-gray-900">{t('parentDash.insights')}</h2>
         <button
           type="button"
-          onClick={() => window.print()}
+          onClick={exportCsv}
           className="inline-flex items-center gap-1.5 font-body font-semibold text-sm px-4 py-2 rounded-xl border border-gray-200 text-gray-700 hover:bg-gray-50 focus-ring transition-colors"
         >
-          <span aria-hidden="true">⬇️</span> {t('parentDash.exportPdf')}
+          <span aria-hidden="true">⬇️</span> {t('parentDash.exportCsv')}
         </button>
       </div>
 
@@ -155,7 +213,7 @@ export default function KidInsights({ kidId, kidName, stats, statsLoading }: Kid
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         <StatTile loading={isLoading} icon="✅" iconBg="bg-teal-50"    value={tasksCompleted}   label={t('parentDash.tasksCompleted')} />
         <StatTile loading={isLoading} icon="⭐" iconBg="bg-amber-50"   value={totalXp}          label={t('parentDash.xpEarned')} />
-        <StatTile loading={isLoading} icon="🛡️" iconBg="bg-primary-50" value={`${honestyRate}%`} label={t('parentDash.honesty')} />
+        <StatTile loading={isLoading} icon="🛡️" iconBg="bg-primary-50" value={`${approvalRate}%`} label={t('parentDash.approvalRate')} />
         <StatTile loading={isLoading} icon="🔥" iconBg="bg-danger-50"  value={streak}           label={t('parentDash.dayStreak')} caption={t('parentDash.bestStreak', { n: best })} />
       </div>
 
@@ -165,7 +223,7 @@ export default function KidInsights({ kidId, kidName, stats, statsLoading }: Kid
           <CardShell title={t('parentDash.weeklyProgress')}>
             {isLoading ? (
               <div className="h-52 rounded-xl bg-gray-100 animate-pulse" />
-            ) : isError ? errText : trendData.length > 0 ? (
+            ) : isError ? errText : (
               <div className="h-52">
                 <ResponsiveContainer width="100%" height="100%">
                   <AreaChart data={trendData} margin={{ top: 8, right: 8, bottom: 0, left: -20 }}>
@@ -177,7 +235,7 @@ export default function KidInsights({ kidId, kidName, stats, statsLoading }: Kid
                     </defs>
                     <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" vertical={false} />
                     <XAxis dataKey="date" tick={{ fontSize: 11, fill: '#6D6C66' }} tickLine={false} axisLine={false} />
-                    <YAxis tick={{ fontSize: 11, fill: '#6D6C66' }} tickLine={false} axisLine={false} allowDecimals={false} />
+                    <YAxis tick={{ fontSize: 11, fill: '#6D6C66' }} tickLine={false} axisLine={false} allowDecimals={false} domain={[0, trendYMax]} />
                     <Tooltip />
                     <Area
                       type="monotone"
@@ -191,7 +249,7 @@ export default function KidInsights({ kidId, kidName, stats, statsLoading }: Kid
                   </AreaChart>
                 </ResponsiveContainer>
               </div>
-            ) : <EmptyMini label={t('parentDash.noData')} className="h-52" />}
+            )}
           </CardShell>
         </div>
 
@@ -235,14 +293,14 @@ export default function KidInsights({ kidId, kidName, stats, statsLoading }: Kid
         <CardShell title={t('parentDash.categoryBalance')}>
           {isLoading ? (
             <div className="h-52 rounded-xl bg-gray-100 animate-pulse" />
-          ) : isError ? errText : hasCategoryData ? (
+          ) : isError ? errText : (
             <>
               <div className="h-48">
                 <ResponsiveContainer width="100%" height="100%">
                   <RadarChart data={radarData} outerRadius="70%">
                     <PolarGrid stroke="#E5E7EB" />
                     <PolarAngleAxis dataKey="category" tick={{ fontSize: 11, fill: '#6D6C66' }} />
-                    <PolarRadiusAxis tick={false} axisLine={false} />
+                    <PolarRadiusAxis tick={false} axisLine={false} domain={[0, radarMax]} />
                     <Radar dataKey="points" stroke={PRIMARY_HEX} fill={PRIMARY_HEX} fillOpacity={0.35} />
                     <Tooltip />
                   </RadarChart>
@@ -263,7 +321,7 @@ export default function KidInsights({ kidId, kidName, stats, statsLoading }: Kid
                 })}
               </ul>
             </>
-          ) : <EmptyMini label={t('parentDash.noData')} className="h-52" />}
+          )}
         </CardShell>
       </div>
 
