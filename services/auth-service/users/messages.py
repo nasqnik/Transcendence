@@ -25,6 +25,7 @@ KID_INVALID_ACCESS_TOKEN = "Invalid token."
 KID_NOT_ACCESS_TOKEN = "Not a kid access token."
 
 # Google
+GOOGLE_USER_DOES_NOT_EXIST = "User doesn't exist. Sign up instead."
 GOOGLE_ACCOUNT_REGISTERED_AS_KID = (
     "This Google account is registered as a kid account. Use kid sign-in instead."
 )

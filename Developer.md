@@ -8,10 +8,11 @@ Local development uses **Docker Compose**.
 cp .env.example .env
 # Edit .env: set DOCKER_UID / DOCKER_GID from `id -u` and `id -g`
 
-make all
+make all   # app + APIs only (no admin / Swagger)
+make dev   # same stack + /admin/ and /api/*/docs/
 ```
 
-`make all` creates SSL certs if missing, builds images (only when Dockerfiles or build context changed), starts **db**, **auth-service**, **frontend**, and **nginx**, ensures **auth_db** exists, and runs **database migrations**.
+`make all` / `make dev` create SSL certs if missing, build images (only when Dockerfiles or build context changed), start **db**, microservices, **frontend**, and **nginx**, ensure per-service DBs exist, and run **database migrations**. Admin and Swagger are registered only when `DJANGO_DEBUG=true` (`make dev`).
 
 First-time only (optional):
 
@@ -24,7 +25,7 @@ To run migrations again later: `make migrate`
 | URL | What |
 |-----|------|
 | https://localhost | App via nginx (HTTPS) |
-| https://localhost/admin/ | Django admin via nginx |
+| https://localhost/admin/ | Django admin via nginx (`make dev` only) |
 | https://localhost/api/… | API via nginx |
 | http://localhost:8001 | auth-service directly |
 | http://localhost:8002 | task-service directly |
@@ -122,7 +123,7 @@ Compose creates a default network; services reach each other by name (`auth-serv
 **Nginx routing** (`security/nginx/nginx.conf`):
 
 - `/` → frontend
-- `/admin/` → auth-service (Django admin)
+- `/admin/` → auth-service (Django admin; only with `make dev`)
 - `/api/tasks/`, `/api/completions/`, `/api/health/` → task-service
 - `/api/` (everything else) → auth-service
 
@@ -148,7 +149,8 @@ Copies `services/_template/` → `services/<slug>-service/` and prints wiring st
 
 | Command | Description |
 |---------|-------------|
-| `make all` | SSL if needed, build (cached), start all services, init DBs, migrate |
+| `make all` | SSL if needed, build (cached), start all services, init DBs, migrate (no admin/docs) |
+| `make dev` | Same as `make all`, but enables Django admin + Swagger |
 | `make init-dbs` | Create `auth_db` and `task_db` if missing |
 | `make init-auth-db` | Create `auth_db` only (legacy alias — use `init-dbs`) |
 | `make build-all` | Build all images without starting |
@@ -159,6 +161,19 @@ Copies `services/_template/` → `services/<slug>-service/` and prints wiring st
 | `make ssl` | Generate self-signed TLS certs |
 
 Rebuilds use Docker layer cache: running `make all` again is fast if nothing in Dockerfiles or `COPY` context changed.
+
+`make all` / `make dev` already run `make seed-catalog` (shop items). Optional **user** seeds for local testing live in `makefiles/seed.mk` (still invoked as `make seed-…`). Run **`make dev` first** — seeds refuse when `DJANGO_DEBUG=false` (`make all`).
+
+| Command | Description |
+|---------|-------------|
+| `make seed-dev` | One parent + kid |
+| `make seed-dev-friend` | Two parent+kid pairs (friend testing) |
+| `make seed-custom-friend` | Custom kid usernames for friend testing |
+| `make seed-dual-parent` | One kid with two parents |
+| `make seed-parent-two-kids` | One parent with two kids |
+| `make seed-parent-many-kids` | One parent with many kids |
+
+Evaluation should use the frontend to sign up; these are developer shortcuts only.
 
 ### auth-service
 
@@ -181,14 +196,7 @@ Rebuilds use Docker layer cache: running `make all` again is fast if nothing in 
 | `make logs-front` | Follow frontend logs |
 | `make shell-front` | Shell into frontend container |
 
-### Django apps
-
-| Command | Description |
-|---------|-------------|
-| `make app name=<app>` | Create app and add to `INSTALLED_APPS` |
-| `make delapp name=<app>` | Remove app directory and `INSTALLED_APPS` entry |
-
-Migrations (after models change):
+### Migrations (after models change)
 
 ```bash
 docker compose exec auth-service python manage.py makemigrations

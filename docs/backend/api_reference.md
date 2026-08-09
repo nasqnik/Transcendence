@@ -46,8 +46,8 @@ Two separate JWT stacks:
 
 | Actor | Login endpoint | Token claims (access) | Use on |
 |--------|----------------|------------------------|--------|
-| **Parent** | `POST /auth/token/` or `POST /auth/google/` | `role: "parent"`, `user_id`, `email`, `username` | Parent routes (e.g. accept invite) |
-| **Kid** | `POST /auth/kid/token/` or `POST /auth/kid/google/` | `role: "kid"`, `kid_id`, `username` | Kid routes (e.g. invite second parent) |
+| **Parent or kid** | `POST /auth/token/` or `POST /auth/google/` | `role: "parent"` or `"kid"` (resolve parent first, then kid) | Branch UI/session on `role` |
+| **Kid (dedicated)** | `POST /auth/kid/token/` or `POST /auth/kid/google/` | `role: "kid"`, `kid_id`, `username` | Optional; same kid tokens as unified login |
 
 **Refresh:**
 
@@ -103,12 +103,12 @@ Default access token lifetime: **60 minutes**. Refresh: **7 days**. Email verifi
 | `POST` | `/auth/kid/google/` | Public | Kid Google login (must be `active`) |
 | `POST` | `/auth/register/` | Public | Parent account creation (sends verify email) |
 | `POST` | `/auth/verify-email/` | Public | Confirm parent email (password signup) |
-| `POST` | `/auth/token/` | Public | Parent login → JWT (requires `email_verified`) |
+| `POST` | `/auth/token/` | Public | Unified login → parent or kid JWT (`role` claim) |
 | `POST` | `/auth/token/refresh/` | Public | Refresh parent JWT |
 | `POST` | `/auth/token/verify/` | Public | Validate parent access token |
 | `GET` | `/guardian-invitations/{token}/` | Public | Invitation details (parent accept screen) |
 | `POST` | `/guardian-invitations/accept/` | Parent JWT | Accept invitation |
-| `POST` | `/auth/google/` | Public | Parent Google login → JWT |
+| `POST` | `/auth/google/` | Public | Unified Google login → parent or kid JWT |
 | `POST` | `/auth/kid/token/` | Public | Kid login → JWT (`email_verified` + `active`) |
 | `POST` | `/auth/kid/token/refresh/` | Public | Refresh kid JWT |
 | `POST` | `/kids/invite-parent/` | Kid JWT | Invite second guardian |
@@ -287,9 +287,11 @@ Creates kid with `email_verified=true` (Google). Sends guardian invite only (no 
 
 ---
 
-### `POST /auth/token/` (parent login)
+### `POST /auth/token/` (unified password login)
 
 **Auth:** none
+
+Resolves a **parent** by email/username first; if none exists, tries a **kid** with the same credentials. Response shape is always `{ "access", "refresh" }` — decode the access JWT `role` (`parent` | `kid`).
 
 **Request body:**
 
@@ -300,7 +302,7 @@ Creates kid with `email_verified=true` (Google). Sends guardian invite only (no 
 }
 ```
 
-`emailOrUsername` accepts the parent's **email** or **username**.
+`emailOrUsername` accepts email or username.
 
 **Success `200`:**
 
@@ -319,7 +321,9 @@ Creates kid with `email_verified=true` (Google). Sends guardian invite only (no 
 }
 ```
 
-Or `"Please verify your email before logging in."` if password is correct but account not verified.
+Or `"Please verify your email before logging in."` if a parent password is correct but email is not verified.
+
+Kid-only details (when falling through to kid): `"Verify your email first."`, `"Kid account is not active yet."`
 
 ---
 
@@ -618,6 +622,8 @@ App must be served from an **authorized origin** (e.g. `https://localhost` via n
 
 **`POST /api/auth/google/`** · **Public**
 
+Unified Google login: tries an existing **parent** first, then a **kid** (same as `/auth/kid/google/`). Does **not** create a parent account (use `/auth/google/signup/` for that).
+
 **Request:**
 
 ```json
@@ -628,20 +634,13 @@ App must be served from an **authorized origin** (e.g. `https://localhost` via n
 
 (`id_token` is the string from `response.credential` — Google’s JWT, not your app JWT.)
 
-**Success `200`:** same as parent password login:
-
-```json
-{
-  "access": "eyJ...",
-  "refresh": "eyJ..."
-}
-```
+**Success `200`:** `{ "access", "refresh" }` with JWT `role` `parent` or `kid`.
 
 **Backend env:** `GOOGLE_CLIENT_ID` must match the frontend Web client ID.
 
-**User linking:** if a parent already registered with the same email, Google login attaches `google_sub` to that account.
+**User linking:** if a parent already registered with the same email, Google login attaches `google_sub` to that account. Same for a kid matched by email.
 
-**Errors `400`:** invalid token, unverified email, email linked to another Google account, Google not configured.
+**Errors `400`:** invalid token, unknown user (“Sign up instead”), `Kid account is not active yet.`, email linked to another Google account, Google not configured.
 
 **Example:**
 
