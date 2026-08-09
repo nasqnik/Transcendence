@@ -497,6 +497,54 @@ class KidAuthAndSecondParentInviteTests(APITestCase):
         )
         self.assertEqual(response_with_email.status_code, status.HTTP_200_OK)
 
+    def test_unified_token_logs_in_active_kid(self):
+        self._signup_and_accept_primary()
+        from rest_framework_simplejwt.tokens import AccessToken
+
+        response = self.client.post(
+            "/api/auth/token/",
+            {"emailOrUsername": "alex_kid2", "password": "secure-pass-1"},
+            format="json",
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn("access", response.data)
+        self.assertIn("refresh", response.data)
+        self.assertEqual(AccessToken(response.data["access"])["role"], "kid")
+
+    def test_unified_token_inactive_kid_returns_not_active_yet(self):
+        self.client.post(
+            "/api/kids/signup/",
+            {
+                "name": "Sam",
+                "username": "sam_unified",
+                "email": "sam_unified@example.com",
+                "password": "secure-pass-1",
+                "parent_email": "parent@example.com",
+            },
+            format="json",
+        )
+        _verify_kid(self.client, "sam_unified")
+        response = self.client.post(
+            "/api/auth/token/",
+            {"emailOrUsername": "sam_unified", "password": "secure-pass-1"},
+            format="json",
+        )
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+        self.assertEqual(response.data["detail"], "Kid account is not active yet.")
+
+    def test_unified_token_parent_wrong_password_does_not_fall_through(self):
+        self._signup_and_accept_primary()
+        response = self.client.post(
+            "/api/auth/token/",
+            {"emailOrUsername": "parent@example.com", "password": "wrong-password"},
+            format="json",
+        )
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+        self.assertEqual(
+            response.data["detail"],
+            "No active account found with the given credentials.",
+        )
+
     def test_kid_token_verify(self):
         self._signup_and_accept_primary()
         login = self.client.post(
@@ -674,7 +722,9 @@ class GoogleLoginTests(APITestCase):
         self.assertTrue(user.email_verified)
 
     @patch("users.serializers.verify_google_id_token")
-    def test_google_login_rejects_kid_google_sub(self, mock_verify):
+    def test_google_login_returns_kid_tokens_for_kid_google_sub(self, mock_verify):
+        from rest_framework_simplejwt.tokens import AccessToken
+
         Kid.objects.create(
             name="Google Kid",
             username="google_kid",
@@ -696,12 +746,15 @@ class GoogleLoginTests(APITestCase):
             format="json",
         )
 
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(AccessToken(response.data["access"])["role"], "kid")
         self.assertFalse(CustomUser.objects.filter(email="kid.google@example.com").exists())
 
     @patch("users.serializers.verify_google_id_token")
-    def test_google_login_rejects_kid_email_without_google_sub(self, mock_verify):
-        Kid.objects.create(
+    def test_google_login_returns_kid_tokens_and_links_google_sub(self, mock_verify):
+        from rest_framework_simplejwt.tokens import AccessToken
+
+        kid = Kid.objects.create(
             name="Email Kid",
             username="email_kid",
             email="kid.only@example.com",
@@ -721,7 +774,10 @@ class GoogleLoginTests(APITestCase):
             format="json",
         )
 
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(AccessToken(response.data["access"])["role"], "kid")
+        kid.refresh_from_db()
+        self.assertEqual(kid.google_sub, "new-google-sub")
         self.assertFalse(CustomUser.objects.filter(email="kid.only@example.com").exists())
 
 
