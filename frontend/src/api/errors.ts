@@ -20,6 +20,8 @@ const API_ERROR_KEYS: Record<string, string> = {
   'A user with this email already exists.': 'errors.api.emailExists',
   'A user with that username already exists.': 'errors.api.usernameExists',
   'This username is already taken.': 'errors.api.usernameTaken',
+  'This field may not be blank.': 'errors.api.fieldRequired',
+  'This field is required.': 'errors.api.fieldRequired',
   'Invitation not found.': 'errors.api.invitationNotFound',
   'Invitation has expired.': 'errors.api.invitationExpired',
   'Your account email does not match the invitation email.': 'errors.api.invitationEmailMismatch',
@@ -66,10 +68,18 @@ const API_ERROR_KEYS: Record<string, string> = {
   // Both mean the session is no longer usable; the distinction is for logs.
   'Invalid token.': 'errors.api.tokenNotValid',
   'Not a kid access token.': 'errors.api.tokenNotValid',
+  // Added by the backend's username-rules and password-reset work.
+  'Username must be 3-20 characters, start with a letter, and use only letters, numbers, and underscores.': 'errors.api.usernameInvalid',
+  "This username isn't available.": 'errors.api.usernameTaken',
+  'If an account exists for that email, we sent a password reset link.': 'errors.api.passwordResetRequested',
+  'Password updated. You can log in with your new password.': 'errors.api.passwordResetSuccess',
+  'Invalid or expired reset link.': 'errors.api.passwordResetTokenInvalid',
+  'This reset link has expired. Request a new one.': 'errors.api.passwordResetTokenExpired',
 }
 
 const PASSWORD_ERROR_PREFIXES: Array<{ prefix: string; key: string }> = [
   { prefix: 'This password is too short', key: 'errors.passwordMinLength' },
+  { prefix: 'Ensure this field has at least', key: 'errors.passwordMinLength' },
   { prefix: 'The password is too similar', key: 'errors.passwordTooSimilar' },
 ]
 
@@ -115,6 +125,7 @@ function resolveMessageKey(message: string): string | null {
   const key = API_ERROR_KEYS[trimmed]
   if (key) return key
   if (trimmed.startsWith('Invitation is not pending')) return 'errors.api.invitationNotPending'
+  if (trimmed.startsWith('Ensure this field has no more than')) return 'errors.api.tooLong'
   for (const { prefix, key } of PASSWORD_ERROR_PREFIXES) {
     if (trimmed.startsWith(prefix)) return key
   }

@@ -19,16 +19,13 @@ export const STAT_XP_PER_LEVEL = 50
 /** Overall XP awarded each time a single category levels up. */
 export const OVERALL_XP_PER_STAT_LEVEL = 50
 
-/** Coins awarded each time the main level goes up. */
-export const COINS_PER_MAIN_LEVEL = 50
-
 /**
- * Category level-ups needed for one main level — the number a kid actually
- * wants when asking "how far until I can buy something?".
+ * Coins awarded each time a *category* levels up.
  *
- * Derived rather than written down: with the current curve it is 2, but the
- * moment the server's ratio changes a hardcoded 2 becomes a lie in the one
- * place that exists to explain the rules.
+ * This used to be `COINS_PER_MAIN_LEVEL`. The server moved the award into the
+ * category loop, so coins now arrive on every colour level-up rather than once
+ * per main level, and the main-level loop pays nothing. A kid earns them twice
+ * as often as the old rule implied — and the help panel was still describing
+ * the old one.
  */
-export const STAT_LEVELS_PER_MAIN_LEVEL =
-  Math.ceil(MAIN_XP_PER_LEVEL / OVERALL_XP_PER_STAT_LEVEL)
+export const COINS_PER_STAT_LEVEL = 50

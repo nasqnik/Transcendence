@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import useAuthStore from '../store/authStore'
 import { kidsFromToken } from '../api/parent'
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import {
   getMe, updateUsername, changePassword, requestEmailChange, deleteAccount, type MeProfile,
 } from '../api/account'
@@ -221,15 +221,23 @@ function PasswordSection({ profile }: { profile: MeProfile }) {
     <form onSubmit={submit} className="flex flex-col gap-3">
       <p className="font-body text-sm font-semibold text-gray-700">{heading}</p>
       {profile.has_password && (
-        <FormField
-          id="current-password"
-          label={t('parentDash.currentPassword')}
-          type="password"
-          value={current}
-          onChange={(e) => { setCurrent(e.target.value); clearFieldError('current_password') }}
-          error={fieldErrors.current_password}
-          autoComplete="current-password"
-        />
+        <div className="flex flex-col gap-1">
+          <FormField
+            id="current-password"
+            label={t('parentDash.currentPassword')}
+            type="password"
+            value={current}
+            onChange={(e) => { setCurrent(e.target.value); clearFieldError('current_password') }}
+            error={fieldErrors.current_password}
+            autoComplete="current-password"
+          />
+          <Link
+            to="/forgot-password"
+            className="self-start min-h-11 -my-1 inline-flex items-center font-body text-xs font-semibold text-primary-600 hover:text-primary-700 focus-ring rounded"
+          >
+            {t('auth.forgotPassword')}
+          </Link>
+        </div>
       )}
       <FormField
         id="new-password"
@@ -454,7 +462,7 @@ export default function ParentSettings() {
       {/* Account */}
       <section aria-labelledby="account-heading" className="bg-white rounded-2xl p-6">
         <h2 id="account-heading" className="font-heading text-lg font-bold text-gray-900 mb-2">
-          {t('parentDash.accountDetails')}
+          <span aria-hidden="true">👤</span> {t('parentDash.accountDetails')}
         </h2>
         {isLoading || !profile ? (
           <div className="flex flex-col gap-3 py-2">
@@ -478,7 +486,7 @@ export default function ParentSettings() {
       {profile && (
         <section aria-labelledby="security-heading" className="bg-white rounded-2xl p-6">
           <h2 id="security-heading" className="font-heading text-lg font-bold text-gray-900 mb-4">
-            {t('parentDash.security')}
+            <span aria-hidden="true">🔒</span> {t('parentDash.security')}
           </h2>
           <PasswordSection profile={profile} />
         </section>
@@ -487,7 +495,7 @@ export default function ParentSettings() {
       {/* Preferences */}
       <section aria-labelledby="prefs-heading" className="bg-white rounded-2xl p-6">
         <h2 id="prefs-heading" className="font-heading text-lg font-bold text-gray-900 mb-4">
-          {t('parentDash.preferences')}
+          <span aria-hidden="true">🌍</span> {t('parentDash.preferences')}
         </h2>
         <div className="flex items-center justify-between gap-4">
           <span className="font-body text-sm text-gray-500">{t('parentDash.language')}</span>
