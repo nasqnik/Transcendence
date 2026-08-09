@@ -11,7 +11,7 @@ export default function VerifyEmailChange() {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const logout = useAuthStore(s => s.logout)
-  usePageTitle(`${t('parentDash.emailChangeSuccess')} — ${t('app.name')}`)
+  usePageTitle(t('parentDash.emailChangeSuccess'))
   const { state, errorMessageKey } = useTokenVerification('email-change-heading', verifyEmailChange)
 
   if (state === 'loading') {

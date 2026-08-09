@@ -98,7 +98,7 @@
     "reject": "Отклонить",
     "submittedAt": "Отправлено {{date}}",
     "loading": "Загрузка задач...",
-    "emptyKid": "Задач пока нет. Попроси родителя добавить!",
+    "emptyKid": "Пока нет заданий. Добавь первое, чтобы начать!",
     "emptyParent": "Задачи ещё не созданы.",
     "invalidKidId": "Введи корректный ID аккаунта ребёнка (UUID).",
     "invalidXp": "Введи корректное количество XP (0 или больше).",
@@ -191,7 +191,7 @@
       "avatar": "Аватар"
     },
     "welcomeModalTitle": "Добро пожаловать в KiddoPath!",
-    "welcomeModalBody": "Ты можешь добавить задания сам или попросить родителя.",
+    "welcomeModalBody": "Добавляй свои задания, выполняй их и получай XP, чтобы повышать уровень!",
     "avatarTitle": "Настройка персонажа",
     "yourCharacter": "Твой персонаж",
     "baseCharacter": "Базовый персонаж",
@@ -204,7 +204,12 @@
     "slotHair": "Волосы",
     "slotGlasses": "Очки",
     "slotEarrings": "Серьги",
-    "slotBackground": "Фон"
+    "slotBackground": "Фон",
+    "profile": "Мой профиль",
+    "editProfile": "Изменить данные",
+    "accountDetails": "Мои данные",
+    "verified": "Подтверждён",
+    "memberSince": "С нами с"
   },
   "friends": {
     "title": "Друзья",

@@ -21,7 +21,12 @@ export default function KidTopbar() {
 
       <div className="flex items-center gap-2 sm:gap-3 shrink-0">
         {streak > 0 && (
+          // role="img" because the label describes the pill as a whole. A bare
+          // <div> is role=generic, where aria-label is *prohibited* and gets
+          // dropped — the flame and the number are already aria-hidden, so the
+          // pill was announcing nothing at all.
           <div
+            role="img"
             aria-label={t('kidDash.streakLabel', { count: streak })}
             className="flex items-center gap-1.5 sm:gap-2.5 bg-amber-50 rounded-2xl px-3 sm:px-4 py-2 sm:py-2.5"
           >
@@ -34,7 +39,9 @@ export default function KidTopbar() {
         )}
 
         {coins > 0 && (
+          // Same as the streak pill above: generic forbids aria-label.
           <div
+            role="img"
             aria-label={`${coins} ${t('kidDash.coins')}`}
             className="hidden sm:flex items-center gap-2.5 bg-amber-50 rounded-2xl px-4 py-2.5"
           >

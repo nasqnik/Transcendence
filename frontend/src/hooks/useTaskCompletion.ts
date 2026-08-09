@@ -113,8 +113,9 @@ export function useTaskCompletion(tasks: Task[]) {
     // Seeded from the task's own review_mode rather than assuming a tick. A
     // task that always needs a parent is never confirmed by tapping it, so
     // flashing green and then correcting to ⏳ tells the kid something untrue
-    // for a beat. 'optional' is unknown until the server answers, so it starts
-    // optimistic and is corrected in onSuccess.
+    // for a beat. review_mode is now only 'always' or 'never', so this is
+    // exact rather than a guess — onSuccess still reconciles it in case the
+    // parent's visibility settings changed since the task list was fetched.
     const needsReview = tasks.find(t => t.id === taskId)?.review_mode === 'always'
     setLingerAs(prev => new Map(prev).set(taskId, needsReview ? SUBMITTED : TICKED))
     setLingering(prev => new Set(prev).add(taskId))
