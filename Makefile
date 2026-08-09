@@ -1,8 +1,9 @@
-export DOCKER_BUILDKIT := 1
-export COMPOSE_DOCKER_CLI_BUILD := 1
+# KiddoPath — Makefile
 
 SSL_CERT := security/ssl/server.crt
 SSL_KEY := security/ssl/server.key
+
+# Backend microservices.
 AUTH_SERVICE := auth-service
 TASK_SERVICE := task-service
 GAMIFICATION_SERVICE := gamification-service
@@ -13,17 +14,29 @@ SOCIAL_SERVICE := social-service
 
 SERVICES := $(AUTH_SERVICE) $(TASK_SERVICE) $(GAMIFICATION_SERVICE) $(ANALYTICS_SERVICE) $(NOTIFICATION_SERVICE) $(CATALOG_SERVICE) $(SOCIAL_SERVICE)
 
-.PHONY: all up down build build-all restart logs ps shell clean fclean re ssl ssl-if-missing migrate init-dbs seed-dev \
-        seed-dev-friend seed-custom-friend seed-dual-parent seed-parent-two-kids \
-        seed-parent-many-kids \
+.PHONY: all dev up down build build-all restart logs ps shell clean fclean re ssl ssl-if-missing migrate init-dbs \
         up-front build-front restart-front logs-front shell-front \
         logs-auth shell-auth logs-task shell-task restart-task seed-catalog
 
+include makefiles/seed.mk
+
+# App only: frontend + APIs. No /admin/ and no Swagger (/api/*/docs/).
+all: export DJANGO_DEBUG := false
 all: ssl-if-missing
 	docker compose up -d --build
 	$(MAKE) init-dbs
 	$(MAKE) migrate
 	$(MAKE) seed-catalog
+	@echo "==> Stack ready (production-like). Open https://localhost — admin/docs are off."
+
+# Same stack, with Django admin + Swagger for local development.
+dev: export DJANGO_DEBUG := true
+dev: ssl-if-missing
+	docker compose up -d --build
+	$(MAKE) init-dbs
+	$(MAKE) migrate
+	$(MAKE) seed-catalog
+	@echo "==> Dev tools on: https://localhost/admin/ and https://localhost/api/docs/ (and /api/<service>/docs/)."
 
 init-dbs: init-auth-db init-task-db init-gamification-db init-analytics-db init-notification-db init-catalog-db init-social-db
 
@@ -60,66 +73,6 @@ migrate:
 		echo "==> migrate $$svc"; \
 		docker compose exec $$svc python manage.py migrate; \
 	done
-
-seed-dev:
-	@echo "==> seed dev parent + kid (auth-service)"
-	@docker compose exec $(AUTH_SERVICE) python manage.py seed_dev_users
-
-seed-dev-friend:
-	@echo "==> migrate auth-service (bio columns required)"
-	@docker compose exec $(AUTH_SERVICE) python manage.py migrate users
-	@echo "==> seed two parent+kid pairs for friend testing (auth-service, not linked)"
-	@docker compose exec $(AUTH_SERVICE) python manage.py seed_dev_friend_users
-
-# Custom two kid pairs for friend testing.
-# Preferred: pass usernames as args.
-#   make seed-custom-friend KID1=alice KID2=bob
-# Optional display names:
-#   make seed-custom-friend KID1=alice KID2=bob NAME1="Alice" NAME2="Bob"
-# If KID1/KID2 are omitted, the command prompts interactively (-it).
-seed-custom-friend:
-	@echo "==> migrate auth-service (bio columns required)"
-	@docker compose exec $(AUTH_SERVICE) python manage.py migrate users
-	@echo "==> seed custom parent+kid pairs for friend testing"
-	@docker compose exec -it $(AUTH_SERVICE) python manage.py seed_custom_friend_users \
-		$(if $(KID1),--kid1 $(KID1),) \
-		$(if $(KID2),--kid2 $(KID2),) \
-		$(if $(NAME1),--name1 "$(NAME1)",) \
-		$(if $(NAME2),--name2 "$(NAME2)",)
-
-seed-dual-parent:
-	@echo "==> migrate auth-service (bio columns required)"
-	@docker compose exec $(AUTH_SERVICE) python manage.py migrate users
-	@echo "==> seed one kid with two parents (auth-service)"
-	@docker compose exec $(AUTH_SERVICE) python manage.py seed_dual_parent_users
-
-# One parent with two kids (parent is primary guardian of both).
-# Defaults: dev_parent_multi + dev_kid_one / dev_kid_two.
-# Override any of them:
-#   make seed-parent-two-kids PARENT=sara KID1=alice KID2=bob NAME1="Alice" NAME2="Bob"
-seed-parent-two-kids:
-	@echo "==> migrate auth-service (bio columns required)"
-	@docker compose exec $(AUTH_SERVICE) python manage.py migrate users
-	@echo "==> seed one parent with two kids (auth-service)"
-	@docker compose exec $(AUTH_SERVICE) python manage.py seed_parent_two_kids_users \
-		$(if $(PARENT),--parent $(PARENT),) \
-		$(if $(KID1),--kid1 $(KID1),) \
-		$(if $(KID2),--kid2 $(KID2),) \
-		$(if $(NAME1),--name1 "$(NAME1)",) \
-		$(if $(NAME2),--name2 "$(NAME2)",)
-
-# One parent with many kids (15 by default), all primary-guardian linked.
-# Override count, parent username, kid prefix, or print every kid's token:
-#   make seed-parent-many-kids COUNT=20 PARENT=sara PREFIX=child TOKENS=1
-seed-parent-many-kids:
-	@echo "==> migrate auth-service (bio columns required)"
-	@docker compose exec $(AUTH_SERVICE) python manage.py migrate users
-	@echo "==> seed one parent with $(or $(COUNT),15) kids (auth-service)"
-	@docker compose exec $(AUTH_SERVICE) python manage.py seed_parent_many_kids_users \
-		$(if $(COUNT),--count $(COUNT),) \
-		$(if $(PARENT),--parent $(PARENT),) \
-		$(if $(PREFIX),--prefix $(PREFIX),) \
-		$(if $(TOKENS),--tokens,)
 
 seed-catalog:
 	@echo "==> seed catalog items (catalog-service)"
@@ -194,39 +147,3 @@ shell-front:
 
 ssl:
 	bash security/ssl/certificate_gen.sh
-
-app:
-	@test -n "$(name)" || (echo "Usage: make app name=<app_name>" && exit 1)
-	docker compose up -d $(AUTH_SERVICE)
-	docker compose exec $(AUTH_SERVICE) python manage.py startapp $(name)
-	@if rg -q "^[[:space:]]*'$(name)'," services/auth-service/core/settings.py; then \
-		echo "[INFO] '$(name)' already exists in INSTALLED_APPS"; \
-	else \
-		awk -v app="$(name)" '\
-			/INSTALLED_APPS = \[/ { in_apps=1 } \
-			in_apps && /^]/ && !added { print "    \047" app "\047,"; added=1; in_apps=0 } \
-			{ print } \
-		' services/auth-service/core/settings.py > services/auth-service/core/settings.py.tmp && mv services/auth-service/core/settings.py.tmp services/auth-service/core/settings.py; \
-		echo "[OK] Added '$(name)' to INSTALLED_APPS"; \
-	fi
-	@echo ""
-	@echo "Done. Remaining steps:"
-	@echo "1) Add routes in services/auth-service/core/urls.py (include your app urls)"
-	@echo "2) Create services/auth-service/$(name)/urls.py if needed"
-	@echo "3) Create models, then run migrations:"
-	@echo "   docker compose exec $(AUTH_SERVICE) python manage.py makemigrations"
-	@echo "   make migrate"
-
-delapp:
-	@test -n "$(name)" || (echo "Usage: make delapp name=<app_name>" && exit 1)
-	docker compose run --rm $(AUTH_SERVICE) sh -c "rm -rf /app/$(name)"
-	@if rg -q "^[[:space:]]*'$(name)'," services/auth-service/core/settings.py; then \
-		awk '!/^[[:space:]]*'\''$(name)'\'',$$/' services/auth-service/core/settings.py > services/auth-service/core/settings.py.tmp && mv services/auth-service/core/settings.py.tmp services/auth-service/core/settings.py; \
-		echo "[OK] Removed '$(name)' from INSTALLED_APPS"; \
-	else \
-		echo "[INFO] '$(name)' not found in INSTALLED_APPS"; \
-	fi
-	@echo ""
-	@echo "Done. Remaining checks:"
-	@echo "1) Remove app routes/imports from services/auth-service/core/urls.py if you added any"
-	@echo "2) If app had models/migrations, create cleanup migration if needed"

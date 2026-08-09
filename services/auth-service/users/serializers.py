@@ -4,7 +4,10 @@ from django.db import transaction
 from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 from rest_framework.exceptions import AuthenticationFailed
-from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+from rest_framework_simplejwt.serializers import (
+    TokenObtainPairSerializer,
+    TokenRefreshSerializer,
+)
 from rest_framework_simplejwt.settings import api_settings
 from rest_framework_simplejwt.tokens import AccessToken
 
@@ -15,19 +18,28 @@ from .google_kids import (
     login_kid_from_google,
     signup_kid_from_google,
 )
-from .google_users import GoogleAccountConflictError, get_or_create_parent_from_google
+from .google_users import (
+    GoogleAccountConflictError,
+    GoogleUserNotFoundError,
+    login_parent_from_google,
+    signup_parent_from_google,
+)
 from .messages import (
     ACCOUNT_INACTIVE,
     CURRENT_PASSWORD_INCORRECT,
     CURRENT_PASSWORD_REQUIRED,
     EMAIL_ALREADY_REGISTERED,
     EMAIL_CHANGE_PENDING,
+    EMAIL_LINKED_TO_DIFFERENT_GOOGLE_ACCOUNT,
     EMAIL_REGISTERED_AS_KID_ACCOUNT,
+    EMAIL_REGISTERED_AS_KID_USE_KID_SIGNIN,
     EMAIL_SAME_AS_CURRENT,
+    GOOGLE_ACCOUNT_REGISTERED_AS_KID,
     KID_ACCOUNT_NOT_ACTIVE,
     KID_ACCOUNT_NOT_ACTIVE_YET,
     KID_EMAIL_MUST_DIFFER_FROM_PARENT,
     KID_EMAIL_NOT_VERIFIED,
+    KID_GOOGLE_ACCOUNT_NOT_FOUND,
     KID_INVALID_ACCESS_TOKEN,
     KID_INVALID_REFRESH_TOKEN,
     KID_NOT_ACCESS_TOKEN,
@@ -89,9 +101,48 @@ from .validators import USERNAME_MAX_LENGTH, validate_username_format
 
 LOGIN_IDENTIFIER_FIELD = "emailOrUsername"
 
+_PARENT_CREDENTIALS_FAILED = "No active account found with the given credentials."
+_KID_GOOGLE_FALLBACK_DETAILS = frozenset(
+    {
+        GOOGLE_ACCOUNT_REGISTERED_AS_KID,
+        EMAIL_REGISTERED_AS_KID_USE_KID_SIGNIN,
+    }
+)
+
+
+def _kid_password_tokens(identifier: str, password: str, *, not_found_detail: str) -> dict:
+    """Issue kid JWT pair, or raise AuthenticationFailed with not_found_detail."""
+    kid = Kid.objects.filter(username__iexact=identifier).first()
+    if kid is None:
+        kid = Kid.objects.filter(email__iexact=identifier).first()
+
+    if kid is None or not kid.check_password(password):
+        raise AuthenticationFailed(not_found_detail)
+
+    if not kid.email_verified:
+        raise AuthenticationFailed(KID_VERIFY_EMAIL_FIRST)
+
+    if kid.registration_status != Kid.RegistrationStatus.ACTIVE:
+        raise AuthenticationFailed(KID_ACCOUNT_NOT_ACTIVE_YET)
+
+    refresh = KidRefreshToken.for_kid(kid)
+    return {
+        "refresh": str(refresh),
+        "access": str(refresh.access_token),
+    }
+
+
+def _kid_google_tokens(idinfo: dict) -> dict:
+    kid = login_kid_from_google(idinfo)
+    refresh = KidRefreshToken.for_kid(kid)
+    return {
+        "refresh": str(refresh),
+        "access": str(refresh.access_token),
+    }
+
 
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
-    """Include stable parent-facing claims on the access token."""
+    """Login: parent match first, then kid. JWT `role` distinguishes the session."""
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -126,15 +177,16 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         if user is None:
             user = CustomUser.objects.filter(username__iexact=identifier).first()
 
-        if user is None or not user.check_password(password):
-            raise AuthenticationFailed(
-                "No active account found with the given credentials."
+        if user is None:
+            return _kid_password_tokens(
+                identifier, password, not_found_detail=_PARENT_CREDENTIALS_FAILED
             )
 
+        if not user.check_password(password):
+            raise AuthenticationFailed(_PARENT_CREDENTIALS_FAILED)
+
         if not api_settings.USER_AUTHENTICATION_RULE(user):
-            raise AuthenticationFailed(
-                "No active account found with the given credentials."
-            )
+            raise AuthenticationFailed(_PARENT_CREDENTIALS_FAILED)
 
         if not user.email_verified:
             raise AuthenticationFailed(
@@ -147,6 +199,53 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
             "refresh": str(refresh),
             "access": str(refresh.access_token),
         }
+
+
+class CustomTokenRefreshSerializer(TokenRefreshSerializer):
+    """Refresh parent tokens and reload kid_ids/kids from the DB.
+
+    SimpleJWT's default refresh copies claims from the old refresh token, so a
+    parent who logged in before a kid linked them would keep kid_ids: [] forever
+    until they logged in again. Re-mint with get_token so claims match the DB.
+    """
+
+    def validate(self, attrs):
+        # Prove the presented refresh is still valid (signature / expiry).
+        old_refresh = self.token_class(attrs["refresh"])
+
+        user_id = old_refresh.payload.get(api_settings.USER_ID_CLAIM)
+        if not user_id:
+            raise AuthenticationFailed(
+                "No active account found for the given token.",
+                code="no_active_account",
+            )
+
+        try:
+            user = CustomUser.objects.get(**{api_settings.USER_ID_FIELD: user_id})
+        except CustomUser.DoesNotExist as exc:
+            raise AuthenticationFailed(
+                "No active account found for the given token.",
+                code="no_active_account",
+            ) from exc
+
+        if not api_settings.USER_AUTHENTICATION_RULE(user):
+            raise AuthenticationFailed(
+                "No active account found for the given token.",
+                code="no_active_account",
+            )
+
+        if api_settings.ROTATE_REFRESH_TOKENS and api_settings.BLACKLIST_AFTER_ROTATION:
+            try:
+                old_refresh.blacklist()
+            except AttributeError:
+                pass
+
+        # Same claim builder as login — kid_ids/kids/email/username/role from DB.
+        refresh = CustomTokenObtainPairSerializer.get_token(user)
+        data = {"access": str(refresh.access_token)}
+        if api_settings.ROTATE_REFRESH_TOKENS:
+            data["refresh"] = str(refresh)
+        return data
 
 
 class KidSignupSerializer(serializers.Serializer):
@@ -356,29 +455,11 @@ class KidTokenObtainSerializer(serializers.Serializer):
     password = serializers.CharField(write_only=True)
 
     def validate(self, attrs):
-        identifier = attrs[LOGIN_IDENTIFIER_FIELD]
-        password = attrs["password"]
-
-        kid = Kid.objects.filter(username__iexact=identifier).first()
-        if kid is None:
-            kid = Kid.objects.filter(email__iexact=identifier).first()
-
-        if kid is None or not kid.check_password(password):
-            raise AuthenticationFailed(
-                "No active kid account found with the given credentials."
-            )
-
-        if not kid.email_verified:
-            raise AuthenticationFailed(KID_VERIFY_EMAIL_FIRST)
-
-        if kid.registration_status != Kid.RegistrationStatus.ACTIVE:
-            raise AuthenticationFailed(KID_ACCOUNT_NOT_ACTIVE_YET)
-
-        refresh = KidRefreshToken.for_kid(kid)
-        return {
-            "refresh": str(refresh),
-            "access": str(refresh.access_token),
-        }
+        return _kid_password_tokens(
+            attrs[LOGIN_IDENTIFIER_FIELD],
+            attrs["password"],
+            not_found_detail="No active kid account found with the given credentials.",
+        )
 
 
 class KidTokenRefreshSerializer(serializers.Serializer):
@@ -473,7 +554,19 @@ class InviteSecondParentSerializer(serializers.Serializer):
         return data
 
 
+def _parent_google_tokens(user):
+    if not user.is_active:
+        raise serializers.ValidationError(ACCOUNT_INACTIVE)
+    refresh = CustomTokenObtainPairSerializer.get_token(user)
+    return {
+        "refresh": str(refresh),
+        "access": str(refresh.access_token),
+    }
+
+
 class GoogleLoginSerializer(serializers.Serializer):
+    """Login only — never creates a parent. Tries parent, then kid."""
+
     id_token = serializers.CharField()
 
     def validate(self, attrs):
@@ -483,18 +576,49 @@ class GoogleLoginSerializer(serializers.Serializer):
             raise serializers.ValidationError(str(exc)) from exc
 
         try:
-            user = get_or_create_parent_from_google(idinfo)
+            user = login_parent_from_google(idinfo)
+        except GoogleAccountConflictError as exc:
+            detail = str(exc)
+            if detail == EMAIL_LINKED_TO_DIFFERENT_GOOGLE_ACCOUNT:
+                raise serializers.ValidationError(detail) from exc
+            if detail not in _KID_GOOGLE_FALLBACK_DETAILS:
+                raise serializers.ValidationError(detail) from exc
+            try:
+                return _kid_google_tokens(idinfo)
+            except GoogleKidAccountConflictError as kid_exc:
+                kid_detail = str(kid_exc)
+                if kid_detail == KID_GOOGLE_ACCOUNT_NOT_FOUND:
+                    raise serializers.ValidationError(detail) from kid_exc
+                raise serializers.ValidationError(kid_detail) from kid_exc
+        except GoogleUserNotFoundError as exc:
+            try:
+                return _kid_google_tokens(idinfo)
+            except GoogleKidAccountConflictError as kid_exc:
+                kid_detail = str(kid_exc)
+                if kid_detail == KID_GOOGLE_ACCOUNT_NOT_FOUND:
+                    raise serializers.ValidationError(str(exc)) from kid_exc
+                raise serializers.ValidationError(kid_detail) from kid_exc
+
+        return _parent_google_tokens(user)
+
+
+class GoogleSignupSerializer(serializers.Serializer):
+    """Sign up (or return tokens if the Google parent already exists)."""
+
+    id_token = serializers.CharField()
+
+    def validate(self, attrs):
+        try:
+            idinfo = verify_google_id_token(attrs["id_token"])
+        except GoogleAuthError as exc:
+            raise serializers.ValidationError(str(exc)) from exc
+
+        try:
+            user = signup_parent_from_google(idinfo)
         except GoogleAccountConflictError as exc:
             raise serializers.ValidationError(str(exc)) from exc
 
-        if not user.is_active:
-            raise serializers.ValidationError(ACCOUNT_INACTIVE)
-
-        refresh = CustomTokenObtainPairSerializer.get_token(user)
-        return {
-            "refresh": str(refresh),
-            "access": str(refresh.access_token),
-        }
+        return _parent_google_tokens(user)
 
 
 class ParentVerifyEmailSerializer(serializers.Serializer):
@@ -631,15 +755,9 @@ class KidGoogleLoginSerializer(serializers.Serializer):
             raise serializers.ValidationError(str(exc)) from exc
 
         try:
-            kid = login_kid_from_google(idinfo)
+            return _kid_google_tokens(idinfo)
         except GoogleKidAccountConflictError as exc:
             raise serializers.ValidationError(str(exc)) from exc
-
-        refresh = KidRefreshToken.for_kid(kid)
-        return {
-            "refresh": str(refresh),
-            "access": str(refresh.access_token),
-        }
 
 
 class ParentProfileSerializer(serializers.ModelSerializer):

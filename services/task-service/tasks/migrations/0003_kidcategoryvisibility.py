@@ -10,11 +10,6 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.AddField(
-            model_name='task',
-            name='should_be_reviewed',
-            field=models.BooleanField(default=False),
-        ),
         migrations.CreateModel(
             name='KidCategoryVisibility',
             fields=[

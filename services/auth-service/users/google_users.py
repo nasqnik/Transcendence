@@ -5,6 +5,7 @@ from .messages import (
     EMAIL_LINKED_TO_DIFFERENT_GOOGLE_ACCOUNT,
     EMAIL_REGISTERED_AS_KID_USE_KID_SIGNIN,
     GOOGLE_ACCOUNT_REGISTERED_AS_KID,
+    GOOGLE_USER_DOES_NOT_EXIST,
 )
 from .models import CustomUser, Kid
 from .services import email_belongs_to_kid, username_is_taken
@@ -17,6 +18,12 @@ from .validators import (
 # it exists because we want to raise an error if the Google account is already linked to a different account
 # and to be able to handle the error in the view
 class GoogleAccountConflictError(Exception):
+    pass
+
+
+class GoogleUserNotFoundError(Exception):
+    """Raised when Google login finds no parent — they must use sign-up."""
+
     pass
 
 
@@ -44,33 +51,55 @@ def _unique_username(base: str) -> str:
         suffix += 1
 
 
-@transaction.atomic
-def get_or_create_parent_from_google(idinfo: dict) -> CustomUser:
-    google_sub = idinfo["sub"]
-    email = idinfo["email"].lower()
-
+def _reject_if_kid_account(google_sub: str, email: str) -> None:
     if Kid.objects.filter(google_sub=google_sub).exists():
         raise GoogleAccountConflictError(GOOGLE_ACCOUNT_REGISTERED_AS_KID)
 
     if email_belongs_to_kid(email):
         raise GoogleAccountConflictError(EMAIL_REGISTERED_AS_KID_USE_KID_SIGNIN)
 
-    # returning Google user — already linked by google_sub
+
+def _find_or_link_existing_parent(google_sub: str, email: str) -> CustomUser | None:
+    """Return an existing parent, linking Google when found by email only."""
     user = CustomUser.objects.filter(google_sub=google_sub).first()
     if user:
         return user
 
-    # existing parent by email — link Google, or reject if another Google account is linked
     user = CustomUser.objects.filter(email=email).first()
-    if user:
-        if user.google_sub and user.google_sub != google_sub:
-            raise GoogleAccountConflictError(EMAIL_LINKED_TO_DIFFERENT_GOOGLE_ACCOUNT)
-        user.google_sub = google_sub
-        user.email_verified = True
-        user.save(update_fields=["google_sub", "email_verified"])
+    if user is None:
+        return None
+
+    if user.google_sub and user.google_sub != google_sub:
+        raise GoogleAccountConflictError(EMAIL_LINKED_TO_DIFFERENT_GOOGLE_ACCOUNT)
+    user.google_sub = google_sub
+    user.email_verified = True
+    user.save(update_fields=["google_sub", "email_verified"])
+    return user
+
+
+def login_parent_from_google(idinfo: dict) -> CustomUser:
+    """Log in an existing parent. Never creates an account."""
+    google_sub = idinfo["sub"]
+    email = idinfo["email"].lower()
+    _reject_if_kid_account(google_sub, email)
+
+    user = _find_or_link_existing_parent(google_sub, email)
+    if user is None:
+        raise GoogleUserNotFoundError(GOOGLE_USER_DOES_NOT_EXIST)
+    return user
+
+
+@transaction.atomic
+def signup_parent_from_google(idinfo: dict) -> CustomUser:
+    """Sign up a parent via Google, or return them if they already exist."""
+    google_sub = idinfo["sub"]
+    email = idinfo["email"].lower()
+    _reject_if_kid_account(google_sub, email)
+
+    user = _find_or_link_existing_parent(google_sub, email)
+    if user is not None:
         return user
 
-    # new parent — build username from email (or google_sub fallback)
     username_base = email.split("@")[0] or f"google_{google_sub[:8]}"
     return CustomUser.objects.create_user(
         email=email,
@@ -80,3 +109,8 @@ def get_or_create_parent_from_google(idinfo: dict) -> CustomUser:
         google_sub=google_sub,
         email_verified=True,
     )
+
+
+# Kept for older call sites / tests that still import the old name.
+def get_or_create_parent_from_google(idinfo: dict) -> CustomUser:
+    return signup_parent_from_google(idinfo)

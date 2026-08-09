@@ -8,7 +8,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('tasks', '0003_kidcategoryvisibility_task_should_be_reviewed'),
+        ('tasks', '0003_kidcategoryvisibility'),
     ]
 
     operations = [
