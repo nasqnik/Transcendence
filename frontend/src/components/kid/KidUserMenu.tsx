@@ -43,10 +43,21 @@ export default function KidUserMenu() {
           <div className="px-4 py-3 border-b border-gray-100">
             <p className="font-body font-semibold text-sm text-gray-900">{currentUser?.username}</p>
           </div>
+          {/* autoFocus moves here with the menu order: the first item should
+              take focus when the menu opens, and logging out is no longer it. */}
           <button
             type="button"
             role="menuitem"
             autoFocus
+            onClick={() => { closeMenu(); navigate('/profile') }}
+            className="w-full px-4 py-3 flex items-center gap-3 font-body text-sm text-gray-700 hover:bg-gray-50 focus-ring transition-colors text-start"
+          >
+            <span aria-hidden="true">👤</span>
+            {t('kidDash.profile')}
+          </button>
+          <button
+            type="button"
+            role="menuitem"
             onClick={() => { closeMenu(); logout(); navigate('/') }}
             className="w-full px-4 py-3 flex items-center gap-3 font-body text-sm text-danger-700 hover:bg-danger-50 focus-ring transition-colors text-start"
           >

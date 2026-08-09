@@ -98,7 +98,7 @@
     "reject": "رفض",
     "submittedAt": "أُرسلت {{date}}",
     "loading": "جارٍ تحميل المهام...",
-    "emptyKid": "لا توجد مهام بعد. اطلب من والدك إضافة مهمة!",
+    "emptyKid": "لا توجد مهام بعد. أضف أول مهمة لك للبدء!",
     "emptyParent": "لم يتم إنشاء أي مهام بعد.",
     "invalidKidId": "أدخل معرّف حساب الطفل الصحيح (UUID).",
     "invalidXp": "أدخل قيمة XP صحيحة (0 أو أكثر).",
@@ -191,7 +191,7 @@
       "avatar": "الشخصية"
     },
     "welcomeModalTitle": "مرحباً بك في KiddoPath!",
-    "welcomeModalBody": "يمكنك إضافة المهام بنفسك أو طلب من أحد والديك إضافتها لك.",
+    "welcomeModalBody": "أضف مهامك بنفسك، وأنجزها، واكسب نقاط خبرة لترتقي بمستواك!",
     "avatarTitle": "تخصيص الشخصية",
     "yourCharacter": "شخصيتك",
     "baseCharacter": "الشخصية الأساسية",
@@ -204,7 +204,12 @@
     "slotHair": "الشعر",
     "slotGlasses": "النظارات",
     "slotEarrings": "الأقراط",
-    "slotBackground": "الخلفية"
+    "slotBackground": "الخلفية",
+    "profile": "ملفي الشخصي",
+    "editProfile": "تعديل بياناتي",
+    "accountDetails": "بياناتي",
+    "verified": "مُوثَّق",
+    "memberSince": "انضم في"
   },
   "friends": {
     "title": "الأصدقاء",

@@ -23,6 +23,7 @@ import ChildDashboard from './pages/ChildDashboard'
 import KidTasks from './pages/KidTasks'
 import KidFriends from './pages/KidFriends'
 import KidSettings from './pages/KidSettings'
+import KidProfile from './pages/KidProfile'
 import AvatarStudio from './pages/AvatarStudio'
 import ParentDashboard from './pages/ParentDashboard'
 import ParentApprovals from './pages/ParentApprovals'
@@ -98,6 +99,7 @@ export default function App() {
             <Route path="/tasks" element={<KidTasks />} />
             <Route path="/friends" element={<KidFriends />} />
             <Route path="/settings" element={<KidSettings />} />
+            <Route path="/profile" element={<KidProfile />} />
           </Route>
         </Route>
 
