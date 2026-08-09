@@ -114,6 +114,16 @@ export default function Login() {
         <Button variant="primary" type="submit" className="w-full" disabled={isLoading}>
           {isLoading ? t('auth.loggingIn') : t('auth.login')}
         </Button>
+
+        {/* Inside the form and directly after the button: someone reaches for
+            this the moment a password fails, so it belongs where that attempt
+            ended rather than below the Google section. */}
+        <Link
+          to="/forgot-password"
+          className="self-center min-h-11 inline-flex items-center font-body text-sm font-semibold text-primary-600 hover:text-primary-700 focus-ring rounded"
+        >
+          {t('auth.forgotPassword')}
+        </Link>
       </form>
 
       <GoogleSignInSection
