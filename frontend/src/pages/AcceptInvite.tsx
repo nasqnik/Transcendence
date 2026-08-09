@@ -15,7 +15,7 @@ import { useInviteAcceptance } from '../hooks/useInviteAcceptance'
 export default function AcceptInvite() {
   const { t } = useTranslation()
   const navigate = useNavigate()
-  usePageTitle(`${t('invite.title')} — ${t('app.name')}`)
+  usePageTitle(t('invite.title'))
   const { isAuthenticated, currentUser, logout } = useAuthStore()
 
   const {

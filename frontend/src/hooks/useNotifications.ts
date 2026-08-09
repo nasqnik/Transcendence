@@ -5,8 +5,9 @@ import useAuthStore from '../store/authStore'
 import { closeSocket } from '../utils/closeSocket'
 import { WS_BASE } from '../utils/wsBase'
 import { PENDING_REWARDS_KEY } from './useRewards'
+import { NOTIFICATIONS_KEY } from './useReviewNotifications'
 
-const KEY = ['notifications'] as const
+const KEY = NOTIFICATIONS_KEY
 
 export function useNotifications() {
   const token = useAuthStore(s => s.token)
@@ -109,7 +110,9 @@ export function useNotifications() {
     }
   }, [token, queryClient])
 
-  // Optimistic mark-as-read with rollback on failure.
+  // Optimistic mark-as-read with rollback on failure. Owned by the bell alone:
+  // the tasks badge tracks its own "seen on that page" marker, so reading a
+  // verdict here must not silently clear it there, or vice versa.
   const { mutate: markRead } = useMutation({
     mutationFn: markNotificationRead,
     onMutate: async (id: string) => {
