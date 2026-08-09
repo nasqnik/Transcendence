@@ -12,6 +12,7 @@ from .views import (
     GuardianInviteDetailView,
     InviteSecondParentView,
     KidGoogleLoginView,
+    KidGoogleSignupCheckView,
     KidGoogleSignupView,
     KidInternalBatchView,
     KidInternalDetailView,
@@ -56,6 +57,7 @@ urlpatterns = [
 
     # Kid registration
     path("kids/signup/", KidSignupView.as_view()),
+    path("kids/signup/google/check/", KidGoogleSignupCheckView.as_view()),
     path("kids/signup/google/", KidGoogleSignupView.as_view()),
     path("auth/kid/verify-email/", KidVerifyEmailView.as_view()),
     path("auth/kid/password-reset/", KidPasswordResetRequestView.as_view()),
@@ -119,8 +121,9 @@ urlpatterns = [
 # - /auth/password-reset/confirm/:  "set a new parent password with the token"
 
 # Kid registration
-# - /kids/signup/:            "register a kid and invite the primary parent"
-# - /kids/signup/google/:     "not used yet — register a kid using Google"
+# - /kids/signup/:                  "register a kid and invite the primary parent"
+# - /kids/signup/google/check/:     "check Google identity before kid profile form"
+# - /kids/signup/google/:           "register a kid using Google"
 # - /auth/kid/verify-email/:  "verify a kid's email"
 # - /auth/kid/password-reset/:          "email a kid a password-reset link"
 # - /auth/kid/password-reset/confirm/:  "set a new kid password with the token"

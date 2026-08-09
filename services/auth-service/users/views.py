@@ -17,6 +17,7 @@ from .serializers import (
     GuardianInviteDetailSerializer,
     InviteSecondParentSerializer,
     KidGoogleLoginSerializer,
+    KidGoogleSignupCheckSerializer,
     KidGoogleSignupSerializer,
     KidPasswordResetConfirmSerializer,
     KidPasswordResetRequestSerializer,
@@ -60,6 +61,18 @@ class KidGoogleSignupView(generics.CreateAPIView):
 
     permission_classes = [AllowAny]
     serializer_class = KidGoogleSignupSerializer
+
+
+@extend_schema(request=KidGoogleSignupCheckSerializer)
+class KidGoogleSignupCheckView(APIView):
+    """Check that a Google identity can start kid signup (no account created)."""
+
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        serializer = KidGoogleSignupCheckSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        return Response(serializer.validated_data, status=status.HTTP_200_OK)
 
 
 class ParentRegisterView(generics.CreateAPIView):
