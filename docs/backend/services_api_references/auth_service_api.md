@@ -166,6 +166,10 @@ The parent access token includes:
 - `kid_ids` — UUIDs of kids they guard (used by task-service and others)
 - `kids` — `[{ "id", "username", "name" }, ...]` for parent UI display without an extra API call
 
+`POST /auth/token/refresh/` rebuilds those claims from the DB (not from the old
+token), so after a kid links to a parent the next refresh picks up the new kid
+without requiring a full log out / log in.
+
 ## Kid
 
 | Method | Path | Purpose |

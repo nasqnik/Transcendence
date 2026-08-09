@@ -366,6 +366,78 @@ class AcceptGuardianInviteTests(APITestCase):
 @override_settings(
     EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend",
     FRONTEND_URL="https://localhost",
+)
+class ParentTokenRefreshKidsTests(APITestCase):
+    """Refresh must re-read kid_ids from the DB, not copy the old empty list."""
+
+    def _decode(self, token):
+        from rest_framework_simplejwt.tokens import AccessToken
+
+        return AccessToken(token)
+
+    def test_refresh_picks_up_a_kid_linked_after_login(self):
+        self.client.post(
+            "/api/auth/register/",
+            {
+                "email": "parent@example.com",
+                "username": "parent_one",
+                "password": "secure-pass-1",
+            },
+            format="json",
+        )
+        _verify_parent(self.client, "parent@example.com")
+        login = self.client.post(
+            "/api/auth/token/",
+            {"emailOrUsername": "parent@example.com", "password": "secure-pass-1"},
+            format="json",
+        )
+        self.assertEqual(login.status_code, status.HTTP_200_OK)
+        stale_refresh = login.data["refresh"]
+        access_before = self._decode(login.data["access"])
+        self.assertEqual(access_before["kid_ids"], [])
+
+        signup = self.client.post(
+            "/api/kids/signup/",
+            {
+                "name": "Alex",
+                "username": "alex_refresh",
+                "email": "alex_refresh@example.com",
+                "password": "secure-pass-1",
+                "parent_email": "parent@example.com",
+            },
+            format="json",
+        )
+        _verify_kid(self.client, "alex_refresh")
+        invite = GuardianInvitation.objects.get(kid_id=signup.data["kid_id"])
+
+        self.client.credentials(
+            HTTP_AUTHORIZATION=f"Bearer {login.data['access']}"
+        )
+        accept = self.client.post(
+            "/api/guardian-invitations/accept/",
+            {"token": str(invite.token)},
+            format="json",
+        )
+        self.assertEqual(accept.status_code, status.HTTP_200_OK)
+        self.client.credentials()
+
+        refreshed = self.client.post(
+            "/api/auth/token/refresh/",
+            {"refresh": stale_refresh},
+            format="json",
+        )
+        self.assertEqual(refreshed.status_code, status.HTTP_200_OK)
+        access_after = self._decode(refreshed.data["access"])
+        self.assertEqual(access_after["kid_ids"], [str(signup.data["kid_id"])])
+        self.assertEqual(access_after["kids"][0]["username"], "alex_refresh")
+        self.assertEqual(access_after["email"], "parent@example.com")
+        self.assertEqual(access_after["role"], "parent")
+        self.assertIn("refresh", refreshed.data)
+
+
+@override_settings(
+    EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend",
+    FRONTEND_URL="https://localhost",
     MAX_GUARDIANS_PER_KID=2,
 )
 class KidAuthAndSecondParentInviteTests(APITestCase):
