@@ -4,7 +4,10 @@ from django.db import transaction
 from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 from rest_framework.exceptions import AuthenticationFailed
-from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+from rest_framework_simplejwt.serializers import (
+    TokenObtainPairSerializer,
+    TokenRefreshSerializer,
+)
 from rest_framework_simplejwt.settings import api_settings
 from rest_framework_simplejwt.tokens import AccessToken
 
@@ -152,6 +155,53 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
             "refresh": str(refresh),
             "access": str(refresh.access_token),
         }
+
+
+class CustomTokenRefreshSerializer(TokenRefreshSerializer):
+    """Refresh parent tokens and reload kid_ids/kids from the DB.
+
+    SimpleJWT's default refresh copies claims from the old refresh token, so a
+    parent who logged in before a kid linked them would keep kid_ids: [] forever
+    until they logged in again. Re-mint with get_token so claims match the DB.
+    """
+
+    def validate(self, attrs):
+        # Prove the presented refresh is still valid (signature / expiry).
+        old_refresh = self.token_class(attrs["refresh"])
+
+        user_id = old_refresh.payload.get(api_settings.USER_ID_CLAIM)
+        if not user_id:
+            raise AuthenticationFailed(
+                "No active account found for the given token.",
+                code="no_active_account",
+            )
+
+        try:
+            user = CustomUser.objects.get(**{api_settings.USER_ID_FIELD: user_id})
+        except CustomUser.DoesNotExist as exc:
+            raise AuthenticationFailed(
+                "No active account found for the given token.",
+                code="no_active_account",
+            ) from exc
+
+        if not api_settings.USER_AUTHENTICATION_RULE(user):
+            raise AuthenticationFailed(
+                "No active account found for the given token.",
+                code="no_active_account",
+            )
+
+        if api_settings.ROTATE_REFRESH_TOKENS and api_settings.BLACKLIST_AFTER_ROTATION:
+            try:
+                old_refresh.blacklist()
+            except AttributeError:
+                pass
+
+        # Same claim builder as login — kid_ids/kids/email/username/role from DB.
+        refresh = CustomTokenObtainPairSerializer.get_token(user)
+        data = {"access": str(refresh.access_token)}
+        if api_settings.ROTATE_REFRESH_TOKENS:
+            data["refresh"] = str(refresh)
+        return data
 
 
 class KidSignupSerializer(serializers.Serializer):
