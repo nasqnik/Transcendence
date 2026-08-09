@@ -296,19 +296,19 @@ analytics reads progress over time for parent dashboards
 
 - **Why:** Usable with keyboard, screen readers, and assistive tech — especially important for kids/families.
 - **How:** Accessibility-oriented frontend base (semantics, focus, navigation patterns) carried through the UI.
-- **Who:** Anastasiia.
+- **Who:** Anastasiia / Madiha.
 
 #### 10. Multiple languages (Minor, 1)
 
 - **Why:** Reach families in more than one language.
 - **How:** `i18next` / `react-i18next` with at least **English, Russian, Arabic** locale files.
-- **Who:** Anastasiia.
+- **Who:** Anastasiia / Madiha.
 
 #### 11. RTL support (Minor, 1)
 
 - **Why:** Arabic layout must mirror correctly.
 - **How:** `document.documentElement.dir` from active language; RTL-aware components (`dir`, layout).
-- **Who:** Anastasiia.
+- **Who:** Anastasiia / Madiha.
 
 #### 12. User activity analytics / insights (Minor, 1)
 
