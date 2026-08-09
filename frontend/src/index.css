@@ -20,6 +20,16 @@
   --color-amber-500: #EF9F27;
   --color-amber-700: #633806;
 
+  /* Honesty, the fifth stat category. A new hue rather than reusing one of the
+     four: rose is the only clear gap left beside teal, blue, amber and purple —
+     indigo passes contrast but reads as a shade of the blue and purple already
+     in play, and cyan's 500 measures 2.43:1 against white, under the 3:1
+     non-text floor for a progress fill. Measured: 700 on white 6.29:1, 700 on
+     the 50 tint 5.72:1, white on 700 6.29:1, 500 on white 3.67:1. */
+  --color-rose-50: #FFF1F2;
+  --color-rose-500: #F43F5E;
+  --color-rose-700: #BE123C;
+
   --color-danger-50: #FCEBEB;
   --color-danger-500: #E24B4A;
   --color-danger-700: #A32D2D;

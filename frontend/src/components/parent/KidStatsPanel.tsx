@@ -1,7 +1,5 @@
 import { useTranslation } from 'react-i18next'
-import { type TaskCategory, CATEGORY_STYLE, type KidStat } from '../../constants/categories'
-
-const CATEGORIES: TaskCategory[] = ['health', 'learning', 'responsibility', 'creativity']
+import { type StatCategory, CATEGORY_STYLE, STAT_CATEGORIES, type KidStat } from '../../constants/categories'
 
 interface KidStatsPanelProps {
   stats: KidStat[]
@@ -18,7 +16,7 @@ export default function KidStatsPanel({ stats, isLoading }: KidStatsPanelProps) 
       </h2>
 
       <div className="flex flex-col gap-5">
-        {isLoading ? CATEGORIES.map(cat => (
+        {isLoading ? STAT_CATEGORIES.map(cat => (
           <div key={cat} className="animate-pulse">
             <div className="flex items-center gap-2.5 mb-2">
               <div className="w-8 h-8 rounded-xl bg-gray-100 shrink-0" />
@@ -27,7 +25,7 @@ export default function KidStatsPanel({ stats, isLoading }: KidStatsPanelProps) 
             </div>
             <div className="h-3 rounded-full bg-gray-100 ms-10" />
           </div>
-        )) : CATEGORIES.map(category => {
+        )) : STAT_CATEGORIES.map(category => {
           const style = CATEGORY_STYLE[category]
           const stat  = stats.find(s => s.category === category)
           const level = stat?.level ?? 0
@@ -44,7 +42,7 @@ export default function KidStatsPanel({ stats, isLoading }: KidStatsPanelProps) 
                   {style.icon}
                 </div>
                 <span className="font-body text-sm font-semibold text-gray-700 flex-1">
-                  {t(`kidDash.categories.${category}` as `kidDash.categories.${TaskCategory}`)}
+                  {t(`kidDash.categories.${category}` as `kidDash.categories.${StatCategory}`)}
                 </span>
                 <span className={`font-body text-xs font-bold ${style.text}`}>
                   {t('parentDash.level', { level })}
@@ -52,7 +50,7 @@ export default function KidStatsPanel({ stats, isLoading }: KidStatsPanelProps) 
               </div>
               <div
                 role="progressbar"
-                aria-label={t(`kidDash.categories.${category}` as `kidDash.categories.${TaskCategory}`)}
+                aria-label={t(`kidDash.categories.${category}` as `kidDash.categories.${StatCategory}`)}
                 aria-valuenow={shown}
                 aria-valuemin={0}
                 aria-valuemax={50}
