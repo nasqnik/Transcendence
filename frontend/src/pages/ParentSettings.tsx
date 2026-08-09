@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import useAuthStore from '../store/authStore'
 import { kidsFromToken } from '../api/parent'
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import {
   getMe, updateUsername, changePassword, requestEmailChange, deleteAccount, type MeProfile,
 } from '../api/account'
@@ -221,15 +221,23 @@ function PasswordSection({ profile }: { profile: MeProfile }) {
     <form onSubmit={submit} className="flex flex-col gap-3">
       <p className="font-body text-sm font-semibold text-gray-700">{heading}</p>
       {profile.has_password && (
-        <FormField
-          id="current-password"
-          label={t('parentDash.currentPassword')}
-          type="password"
-          value={current}
-          onChange={(e) => { setCurrent(e.target.value); clearFieldError('current_password') }}
-          error={fieldErrors.current_password}
-          autoComplete="current-password"
-        />
+        <div className="flex flex-col gap-1">
+          <FormField
+            id="current-password"
+            label={t('parentDash.currentPassword')}
+            type="password"
+            value={current}
+            onChange={(e) => { setCurrent(e.target.value); clearFieldError('current_password') }}
+            error={fieldErrors.current_password}
+            autoComplete="current-password"
+          />
+          <Link
+            to="/forgot-password"
+            className="self-start min-h-11 -my-1 inline-flex items-center font-body text-xs font-semibold text-primary-600 hover:text-primary-700 focus-ring rounded"
+          >
+            {t('auth.forgotPassword')}
+          </Link>
+        </div>
       )}
       <FormField
         id="new-password"
@@ -263,11 +271,19 @@ function PasswordSection({ profile }: { profile: MeProfile }) {
 
 // Identity + avatar
 
+const MAX_AVATAR_BYTES = 2 * 1024 * 1024  // 2 MB — matches the nginx and backend limits
+const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp']
+
 function IdentityCard({ displayName }: { displayName?: string }) {
   const { t } = useTranslation()
   const qc = useQueryClient()
   const fileRef = useRef<HTMLInputElement>(null)
-  const { fieldErrors, setFieldErrors, resetFieldErrors } = useFormErrors()
+  const [error, setError] = useState<string | null>(null)
+
+  const flashError = (msg: string) => {
+    setError(msg)
+    window.setTimeout(() => setError(null), 4000)
+  }
 
   const { data: avatar } = useQuery({ queryKey: ['parentAvatar'], queryFn: getParentAvatar })
   const hasPhoto = !!avatar?.profile_picture
@@ -275,13 +291,13 @@ function IdentityCard({ displayName }: { displayName?: string }) {
   const { mutate: upload, isPending: uploading } = useMutation({
     mutationFn: (file: File) => uploadParentAvatar(file),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['parentAvatar'] }),
-    onError: (err) => setFieldErrors(getFieldErrors(err)),
+    onError: (err) => flashError(getFieldErrors(err).profile_picture ?? t('parentDash.avatarUploadFailed')),
   })
 
   const { mutate: remove, isPending: removing } = useMutation({
     mutationFn: deleteParentAvatar,
     onSuccess: () => qc.invalidateQueries({ queryKey: ['parentAvatar'] }),
-    onError: (err) => setFieldErrors(getFieldErrors(err)),
+    onError: () => flashError(t('parentDash.avatarUploadFailed')),
   })
 
   const busy = uploading || removing
@@ -289,7 +305,11 @@ function IdentityCard({ displayName }: { displayName?: string }) {
   function onPick(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     e.target.value = ''  // allow re-picking the same file
-    if (file) { resetFieldErrors(); upload(file) }
+    if (!file) return
+    setError(null)
+    if (!ALLOWED_IMAGE_TYPES.includes(file.type)) { flashError(t('parentDash.avatarInvalidType')); return }
+    if (file.size > MAX_AVATAR_BYTES) { flashError(t('parentDash.avatarTooLarge')); return }
+    upload(file)
   }
 
   return (
@@ -317,7 +337,7 @@ function IdentityCard({ displayName }: { displayName?: string }) {
           {hasPhoto && (
             <button
               type="button"
-              onClick={() => { resetFieldErrors(); remove() }}
+              onClick={() => { setError(null); remove() }}
               disabled={busy}
               className="font-body text-sm font-semibold text-danger-700 hover:opacity-80 focus-ring rounded disabled:opacity-50"
             >
@@ -332,10 +352,16 @@ function IdentityCard({ displayName }: { displayName?: string }) {
             className="hidden"
           />
         </div>
-        {fieldErrors.profile_picture && (
-          <p className="field-error mt-1">{fieldErrors.profile_picture}</p>
-        )}
       </div>
+
+      {error && (
+        <div
+          role="alert"
+          className="fixed bottom-8 left-1/2 -translate-x-1/2 z-50 bg-danger-700 text-white font-body font-semibold text-sm px-5 py-3 rounded-2xl shadow-lg max-w-[90vw] text-center"
+        >
+          {error}
+        </div>
+      )}
     </section>
   )
 }
@@ -357,43 +383,50 @@ function DeleteAccountSection() {
 
   return (
     <section aria-labelledby="danger-heading" className="bg-white rounded-2xl p-6">
-      <h2 id="danger-heading" className="font-heading text-lg font-bold text-gray-900 mb-2">
-        {t('parentDash.deleteAccount')}
+      <h2 id="danger-heading" className="font-heading text-lg font-bold text-gray-900 mb-4">
+        <span aria-hidden="true">⚠️</span> {t('parentDash.deleteAccount')}
       </h2>
       <p className="font-body text-sm text-gray-500 mb-4">{t('parentDash.deleteAccountHint')}</p>
+      {/* Solid danger-700 (7.07:1 on white), filled rather than a red text link —
+          inside a column of ordinary settings rows the link read as just another
+          one, and this is the row that can't be undone. */}
       <button
         type="button"
         onClick={() => { setError(null); setConfirming(true) }}
-        className="font-body font-semibold text-sm text-danger-700 hover:opacity-80 focus-ring rounded transition-opacity"
+        className="min-h-11 px-4 inline-flex items-center rounded-xl bg-danger-700 font-body text-sm font-semibold text-white hover:opacity-90 focus-ring transition-opacity"
       >
         {t('parentDash.deleteAccount')}
       </button>
 
       {confirming && (
         <Modal
+          role="alertdialog"
           onClose={() => { if (!isPending) setConfirming(false) }}
-          labelledBy="delete-modal-title"
+          labelledBy="parent-delete-modal-title"
+          describedBy="parent-delete-modal-body"
           cardClassName="rounded-2xl p-6 w-full max-w-sm flex flex-col gap-4"
         >
-          <h2 id="delete-modal-title" className="font-heading text-lg font-bold text-gray-900">
+          <h2 id="parent-delete-modal-title" className="font-heading text-lg font-bold text-gray-900">
             {t('parentDash.deleteAccountConfirmTitle')}
           </h2>
-          <p className="font-body text-sm text-gray-600">{t('parentDash.deleteAccountConfirmBody')}</p>
+          <p id="parent-delete-modal-body" className="font-body text-sm text-gray-600">
+            {t('parentDash.deleteAccountConfirmBody')}
+          </p>
           {error && <p className="field-error" role="alert">{error}</p>}
           <div className="flex items-center justify-end gap-3">
             <button
               type="button"
               onClick={() => setConfirming(false)}
               disabled={isPending}
-              className="font-body font-semibold text-sm px-4 py-2 rounded-xl text-gray-500 hover:text-gray-700 focus-ring transition-colors disabled:opacity-50"
+              className="min-h-11 font-body font-semibold text-sm px-4 py-2 rounded-xl text-gray-700 hover:bg-gray-100 focus-ring transition-colors disabled:opacity-50"
             >
-              {t('parentDash.cancel')}
+              {t('common.cancel')}
             </button>
             <button
               type="button"
               onClick={() => { setError(null); destroy() }}
               disabled={isPending}
-              className="font-body font-semibold text-sm px-4 py-2 rounded-xl bg-danger-700 text-white hover:opacity-90 focus-ring transition-opacity disabled:opacity-50"
+              className="min-h-11 font-body font-semibold text-sm px-4 py-2 rounded-xl bg-danger-700 text-white hover:opacity-90 focus-ring transition-opacity disabled:opacity-50"
             >
               {isPending ? t('parentDash.deleteAccountPending') : t('parentDash.deleteAccountConfirm')}
             </button>
@@ -429,7 +462,7 @@ export default function ParentSettings() {
       {/* Account */}
       <section aria-labelledby="account-heading" className="bg-white rounded-2xl p-6">
         <h2 id="account-heading" className="font-heading text-lg font-bold text-gray-900 mb-2">
-          {t('parentDash.accountDetails')}
+          <span aria-hidden="true">👤</span> {t('parentDash.accountDetails')}
         </h2>
         {isLoading || !profile ? (
           <div className="flex flex-col gap-3 py-2">
@@ -453,7 +486,7 @@ export default function ParentSettings() {
       {profile && (
         <section aria-labelledby="security-heading" className="bg-white rounded-2xl p-6">
           <h2 id="security-heading" className="font-heading text-lg font-bold text-gray-900 mb-4">
-            {t('parentDash.security')}
+            <span aria-hidden="true">🔒</span> {t('parentDash.security')}
           </h2>
           <PasswordSection profile={profile} />
         </section>
@@ -462,7 +495,7 @@ export default function ParentSettings() {
       {/* Preferences */}
       <section aria-labelledby="prefs-heading" className="bg-white rounded-2xl p-6">
         <h2 id="prefs-heading" className="font-heading text-lg font-bold text-gray-900 mb-4">
-          {t('parentDash.preferences')}
+          <span aria-hidden="true">🌍</span> {t('parentDash.preferences')}
         </h2>
         <div className="flex items-center justify-between gap-4">
           <span className="font-body text-sm text-gray-500">{t('parentDash.language')}</span>

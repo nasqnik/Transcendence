@@ -47,6 +47,10 @@ export default function TodaysTasks() {
 
   // When the hold-up is a parent rather than the kid, say so.
   const awaitingParent = groupTasks(tasks, completions, today).pending.length > 0
+  // Work that exists but isn't due today: overdue, scheduled ahead, or undated.
+  // Counted so the empty state can say "not here" rather than "not at all".
+  const groups = groupTasks(tasks, completions, today, lingering)
+  const elsewhere = groups.overdue.length + groups.upcoming.length + groups.anytime.length
 
   return (
     <>
@@ -153,6 +157,23 @@ export default function TodaysTasks() {
                 {/* The one thing the old empty state never answered: where the
                     tasks are now. They sit in the tasks page's waiting column
                     until a parent gets to them. */}
+                <Link
+                  to="/tasks"
+                  className="mt-1 font-body text-sm font-semibold text-primary-600 hover:text-primary-700 focus-ring rounded px-2 py-1"
+                >
+                  {t('tasks.allTasks')}
+                </Link>
+              </>
+            ) : elsewhere > 0 ? (
+              // Nothing due today is not the same as having no tasks. A kid
+              // whose work is all overdue, upcoming or undated was told "You
+              // haven't added any tasks yet" while the sidebar badge counted
+              // those very tasks — the same empty-vs-something lie as an error
+              // rendering as an empty list.
+              <>
+                <span className="text-5xl" aria-hidden="true">📋</span>
+                <p className="font-heading font-bold text-gray-900">{t('kidDash.noTasks')}</p>
+                <p className="font-body text-sm text-gray-400">{t('kidDash.tasksElsewhere')}</p>
                 <Link
                   to="/tasks"
                   className="mt-1 font-body text-sm font-semibold text-primary-600 hover:text-primary-700 focus-ring rounded px-2 py-1"

@@ -46,6 +46,26 @@ export interface CreateTaskInput {
   due_date: string | null
 }
 
+/**
+ * An `error` event from the task stream, carrying the server's machine-readable
+ * code (`content_blocked`, `rate_limited`, …) from task-service's `AIError`.
+ *
+ * The code is what the UI needs: the accompanying `message` is written by the
+ * moderation model in English, so showing it verbatim to a child reading the
+ * app in Russian or Arabic isn't an option. It's kept for logs only.
+ */
+export class TaskStreamError extends Error {
+  // Declared, not a constructor parameter property: `erasableSyntaxOnly` is on,
+  // and parameter properties emit runtime code.
+  readonly code: string
+
+  constructor(code: string, message: string) {
+    super(message)
+    this.name = 'TaskStreamError'
+    this.code = code
+  }
+}
+
 async function readTaskSSE(
   body: ReadableStream<Uint8Array>,
   onToken: (text: string) => void,
@@ -76,7 +96,12 @@ async function readTaskSSE(
 
       if (eventType === 'token' && typeof payload.text === 'string') onToken(payload.text)
       else if (eventType === 'done' && payload.task) onDone(payload.task as Task)
-      else if (eventType === 'error') throw new Error((payload.message as string) ?? 'ai_error')
+      else if (eventType === 'error') {
+        throw new TaskStreamError(
+          typeof payload.code === 'string' ? payload.code : 'ai_error',
+          typeof payload.message === 'string' ? payload.message : 'ai_error',
+        )
+      }
     }
   }
 
