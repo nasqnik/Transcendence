@@ -59,6 +59,13 @@ export async function loginParent(identifier: string, password: string): Promise
   return res.data
 }
 
+// POST /auth/token/refresh/  — exchange a parent refresh token for a fresh
+// access token (e.g. after linking a kid, so the new kid_ids land in the JWT).
+export async function refreshParentToken(refresh: string): Promise<TokenResponse> {
+  const res = await client.post<TokenResponse>('/auth/token/refresh/', { refresh })
+  return res.data
+}
+
 // POST /auth/kid/token/  — kid login with emailOrUsername + password
 export async function loginKid(identifier: string, password: string): Promise<TokenResponse> {
   const res = await client.post<TokenResponse>('/auth/kid/token/', {
@@ -196,4 +203,48 @@ export async function signupKid(
     parent_email: parentEmail,
   })
   return res.data
+}
+
+// ─── Password reset ───────────────────────────────────────────────────────────
+
+/**
+ * Ask for a reset link.
+ *
+ * Parent and kid have separate endpoints, and an email address cannot tell you
+ * which — asking the person would leak whether an account exists. Both are
+ * called, mirroring the dual-role login: the backend forbids a kid and a parent
+ * sharing an address, so at most one sends mail, and both answer with the same
+ * message either way so nothing is revealed.
+ */
+export async function requestPasswordReset(email: string): Promise<void> {
+  // skipAuth on both: this is reachable from settings while signed in, and a
+  // stale or wrong-role token attached to a public endpoint can only turn a
+  // working request into a 401.
+  const results = await Promise.allSettled([
+    client.post('/auth/password-reset/', { email }, { skipAuth: true }),
+    client.post('/auth/kid/password-reset/', { email }, { skipAuth: true }),
+  ])
+  // One success is enough: an address belongs to a parent or a kid, never both,
+  // and the endpoint answers 200 either way — so a single rejection says
+  // nothing about whether mail went out. Only when *every* call failed is it
+  // certain nothing was sent, and that must not be reported as "check your
+  // email". `allSettled` never rejects on its own, so without this the caller's
+  // error path is unreachable and an offline device sees a success screen.
+  if (results.every(r => r.status === 'rejected')) {
+    throw (results[0] as PromiseRejectedResult).reason
+  }
+}
+
+/** Set a new password from an emailed token. The route decides whose. */
+export async function confirmPasswordReset(
+  role: 'parent' | 'kid',
+  token: string,
+  newPassword: string,
+): Promise<void> {
+  const path = role === 'kid'
+    ? '/auth/kid/password-reset/confirm/'
+    : '/auth/password-reset/confirm/'
+  // skipAuth: the link is followed from an inbox, possibly on a device already
+  // signed in as someone else. The reset token in the body is the credential.
+  await client.post(path, { token, new_password: newPassword }, { skipAuth: true })
 }

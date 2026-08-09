@@ -1,7 +1,27 @@
 import { useEffect, useRef, useState } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
+import { TaskStreamError } from '../api/tasks'
 
 export type TaskStreamStatus = 'idle' | 'streaming' | 'error'
+
+/**
+ * task-service's `AIError.code` → an i18n key.
+ *
+ * Every one of these used to surface as "Something went wrong", which told a
+ * kid nothing — least of all that their task was rejected for what it said
+ * rather than because the network failed. The message that arrives alongside
+ * the code is written by the moderation model in English, so the code is what
+ * gets translated, not the text.
+ */
+const AI_ERROR_KEYS: Record<string, string> = {
+  content_blocked: 'errors.ai.contentBlocked',
+  rate_limited: 'errors.ai.rateLimited',
+  service_unavailable: 'errors.ai.serviceUnavailable',
+  authentication_failed: 'errors.ai.serviceUnavailable',
+  invalid_response: 'errors.ai.invalidResponse',
+}
+
+const AI_ERROR_FALLBACK = 'errors.ai.generic'
 
 /** Shape of `createTaskStream` / `updateTaskStream` once their id/payload is bound. */
 export type BoundTaskStream = (
@@ -28,6 +48,7 @@ export type BoundTaskStream = (
 export function useTaskStream(onClose: () => void) {
   const queryClient = useQueryClient()
   const [status, setStatus] = useState<TaskStreamStatus>('idle')
+  const [errorKey, setErrorKey] = useState(AI_ERROR_FALLBACK)
   const [streamingText, setStreamingText] = useState('')
   const abortRef = useRef<AbortController | null>(null)
 
@@ -61,12 +82,20 @@ export function useTaskStream(onClose: () => void) {
         if (abortRef.current === controller) setStatus('idle')
         return
       }
+      setErrorKey(
+        err instanceof TaskStreamError
+          ? AI_ERROR_KEYS[err.code] ?? AI_ERROR_FALLBACK
+          : AI_ERROR_FALLBACK,
+      )
       setStatus('error')
     }
   }
 
   /** Report a failure from work this hook did not run (the edit modal's delete). */
-  function fail() { setStatus('error') }
+  function fail() {
+    setErrorKey(AI_ERROR_FALLBACK)
+    setStatus('error')
+  }
 
-  return { status, streamingText, run, fail }
+  return { status, errorKey, streamingText, run, fail }
 }
