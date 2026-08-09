@@ -1,4 +1,4 @@
-*This project has been created as part of the 42 curriculum by meid, hparveen, mnazar, anikiti.*
+*This project has been created as part of the 42 curriculum by meid, hparveen, mnazar, anikitin.*
 
 # KiddoPath
 
