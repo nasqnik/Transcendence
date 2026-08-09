@@ -7,7 +7,7 @@ import {
   getInvitation,
   acceptInvitation,
   loginParent,
-  loginWithGoogle,
+  signupParentWithGoogle,
   registerParent,
   refreshParentToken,
   type InvitationDetails,
@@ -218,7 +218,9 @@ export function useInviteAcceptance() {
     setIsSubmitting(true)
 
     try {
-      const tokens = await loginWithGoogle(credential)
+      // Signup endpoint: creates a parent if new, or returns tokens if they
+      // already have an account (login-only would reject first-time invitees).
+      const tokens = await signupParentWithGoogle(credential)
       const user = parentUserFromAccessToken(tokens.access)
 
       if (!emailsMatchIgnoreCase(user.email, invitation.invite_email)) {

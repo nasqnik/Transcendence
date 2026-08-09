@@ -130,9 +130,15 @@ export async function inviteParent(parentEmail: string, invitedUsernameHint?: st
   return res.data
 }
 
-// POST /auth/google/  — parent sign-in / sign-up via Google Identity Services
+// POST /auth/google/  — parent sign-in via Google (does not create an account)
 export async function loginWithGoogle(idToken: string): Promise<TokenResponse> {
   const res = await client.post<TokenResponse>('/auth/google/', { id_token: idToken })
+  return res.data
+}
+
+// POST /auth/google/signup/  — parent sign-up via Google (creates if new)
+export async function signupParentWithGoogle(idToken: string): Promise<TokenResponse> {
+  const res = await client.post<TokenResponse>('/auth/google/signup/', { id_token: idToken })
   return res.data
 }
 

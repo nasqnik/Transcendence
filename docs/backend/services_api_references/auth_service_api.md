@@ -153,13 +153,22 @@ Invalid/expired token → `400` under `token`.
 | POST | `/auth/token/` | Log in a parent (email/username + password) -> tokens. |
 | POST | `/auth/token/refresh/` | Refresh a parent's access token. |
 | POST | `/auth/token/verify/` | Check a parent's access token is valid. |
-| POST | `/auth/google/` | Log in or sign up a parent via Google. |
+| POST | `/auth/google/` | Log in a parent via Google (does **not** create an account). |
+| POST | `/auth/google/signup/` | Sign up a parent via Google (creates if new; returns tokens if already exists). |
+
+`POST /auth/google/` for an unknown Google account returns `400` with
+`"User doesn't exist. Sign up instead."` — use `/auth/google/signup/` from the
+signup page (and invite accept when creating a new parent).
 | POST | `/auth/password-reset/` | Request a parent password reset email. |
 | POST | `/auth/password-reset/confirm/` | Confirm a parent password reset. |
 
 The parent access token includes:
 - `kid_ids` — UUIDs of kids they guard (used by task-service and others)
 - `kids` — `[{ "id", "username", "name" }, ...]` for parent UI display without an extra API call
+
+`POST /auth/token/refresh/` rebuilds those claims from the DB (not from the old
+token), so after a kid links to a parent the next refresh picks up the new kid
+without requiring a full log out / log in.
 
 ## Kid
 

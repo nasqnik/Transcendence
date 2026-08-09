@@ -29,7 +29,6 @@ class Task(models.Model):
     is_active = models.BooleanField(default=True)
     due_date = models.DateField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
-    should_be_reviewed = models.BooleanField(default=False)
 
     class Meta:
         ordering = ['-created_at']

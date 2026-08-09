@@ -28,15 +28,14 @@ Roles: **kid** and **parent** (decided by the JWT). A parent's token carries `ki
 
 Response (and GET) include `id`, `xp_reward`, `ai_summary`, `ai_evaluated`, `category_rewards` (per-category points), and `review_mode`.
 
-**`review_mode`** tells the UI how completing this task behaves:
+**`review_mode`** is computed from the kid’s category visibility toggles (`GET`/`PUT` `/settings/categories/`):
 
-| `review_mode` | Meaning | UI |
+| `review_mode` | Meaning | Completion status |
 | --- | --- | --- |
-| `always` | all shown categories -> completion will be pending | submit, no toggle |
-| `never` | no shown categories -> auto-confirmed | submit, no toggle |
-| `optional` | mixed -> kid decides | show a "send to parent?" toggle -> sets `send_for_review` |
+| `always` | at least one of the task’s categories is shown to the parent | `pending` |
+| `never` | none of the task’s categories are shown (or no categories) | `confirmed` (auto) |
 
-Only send `send_for_review` when `review_mode === "optional"`; it is ignored otherwise.
+No per-completion choice — frontend only needs the category settings toggles.
 
 ## Completions
 
@@ -50,7 +49,7 @@ Only send `send_for_review` when `review_mode === "optional"`; it is ignored oth
 **POST `/completions/` body**
 
 ```json
-{ "task": "<task_id>", "send_for_review": false }
+{ "task": "<task_id>" }
 ```
 
 List/create/review responses include nested task fields: `task_title`, `task_description`, `task_due_date`.
@@ -65,10 +64,8 @@ empty list rather than an error, so the endpoint can't be used to probe for
 kids outside the family. The parameter is ignored for kid tokens, which are
 always scoped to themselves.
 
-Resulting `status` depends on the kid's category visibility:
-- all the task's categories shown to parent -> `pending`
-- none shown -> `confirmed` (auto)
-- mixed -> `pending` if `send_for_review` is true, else `confirmed`
+Resulting `status` follows the task’s `review_mode` (from category visibility
+toggles): `always` → `pending`, `never` → `confirmed`.
 
 **POST `/completions/{id}/review/` body**
 

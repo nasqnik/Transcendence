@@ -8,6 +8,7 @@ from rest_framework_simplejwt.views import (
 from .views import (
     AcceptGuardianInviteView,
     GoogleLoginView,
+    GoogleSignupView,
     GuardianInviteDetailView,
     InviteSecondParentView,
     KidGoogleLoginView,
@@ -49,6 +50,7 @@ urlpatterns = [
     path("auth/token/refresh/", TokenRefreshView.as_view()),
     path("auth/token/verify/", TokenVerifyView.as_view()),
     path("auth/google/", GoogleLoginView.as_view()),
+    path("auth/google/signup/", GoogleSignupView.as_view()),
     path("auth/password-reset/", PasswordResetRequestView.as_view()),
     path("auth/password-reset/confirm/", PasswordResetConfirmView.as_view()),
 
@@ -111,7 +113,8 @@ urlpatterns = [
 # - /auth/token/:           "log in a parent with email and password"
 # - /auth/token/refresh/:   "refresh a parent's JWT"
 # - /auth/token/verify/:    "check if a parent's access token is still valid"
-# - /auth/google/:          "log in or sign up a parent using Google"
+# - /auth/google/:          "log in a parent using Google (no account create)"
+# - /auth/google/signup/:   "sign up a parent using Google"
 # - /auth/password-reset/:          "email a parent a password-reset link"
 # - /auth/password-reset/confirm/:  "set a new parent password with the token"
 

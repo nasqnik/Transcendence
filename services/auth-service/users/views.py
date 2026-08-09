@@ -13,6 +13,7 @@ from .messages import PARENT_HAS_LINKED_KIDS
 from .serializers import (
     AcceptGuardianInviteSerializer,
     GoogleLoginSerializer,
+    GoogleSignupSerializer,
     GuardianInviteDetailSerializer,
     InviteSecondParentSerializer,
     KidGoogleLoginSerializer,
@@ -70,13 +71,25 @@ class ParentRegisterView(generics.CreateAPIView):
 
 @extend_schema(request=GoogleLoginSerializer)
 class GoogleLoginView(APIView):
-    """Parent sign-in via Google Identity Services id_token."""
+    """Parent sign-in via Google. Does not create an account."""
 
     permission_classes = [AllowAny]
 
     def post(self, request):
         serializer = GoogleLoginSerializer(data=request.data)
         #is_valid call => validate_username , validate_password, validate_email, .... , validate .
+        serializer.is_valid(raise_exception=True)
+        return Response(serializer.validated_data, status=status.HTTP_200_OK)
+
+
+@extend_schema(request=GoogleSignupSerializer)
+class GoogleSignupView(APIView):
+    """Parent sign-up via Google Identity Services id_token."""
+
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        serializer = GoogleSignupSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         return Response(serializer.validated_data, status=status.HTTP_200_OK)
 

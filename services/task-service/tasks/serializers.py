@@ -5,17 +5,16 @@ from .models import Task, TaskCategoryReward, TaskCompletion, KidCategoryVisibil
 from .notifications import notify_task_submitted, push_completion_confirmed
 
 
-# Review modes returned to the client so the UI knows how to handle submission.
-REVIEW_ALWAYS = 'always'      # all categories shown -> completion is always pending
-REVIEW_NEVER = 'never'        # no categories shown -> completion auto-confirms
-REVIEW_OPTIONAL = 'optional'  # mixed -> the kid chooses (send_for_review)
+# Review modes from category visibility toggles (no per-completion choice).
+REVIEW_ALWAYS = 'always'  # at least one category shown -> completion is pending
+REVIEW_NEVER = 'never'    # no categories shown -> completion auto-confirms
 
 
 def compute_review_mode(task, kid_id, visibility=None):
     """Decide whether completing this task needs parent review.
 
-    Single source of truth shared by TaskSerializer.review_mode (what the UI
-    reads) and the completion create logic (what actually sets the status).
+    Driven only by KidCategoryVisibility toggles. Single source of truth shared
+    by TaskSerializer.review_mode and completion create.
 
     Pass `visibility` to reuse an already-fetched settings row (avoids an
     N+1 query when serializing a list of tasks).
@@ -27,13 +26,9 @@ def compute_review_mode(task, kid_id, visibility=None):
 
     if visibility is None:
         visibility, _ = KidCategoryVisibility.objects.get_or_create(kid_id=kid_id)
-    shown = [c for c in categories if getattr(visibility, f'show_{c}')]
-
-    if len(shown) == len(categories):
+    if any(getattr(visibility, f'show_{c}') for c in categories):
         return REVIEW_ALWAYS
-    if not shown:
-        return REVIEW_NEVER
-    return REVIEW_OPTIONAL
+    return REVIEW_NEVER
 
 
 class TaskCategoryRewardSerializer(serializers.ModelSerializer):
@@ -112,16 +107,9 @@ class TaskCompletionSerializer(serializers.ModelSerializer):
 
 
 class TaskCompletionCreateSerializer(serializers.ModelSerializer):
-    # Only consulted in the "mixed" case (some shown, some hidden categories).
-    send_for_review = serializers.BooleanField(
-        write_only=True,
-        required=False,
-        default=False,
-    )
-
     class Meta:
         model = TaskCompletion
-        fields = ('task', 'send_for_review')
+        fields = ('task',)
 
     def validate_task(self, task):
         kid_id = self.context['request'].user.kid_id
@@ -131,10 +119,9 @@ class TaskCompletionCreateSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         kid_id = self.context['request'].user.kid_id
-        send_for_review = validated_data.pop('send_for_review', False)
         task = validated_data['task']
 
-        new_status = self._resolve_status(task, kid_id, send_for_review)
+        new_status = self._resolve_status(task, kid_id)
         completion = TaskCompletion.objects.create(
             kid_id=kid_id,
             status=new_status,
@@ -149,14 +136,8 @@ class TaskCompletionCreateSerializer(serializers.ModelSerializer):
 
         return completion
 
-    def _resolve_status(self, task, kid_id, send_for_review):
-        mode = compute_review_mode(task, kid_id)
-        if mode == REVIEW_ALWAYS:
-            return TaskCompletion.Status.PENDING
-        if mode == REVIEW_NEVER:
-            return TaskCompletion.Status.CONFIRMED
-        # REVIEW_OPTIONAL -> the kid chooses.
-        if send_for_review:
+    def _resolve_status(self, task, kid_id):
+        if compute_review_mode(task, kid_id) == REVIEW_ALWAYS:
             return TaskCompletion.Status.PENDING
         return TaskCompletion.Status.CONFIRMED
 
