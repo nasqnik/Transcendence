@@ -12,6 +12,8 @@ import Login from './pages/Login'
 import Signup from './pages/Signup'
 import AcceptInvite from './pages/AcceptInvite'
 import NotFound from './pages/NotFound'
+import ForgotPassword from './pages/ForgotPassword'
+import ResetPassword from './pages/ResetPassword'
 import VerifyEmail from './pages/VerifyEmail'
 import VerifyEmailChange from './pages/VerifyEmailChange'
 import VerifyKidEmail from './pages/VerifyKidEmail'
@@ -74,6 +76,13 @@ export default function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
         </Route>
+        {/* Public, not guest-only. The reset links auth-service mails must work
+            for someone already signed in on another device, and the settings
+            page links here for a kid who has to change a password they can't
+            remember — GuestRoute would bounce them to their dashboard. */}
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/reset-password" element={<ResetPassword role="parent" />} />
+        <Route path="/kid/reset-password" element={<ResetPassword role="kid" />} />
         <Route path="/privacy" element={<PrivacyPolicy />} />
         <Route path="/terms" element={<TermsOfService />} />
         <Route path="/accept-invite" element={<AcceptInvite />} />

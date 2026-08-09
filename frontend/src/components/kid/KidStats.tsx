@@ -1,40 +1,20 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { type TaskCategory, CATEGORY_STYLE } from '../../constants/categories'
+import { type StatCategory, CATEGORY_STYLE, STAT_CATEGORIES } from '../../constants/categories'
 import { useKidLevel } from '../../hooks/useKidLevel'
+import { STAT_XP_PER_LEVEL } from '../../constants/xp'
 import LoadError from '../LoadError'
 import StatsLog from './StatsLog'
-import LevelUpModal from './LevelUpModal'
-import { levelUpsBetween, type LevelUp } from '../../utils/levelUps'
+import HowRewardsWork from './HowRewardsWork'
 
-const CATEGORIES: TaskCategory[] = ['health', 'learning', 'responsibility', 'creativity']
 
 export default function KidStats() {
   const { t } = useTranslation()
   const [logOpen, setLogOpen] = useState(false)
-  // A queue, not a single value: finishing one task can raise two categories
-  // at once, and `break` after the first meant the kid was congratulated for
-  // one and never told about the other.
-  const [levelUps, setLevelUps] = useState<LevelUp[]>([])
+  const [helpOpen, setHelpOpen] = useState(false)
 
   const { stats, pendingXpByCategory, isLoading, isError, refetch } = useKidLevel()
 
-  // Detect level-ups by comparing category levels before and after each refetch
-  const prevLevelsRef = useRef<Record<TaskCategory, number> | null>(null)
-
-  useEffect(() => {
-    if (isLoading) return
-    const currentLevels = Object.fromEntries(
-      CATEGORIES.map(cat => [cat, stats[cat].level])
-    ) as Record<TaskCategory, number>
-
-    if (prevLevelsRef.current) {
-      const gained = levelUpsBetween(prevLevelsRef.current, currentLevels)
-      if (gained.length > 0) setLevelUps(queue => [...queue, ...gained])
-    }
-
-    prevLevelsRef.current = currentLevels
-  }, [stats, isLoading])
 
   return (
     <>
@@ -43,20 +23,34 @@ export default function KidStats() {
           <h2 id="stats-heading" className="font-heading text-lg font-bold text-gray-900">
             {t('kidDash.myStats')}
           </h2>
-          <button
-            type="button"
-            aria-haspopup="dialog"
-            aria-expanded={logOpen}
-            className="min-h-11 -my-2 px-2 flex items-center font-body text-xs font-semibold text-primary-600 hover:text-primary-700 focus-ring rounded"
-            onClick={() => setLogOpen(true)}
-          >
-            {t('kidDash.details')}
-          </button>
+          <div className="flex items-center gap-1">
+            {/* Next to the bars it explains, not buried in settings — the
+                question "how do I get coins?" arrives while looking at these. */}
+            <button
+              type="button"
+              aria-haspopup="dialog"
+              aria-expanded={helpOpen}
+              aria-label={t('rewards.title')}
+              className="min-h-11 w-11 -my-2 flex items-center justify-center text-base text-primary-600 hover:text-primary-700 focus-ring rounded"
+              onClick={() => setHelpOpen(true)}
+            >
+              <span aria-hidden="true">💡</span>
+            </button>
+            <button
+              type="button"
+              aria-haspopup="dialog"
+              aria-expanded={logOpen}
+              className="min-h-11 -my-2 px-2 flex items-center font-body text-xs font-semibold text-primary-600 hover:text-primary-700 focus-ring rounded"
+              onClick={() => setLogOpen(true)}
+            >
+              {t('kidDash.details')}
+            </button>
+          </div>
         </div>
 
         {isError ? <LoadError onRetry={refetch} /> : (
         <div className="flex flex-col gap-3">
-          {isLoading ? CATEGORIES.map(cat => (
+          {isLoading ? STAT_CATEGORIES.map(cat => (
             <div key={cat} className="animate-pulse rounded-2xl bg-gray-50 p-3">
               <div className="flex items-center gap-3 mb-2">
                 <div className="w-10 h-10 rounded-xl bg-gray-100 shrink-0" />
@@ -65,18 +59,28 @@ export default function KidStats() {
               </div>
               <div className="h-3 rounded-full bg-gray-100" />
             </div>
-          )) : CATEGORIES.map(category => {
+          )) : STAT_CATEGORIES.map(category => {
             const style      = CATEGORY_STYLE[category]
             const { level, xp_percent } = stats[category]
-            const pending = pendingXpByCategory[category] ?? 0
-            const pendingWidth = Math.min(pending, 100 - xp_percent)
+            // Honesty has no pending state: it is granted at the moment a parent
+            // confirms, never sitting unconfirmed the way a task's own XP does.
+            // Checked rather than cast — the cast happened to work because the
+            // key is absent, which is the type split papered over rather than
+            // expressed.
+            const pending = category === 'honesty' ? 0 : pendingXpByCategory[category]
+            // xp_percent and pending are both raw XP, so the clamp happens in
+            // XP and only the widths are converted to percentages. Comparing
+            // one against the other as a percentage mixed the two units.
+            const fillPct    = (xp_percent / STAT_XP_PER_LEVEL) * 100
+            const pendingXp  = Math.min(pending, STAT_XP_PER_LEVEL - xp_percent)
+            const pendingPct = (pendingXp / STAT_XP_PER_LEVEL) * 100
 
             return (
               // Each category gets its own tinted card. The colours already
               // existed but only as a thin bar and a small icon, so the panel
-              // read as four grey rows — the flattest block on a page meant
-              // for a child. The tint is what makes a category recognisable
-              // at a glance before the label is even read.
+              // read as a stack of grey rows — the flattest block on a page
+              // meant for a child. The tint is what makes a category
+              // recognisable at a glance before the label is even read.
               <div key={category} className={`${style.bg} rounded-2xl p-3`}>
                 <div className="flex items-center gap-3 mb-2">
                   <div
@@ -86,7 +90,7 @@ export default function KidStats() {
                     {style.icon}
                   </div>
                   <span className="font-body text-sm font-semibold text-gray-900 flex-1">
-                    {t(`kidDash.categories.${category}` as `kidDash.categories.${TaskCategory}`)}
+                    {t(`kidDash.categories.${category}` as `kidDash.categories.${StatCategory}`)}
                   </span>
                   <span className={`font-body text-xs font-bold ${style.text}`}>
                     {t('kidDash.level', { level })}
@@ -94,22 +98,22 @@ export default function KidStats() {
                 </div>
                 <div
                   role="progressbar"
-                  aria-label={t(`kidDash.categories.${category}` as `kidDash.categories.${TaskCategory}`)}
+                  aria-label={t(`kidDash.categories.${category}` as `kidDash.categories.${StatCategory}`)}
                   aria-valuenow={xp_percent}
                   aria-valuemin={0}
-                  aria-valuemax={100}
+                  aria-valuemax={STAT_XP_PER_LEVEL}
                   // White track, not gray-100: on a tinted card the grey track
                   // muddies against the tint and the fill loses its edge.
                   className="relative h-3 bg-white rounded-full overflow-hidden"
                 >
                   <div
                     className={`absolute inset-y-0 start-0 ${style.bar} rounded-full transition-all duration-500`}
-                    style={{ width: `${xp_percent}%` }}
+                    style={{ width: `${fillPct}%` }}
                   />
-                  {pendingWidth > 0 && (
+                  {pendingPct > 0 && (
                     <div
                       className={`absolute inset-y-0 ${style.bar} opacity-35 rounded-full transition-all duration-500`}
-                      style={{ insetInlineStart: `${xp_percent}%`, width: `${pendingWidth}%` }}
+                      style={{ insetInlineStart: `${fillPct}%`, width: `${pendingPct}%` }}
                     />
                   )}
                 </div>
@@ -117,7 +121,7 @@ export default function KidStats() {
                   {/* gray-700, not gray-400: on the amber tint gray-400 lands
                       at 4.59:1, close enough to the 4.5 floor that a nudge to
                       the palette would break it. */}
-                  <span className="font-body text-xs text-gray-700">{xp_percent} / 100</span>
+                  <span className="font-body text-xs text-gray-700">{xp_percent} / {STAT_XP_PER_LEVEL}</span>
                   {/* XP already earned but not yet approved — matches the
                       faded segment on the bar above. Was a bare "+10 ⏳" with
                       nothing saying what it meant. */}
@@ -142,16 +146,8 @@ export default function KidStats() {
 
       {logOpen && <StatsLog onClose={() => setLogOpen(false)} />}
 
-      {/* One at a time; closing reveals the next so a double level-up is two
-          celebrations rather than one silently dropped. */}
-      {levelUps.length > 0 && (
-        <LevelUpModal
-          key={`${levelUps[0].category}-${levelUps[0].level}`}
-          category={levelUps[0].category}
-          level={levelUps[0].level}
-          onClose={() => setLevelUps(queue => queue.slice(1))}
-        />
-      )}
+      {helpOpen && <HowRewardsWork onClose={() => setHelpOpen(false)} />}
+
     </>
   )
 }

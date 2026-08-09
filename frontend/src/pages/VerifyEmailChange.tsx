@@ -5,10 +5,12 @@ import Button from '../components/Button'
 import { verifyEmailChange } from '../api/account'
 import { usePageTitle } from '../hooks/usePageTitle'
 import { useTokenVerification } from '../hooks/useTokenVerification'
+import useAuthStore from '../store/authStore'
 
 export default function VerifyEmailChange() {
   const { t } = useTranslation()
   const navigate = useNavigate()
+  const logout = useAuthStore(s => s.logout)
   usePageTitle(`${t('parentDash.emailChangeSuccess')} — ${t('app.name')}`)
   const { state, errorMessageKey } = useTokenVerification('email-change-heading', verifyEmailChange)
 
@@ -33,7 +35,11 @@ export default function VerifyEmailChange() {
         <p className="font-body text-sm text-gray-700 text-center w-full">
           {t('parentDash.emailChangeSuccessHint')}
         </p>
-        <Button variant="primary" onClick={() => navigate('/login')}>
+        {/* Sign out first. The address on the account just changed, so the
+            session in the store is stale — and /login sits behind GuestRoute,
+            which would bounce a still-authenticated visitor straight to their
+            dashboard, skipping the re-login this button promises. */}
+        <Button variant="primary" onClick={() => { logout(); navigate('/login') }}>
           {t('auth.login')}
         </Button>
       </AuthMessageLayout>
