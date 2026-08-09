@@ -8,7 +8,7 @@ import { usePageTitle } from '../hooks/usePageTitle'
 export default function NotFound() {
   const { t } = useTranslation()
   const navigate = useNavigate()
-  usePageTitle(`${t('notFound.title')} — ${t('app.name')}`)
+  usePageTitle(t('notFound.title'))
 
   return (
     <main

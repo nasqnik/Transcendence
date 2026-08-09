@@ -8,6 +8,7 @@ import { todayStr, dateStrFromToday, localDateStr } from '../utils/date'
 import { useTaskCompletion } from '../hooks/useTaskCompletion'
 import { usePageTitle } from '../hooks/usePageTitle'
 import { useFocusOnSwap } from '../hooks/useFocusOnSwap'
+import { useMarkTasksVerdictsSeen } from '../hooks/useReviewNotifications'
 import TaskRow from '../components/kid/TaskRow'
 import LoadError from '../components/LoadError'
 import TaskToasts from '../components/kid/TaskToasts'
@@ -52,7 +53,12 @@ function Section({ id, icon, title, tone = 'default', action, children }: Sectio
 export default function KidTasks() {
   const { t, i18n } = useTranslation()
   const queryClient = useQueryClient()
-  usePageTitle(`${t('tasks.allTasks')} — ${t('app.name')}`)
+  usePageTitle(t('tasks.allTasks'))
+
+  // The nav badge counts approvals and rejections that arrived since the kid
+  // last opened this page. It clears here; the bell keeps its own unread
+  // state and is deliberately left untouched.
+  useMarkTasksVerdictsSeen()
 
   const [selectMode, setSelectMode]   = useState(false)
   const [selectedIds, setSelectedIds] = useState(new Set<string>())

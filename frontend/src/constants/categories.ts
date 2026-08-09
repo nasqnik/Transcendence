@@ -25,14 +25,14 @@ export interface Task {
   is_active: boolean
   created_at: string
   category_rewards: CategoryReward[]
-  review_mode: 'always' | 'never' | 'optional'
+  review_mode: 'always' | 'never'   // 'optional' was dropped backend-side
 }
 
 export interface Completion {
   id: string
   task: string              // task id
-  task_title?: string       
-  task_description?: string 
+  task_title?: string
+  task_description?: string
   task_due_date?: string | null
   kid_id: string
   status: 'pending' | 'confirmed' | 'rejected'

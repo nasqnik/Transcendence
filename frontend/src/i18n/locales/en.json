@@ -98,7 +98,7 @@
     "reject": "Reject",
     "submittedAt": "Submitted {{date}}",
     "loading": "Loading tasks...",
-    "emptyKid": "No tasks yet. Ask your parent to add one!",
+    "emptyKid": "No tasks yet. Add your first one to get started!",
     "emptyParent": "No tasks created yet.",
     "invalidKidId": "Enter a valid child account ID (UUID).",
     "invalidXp": "Enter a valid XP amount (0 or more).",
@@ -191,7 +191,7 @@
       "avatar": "Avatar"
     },
     "welcomeModalTitle": "Welcome to KiddoPath!",
-    "welcomeModalBody": "You can add tasks yourself, or ask your parent to add some for you.",
+    "welcomeModalBody": "Add your own tasks, finish them, and earn XP to level up!",
     "avatarTitle": "Customize Character",
     "yourCharacter": "Your Character",
     "baseCharacter": "Base Character",
@@ -204,7 +204,12 @@
     "slotHair": "Hair",
     "slotGlasses": "Glasses",
     "slotEarrings": "Earrings",
-    "slotBackground": "Background"
+    "slotBackground": "Background",
+    "profile": "My profile",
+    "editProfile": "Edit my info",
+    "accountDetails": "My details",
+    "verified": "Verified",
+    "memberSince": "Joined"
   },
   "friends": {
     "title": "Friends",

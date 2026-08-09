@@ -15,7 +15,7 @@ import { isEmpty } from '../utils/validation'
 export default function Login() {
   const navigate = useNavigate()
   const { t } = useTranslation()
-  usePageTitle(`${t('auth.login')} — ${t('app.name')}`)
+  usePageTitle(t('auth.login'))
   const { fieldErrors, setFieldErrors, clearFieldError, resetFieldErrors } = useFormErrors()
 
   const [identifier, setIdentifier] = useState('')
