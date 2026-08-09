@@ -20,7 +20,7 @@ import { isEmpty, isValidEmail, validatePasswordField } from '../utils/validatio
 export default function Signup() {
   const navigate = useNavigate()
   const { t } = useTranslation()
-  usePageTitle(`${t('auth.signup')} — ${t('app.name')}`)
+  usePageTitle(t('auth.signup'))
 
   const [role, setRole]               = useState<'parent' | 'kid' | null>(null)
   const [username, setUsername]       = useState('')
@@ -177,11 +177,14 @@ export default function Signup() {
             onSuccess={async credential => {
               setErrorKey(null)
               resetFieldErrors()
-              // The password form validates this on submit; the Google path
-              // used to skip it entirely, so a parent could create an account
-              // without ever accepting the terms. The kid path already
-              // re-checks in SignupKidGoogleProfile.
-              if (!agreedToTerms) {
+              // Parent only. Google sign-in creates a parent account straight
+              // away, so this is the last point at which the terms can be
+              // accepted — without it a parent signs up having agreed to
+              // nothing. A kid goes on to SignupKidGoogleProfile, which
+              // collects its own acceptance before any account exists, so
+              // asking here as well made them tick the same box twice (that
+              // step starts unchecked, so the first tick did not even carry).
+              if (role === 'parent' && !agreedToTerms) {
                 setFieldErrors({ agreedToTerms: t('errors.mustAgreeToTerms') })
                 return
               }
