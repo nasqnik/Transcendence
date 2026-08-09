@@ -787,6 +787,48 @@ class GoogleLoginTests(APITestCase):
 )
 class KidGoogleAuthTests(APITestCase):
     @patch("users.serializers.verify_google_id_token")
+    def test_kid_google_signup_check_allows_new_identity(self, mock_verify):
+        mock_verify.return_value = {
+            "sub": "kid-google-sub-check-ok",
+            "email": "kid.check@example.com",
+            "email_verified": True,
+            "iss": "accounts.google.com",
+        }
+
+        response = self.client.post(
+            "/api/kids/signup/google/check/",
+            {"id_token": "fake-token"},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data, {"ok": True})
+
+    @patch("users.serializers.verify_google_id_token")
+    def test_kid_google_signup_check_rejects_parent_email(self, mock_verify):
+        CustomUser.objects.create_user(
+            email="parent@example.com",
+            username="parent_one",
+            password="secure-pass-1",
+            role="parent",
+        )
+        mock_verify.return_value = {
+            "sub": "kid-google-sub-check-parent",
+            "email": "parent@example.com",
+            "email_verified": True,
+            "iss": "accounts.google.com",
+        }
+
+        response = self.client.post(
+            "/api/kids/signup/google/check/",
+            {"id_token": "fake-token"},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("already registered", str(response.data))
+
+    @patch("users.serializers.verify_google_id_token")
     def test_kid_google_signup_creates_account_and_invites_parent(self, mock_verify):
         mock_verify.return_value = {
             "sub": "kid-google-sub-1",
