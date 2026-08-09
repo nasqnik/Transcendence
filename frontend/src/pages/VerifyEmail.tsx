@@ -10,7 +10,7 @@ import { useTokenVerification, ALREADY_VERIFIED_KEYS } from '../hooks/useTokenVe
 export default function VerifyEmail() {
   const { t } = useTranslation()
   const navigate = useNavigate()
-  usePageTitle(`${t('verify.title')} — ${t('app.name')}`)
+  usePageTitle(t('verify.title'))
   const { state, errorMessageKey } = useTokenVerification(
     'verify-heading', verifyParentEmail, ALREADY_VERIFIED_KEYS,
   )
