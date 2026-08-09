@@ -1,8 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
-import { getTasks, getCompletions } from '../api/tasks'
 import { getFriendRequests } from '../api/social'
-import { groupTasks } from '../utils/taskGroups'
-import { todayStr } from '../utils/date'
+import { useUnseenVerdicts } from './useReviewNotifications'
 
 export interface KidNavItem {
   icon: string
@@ -19,20 +17,23 @@ export interface KidNavItem {
  * themselves, so this costs no extra requests.
  */
 export function useKidNav(): KidNavItem[] {
-  const { data: tasks = [] } = useQuery({ queryKey: ['tasks'], queryFn: getTasks })
-  const { data: completions = [] } = useQuery({ queryKey: ['completions'], queryFn: getCompletions })
-  // social-service sends no notification when a request arrives, so this badge
-  // is the only thing that tells a kid someone is waiting on them.
+  // A `friend_request` notification does reach the bell now, but this badge
+  // is what marks the Friends page itself as having something waiting.
   const { data: requests = [] } = useQuery({ queryKey: ['friendRequests'], queryFn: getFriendRequests })
 
-  // What needs doing now. Upcoming and undated tasks are left out on purpose:
-  // they would sit in the badge forever instead of clearing as work gets done.
-  const groups = groupTasks(tasks, completions, todayStr())
-  const todoCount = groups.overdue.length + groups.today.length
+  // Approvals and rejections the kid has not looked at yet.
+  //
+  // This used to count tasks due today plus overdue ones, which meant adding a
+  // task raised the badge — the kid was being alerted to their own action, and
+  // the number only fell once the work was done. A badge should mark something
+  // new to look at, so it now tracks the parent's verdicts and clears on the
+  // tasks page, where those verdicts are visible. Tracked separately from the
+  // bell's read state, so clearing one does not clear the other.
+  const verdicts = useUnseenVerdicts()
 
   return [
     { icon: '🏠', labelKey: 'kidDash.nav.home',     path: '/dashboard', badge: 0 },
-    { icon: '📋', labelKey: 'tasks.allTasks',       path: '/tasks',     badge: todoCount },
+    { icon: '📋', labelKey: 'tasks.allTasks',       path: '/tasks',     badge: verdicts.length },
     { icon: '🎨', labelKey: 'kidDash.nav.avatar',   path: '/avatar',    badge: 0 },
     { icon: '👥', labelKey: 'friends.title',        path: '/friends',   badge: requests.length },
     { icon: '⚙️', labelKey: 'kidDash.nav.settings', path: '/settings',  badge: 0 },

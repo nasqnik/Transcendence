@@ -15,7 +15,7 @@ type PageState = 'loading' | 'success' | 'active' | 'already' | 'error'
 export default function VerifyKidEmail() {
   const { t } = useTranslation()
   const navigate = useNavigate()
-  usePageTitle(`${t('verify.title')} — ${t('app.name')}`)
+  usePageTitle(t('verify.title'))
   const { isAuthenticated, currentUser, logout } = useAuthStore()
   const [searchParams] = useSearchParams()
   const token = searchParams.get('token')
