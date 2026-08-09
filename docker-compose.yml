@@ -11,6 +11,9 @@ x-django-service: &django-service
     db:
       condition: service_healthy
   env_file: .env
+  # make all → false (no admin/Swagger); make dev → true
+  environment:
+    DJANGO_DEBUG: ${DJANGO_DEBUG:-false}
   command: python manage.py runserver 0.0.0.0:8000
 
 services:
@@ -57,6 +60,7 @@ services:
       - ./services/auth-service:/app
     environment:
       DB_NAME: ${AUTH_DB_NAME:-auth_db}
+      DJANGO_DEBUG: ${DJANGO_DEBUG:-false}
 
   task-service:
     <<: *django-service
@@ -71,6 +75,7 @@ services:
       - ./services/task-service:/app
     environment:
       DB_NAME: ${TASK_DB_NAME:-task_db}
+      DJANGO_DEBUG: ${DJANGO_DEBUG:-false}
 
   gamification-service:
     <<: *django-service
@@ -85,6 +90,7 @@ services:
       - ./services/gamification-service:/app
     environment:
       DB_NAME: ${GAMIFICATION_DB_NAME:-gamification_db}
+      DJANGO_DEBUG: ${DJANGO_DEBUG:-false}
 
   analytics-service:
     <<: *django-service
@@ -99,6 +105,7 @@ services:
       - ./services/analytics-service:/app
     environment:
       DB_NAME: ${ANALYTICS_DB_NAME:-analytics_db}
+      DJANGO_DEBUG: ${DJANGO_DEBUG:-false}
 
   notification-service:
     <<: *django-service
@@ -119,6 +126,7 @@ services:
     environment:
       DB_NAME: ${NOTIFICATION_DB_NAME:-notification_db}
       REDIS_URL: redis://redis:6379
+      DJANGO_DEBUG: ${DJANGO_DEBUG:-false}
     command: daphne -b 0.0.0.0 -p 8000 core.asgi:application
 
   catalog-service:
@@ -134,6 +142,7 @@ services:
       - ./services/catalog-service:/app
     environment:
       DB_NAME: ${CATALOG_DB_NAME:-catalog_db}
+      DJANGO_DEBUG: ${DJANGO_DEBUG:-false}
 
   social-service:
     <<: *django-service
@@ -154,6 +163,7 @@ services:
     environment:
       DB_NAME: ${SOCIAL_DB_NAME:-social_db}
       REDIS_URL: redis://redis:6379
+      DJANGO_DEBUG: ${DJANGO_DEBUG:-false}
     command: daphne -b 0.0.0.0 -p 8000 core.asgi:application
 
   # ---------------------------------------------------------------------------
