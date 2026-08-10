@@ -40,4 +40,8 @@ if [ -n "$leftovers" ]; then
 	docker rm -f $leftovers
 fi
 
+# clean uploaded media files
+rm -rf services/catalog-service/media/parent_avatars/*
+echo "==> media cleaned"
+
 echo "==> fclean done"
