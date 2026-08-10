@@ -190,6 +190,16 @@ SPECTACULAR_SETTINGS = {
     'DESCRIPTION': 'KiddoPath backend API — parents (JWT) and kids (kid JWT).',
     'VERSION': '1.0.0',
     'SERVE_INCLUDE_SCHEMA': False,
+    'TAGS': [
+        {'name': 'Parent Registration', 'description': 'Parent signup and email verification.'},
+        {'name': 'Current User', 'description': 'Logged-in parent or kid profile.'},
+        {'name': 'Parent Authentication', 'description': 'Parent login, JWT, Google, password reset.'},
+        {'name': 'Kid Registration', 'description': 'Kid signup, email verify, password reset.'},
+        {'name': 'Kid Invite Parent', 'description': 'Logged-in kid invites a second parent.'},
+        {'name': 'Kid Authentication', 'description': 'Kid login, JWT, and Google.'},
+        {'name': 'Guardian Invitations', 'description': 'Preview and accept guardian invitations.'},
+        {'name': 'Internal', 'description': 'Service-to-service kid lookups.'},
+    ],
 }
 
 SIMPLE_JWT = {

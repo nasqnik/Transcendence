@@ -1,4 +1,4 @@
-*This project has been created as part of the 42 curriculum by meid, hparveen, mnazar, anikitin.*
+*This project has been created as part of the 42 curriculum by meid, hparveen, mnazar, anikitinn.*
 
 # KiddoPath
 
@@ -151,7 +151,7 @@ All AI-suggested changes were reviewed, adapted to team conventions, and tested 
 | Login | Name | Role(s) | Responsibilities |
 | --- | --- | --- | --- |
 | **meid** | Mariam Eid | Product Owner (PO), Developer | After the team agreed on the idea, defined the product scope and which features ship now vs later; coordinated backend so Henna and the frontend team (Anastasiia, Madiha) had a stable base; gathered submission requirements from peers and staff documentation; implemented **auth-service**, **task-service**, **gamification-service**, **social-service**, and shared infra. |
-| **anikiti** | Anastasiia Nikitina | Project Manager / Scrum Master, Developer | Planned with the PO; set project flow and team organization; scheduled meetings and agendas; enforced the GitHub pipeline and commit conventions; built the **frontend base** and **accessibility** foundations so Madiha had a solid starting point; also built the **kid dashboard**. |
+| **anikitin** | Anastasiia Nikitina | Project Manager / Scrum Master, Developer | Planned with the PO; set project flow and team organization; scheduled meetings and agendas; enforced the GitHub pipeline and commit conventions; built the **frontend base** and **accessibility** foundations so Madiha had a solid starting point; also built the **kid dashboard**. |
 | **mnazar** | Madiha Nazar | Technical Lead / Architect, Developer | Go-to person for critical tech-stack decisions; reviewed PRs into `main`; built the **parent dashboard**, and the **avatar** feature inside the kid dashboard. |
 | **hparveen** | Henna Parveen | Developer, main tester | Active in design discussions; implemented **analytics-service**, **catalog-service**, **notification-service**, and helped with infra; as **main tester**, found bugs early so the team could fix them. |
 
@@ -343,7 +343,7 @@ analytics reads progress over time for parent dashboards
 - **Backend:** `auth-service`, `task-service`, `gamification-service`, `social-service`, plus shared infra with Henna.
 - **Modules:** Standard auth, OAuth, advanced permissions, LLM categorization + AI moderation, social presence WebSockets, microservices/ORM share, backend half of the stack.
 
-#### anikiti — Anastasiia Nikitina (PM + Developer)
+#### anikitin — Anastasiia Nikitina (PM + Developer)
 
 - **Process:** Planning with the PO, meeting schedule, GitHub pipeline and commit conventions.
 - **Frontend:** App base, accessibility (WCAG-oriented foundation), i18n (EN / RU / AR) and RTL, kid dashboard; set patterns so Madiha could extend the UI.

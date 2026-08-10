@@ -1,4 +1,5 @@
 from django.urls import path
+from drf_spectacular.utils import extend_schema
 from rest_framework_simplejwt.views import (
     TokenObtainPairView,
     TokenRefreshView,
@@ -35,6 +36,10 @@ from .views import (
     VerifyEmailChangeView,
 )
 
+ParentTokenObtainView = extend_schema(tags=["Parent Authentication"])(TokenObtainPairView)
+ParentTokenRefreshView = extend_schema(tags=["Parent Authentication"])(TokenRefreshView)
+ParentTokenVerifyView = extend_schema(tags=["Parent Authentication"])(TokenVerifyView)
+
 urlpatterns = [
     # Parent registration
     path("auth/register/", ParentRegisterView.as_view()),
@@ -47,9 +52,9 @@ urlpatterns = [
     path("auth/me/email/", MeEmailChangeView.as_view()),
 
     # Parent authentication
-    path("auth/token/", TokenObtainPairView.as_view()),
-    path("auth/token/refresh/", TokenRefreshView.as_view()),
-    path("auth/token/verify/", TokenVerifyView.as_view()),
+    path("auth/token/", ParentTokenObtainView.as_view()),
+    path("auth/token/refresh/", ParentTokenRefreshView.as_view()),
+    path("auth/token/verify/", ParentTokenVerifyView.as_view()),
     path("auth/google/", GoogleLoginView.as_view()),
     path("auth/google/signup/", GoogleSignupView.as_view()),
     path("auth/password-reset/", PasswordResetRequestView.as_view()),
