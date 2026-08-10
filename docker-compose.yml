@@ -212,6 +212,7 @@ services:
     volumes:
       - ./security/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
       - ./security/ssl:/etc/nginx/ssl:ro
+      - ./services/catalog-service/media:/etc/nginx/media:ro
 
 volumes:
   postgres_data:
