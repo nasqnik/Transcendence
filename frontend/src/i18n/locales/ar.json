@@ -209,7 +209,42 @@
     "editProfile": "تعديل بياناتي",
     "accountDetails": "بياناتي",
     "verified": "مُوثَّق",
-    "memberSince": "انضم في"
+    "memberSince": "انضم في",
+    "items": {
+      "hairVariant": {
+        "long03": "شعر طويل 1",
+        "long08": "شعر طويل 2",
+        "long09": "شعر طويل 3",
+        "long11": "شعر طويل 4",
+        "long18": "شعر طويل 5",
+        "long26": "شعر طويل 6",
+        "short01": "شعر قصير 1",
+        "short03": "شعر قصير 2",
+        "short09": "شعر قصير 3",
+        "short16": "شعر قصير 4",
+        "short17": "شعر قصير 5"
+      },
+      "glassesVariant": {
+        "variant01": "نظارة شمسية",
+        "variant02": "نظارة دائرية",
+        "variant04": "نظارة مربعة",
+        "variant05": "نظارة أنيقة"
+      },
+      "earringsVariant": {
+        "variant01": "أقراط صغيرة",
+        "variant02": "أقراط حلقية",
+        "variant04": "أقراط متدلية",
+        "variant06": "أقراط كريستال"
+      },
+      "backgroundColor": {
+        "b6e3f4": "أزرق المحيط",
+        "d1f4d1": "أخضر الغابة",
+        "ffd5dc": "وردي الغروب",
+        "c0aede": "بنفسجي ملكي",
+        "ffe4c4": "أصفر ذهبي",
+        "1a1a2e": "سماء الليل"
+      }
+    }
   },
   "friends": {
     "title": "الأصدقاء",
@@ -400,7 +435,12 @@
     "csvLevel": "المستوى",
     "csvDate": "التاريخ",
     "csvXp": "النقاط",
-    "approvalRate": "معدل الموافقة"
+    "approvalRate": "معدل الموافقة",
+    "dateRange": "النطاق الزمني",
+    "lastNDays": "{{n}} يوم",
+    "allTime": "الكل",
+    "all": "الكل",
+    "filterByStatus": "تصفية حسب الحالة"
   },
   "errors": {
     "required": "هذا الحقل مطلوب",

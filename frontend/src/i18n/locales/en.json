@@ -209,7 +209,42 @@
     "editProfile": "Edit my info",
     "accountDetails": "My details",
     "verified": "Verified",
-    "memberSince": "Joined"
+    "memberSince": "Joined",
+    "items": {
+      "hairVariant": {
+        "long03": "Long Hair 1",
+        "long08": "Long Hair 2",
+        "long09": "Long Hair 3",
+        "long11": "Long Hair 4",
+        "long18": "Long Hair 5",
+        "long26": "Long Hair 6",
+        "short01": "Short Hair 1",
+        "short03": "Short Hair 2",
+        "short09": "Short Hair 3",
+        "short16": "Short Hair 4",
+        "short17": "Short Hair 5"
+      },
+      "glassesVariant": {
+        "variant01": "Sunglasses",
+        "variant02": "Round Glasses",
+        "variant04": "Square Glasses",
+        "variant05": "Cool Glasses"
+      },
+      "earringsVariant": {
+        "variant01": "Stud Earrings",
+        "variant02": "Hoop Earrings",
+        "variant04": "Drop Earrings",
+        "variant06": "Crystal Earrings"
+      },
+      "backgroundColor": {
+        "b6e3f4": "Ocean Blue",
+        "d1f4d1": "Forest Green",
+        "ffd5dc": "Sunset Pink",
+        "c0aede": "Royal Purple",
+        "ffe4c4": "Golden Yellow",
+        "1a1a2e": "Night Sky"
+      }
+    }
   },
   "friends": {
     "title": "Friends",
@@ -400,7 +435,12 @@
     "csvLevel": "Level",
     "csvDate": "Date",
     "csvXp": "XP",
-    "approvalRate": "Approval Rate"
+    "approvalRate": "Approval Rate",
+    "dateRange": "Date range",
+    "lastNDays": "{{n}} days",
+    "allTime": "All",
+    "all": "All",
+    "filterByStatus": "Filter by status"
   },
   "errors": {
     "required": "This field is required",
