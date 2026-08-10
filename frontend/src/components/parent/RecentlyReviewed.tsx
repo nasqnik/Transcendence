@@ -34,6 +34,32 @@ function TaskTile({ avatarUrl, sizeClass, fallbackClass }: { avatarUrl?: string;
   )
 }
 
+type StatusFilter = 'all' | 'confirmed' | 'rejected'
+const STATUS_FILTERS: StatusFilter[] = ['all', 'confirmed', 'rejected']
+
+function StatusFilterTabs({ value, onChange }: { value: StatusFilter; onChange: (s: StatusFilter) => void }) {
+  const { t } = useTranslation()
+  const label = (s: StatusFilter) =>
+    s === 'all' ? t('parentDash.all') : s === 'confirmed' ? t('parentDash.confirmed') : t('parentDash.rejected')
+  return (
+    <div role="group" aria-label={t('parentDash.filterByStatus')} className="inline-flex rounded-lg border border-gray-200 overflow-hidden shrink-0">
+      {STATUS_FILTERS.map(s => (
+        <button
+          key={s}
+          type="button"
+          aria-pressed={value === s}
+          onClick={() => onChange(s)}
+          className={`px-2.5 py-1 font-body text-xs font-semibold transition-colors focus-ring ${
+            value === s ? 'bg-primary-600 text-white' : 'text-gray-500 hover:bg-gray-50'
+          }`}
+        >
+          {label(s)}
+        </button>
+      ))}
+    </div>
+  )
+}
+
 function StatusBadge({ confirmed, label }: { confirmed: boolean; label: string }) {
   return (
     <span
@@ -50,6 +76,7 @@ function StatusBadge({ confirmed, label }: { confirmed: boolean; label: string }
 export default function RecentlyReviewed({ kidLabelFor, kidAvatarFor, showKidLabel }: RecentlyReviewedProps) {
   const { t, i18n } = useTranslation()
   const [viewing, setViewing] = useState<Completion | null>(null)
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>('all')
 
   const { data: completions = [], isLoading } = useQuery({
     queryKey: ['parentCompletions'],
@@ -58,6 +85,7 @@ export default function RecentlyReviewed({ kidLabelFor, kidAvatarFor, showKidLab
 
   const reviewed = completions
     .filter(c => c.status === 'confirmed' || c.status === 'rejected')
+    .filter(c => statusFilter === 'all' || c.status === statusFilter)
     .sort((a, b) =>
       new Date(b.reviewed_at ?? b.completed_at).getTime() -
       new Date(a.reviewed_at ?? a.completed_at).getTime())
@@ -71,9 +99,12 @@ export default function RecentlyReviewed({ kidLabelFor, kidAvatarFor, showKidLab
   return (
     <>
       <section aria-labelledby="reviewed-heading" className="bg-white rounded-2xl p-6">
-        <h2 id="reviewed-heading" className="font-heading text-xl font-bold text-gray-900 mb-4">
-          {t('parentDash.recentlyReviewed')}
-        </h2>
+        <div className="flex items-center justify-between gap-2 mb-4 flex-wrap">
+          <h2 id="reviewed-heading" className="font-heading text-xl font-bold text-gray-900">
+            {t('parentDash.recentlyReviewed')}
+          </h2>
+          <StatusFilterTabs value={statusFilter} onChange={setStatusFilter} />
+        </div>
 
         {isLoading ? (
           <ul className="flex flex-col gap-2" aria-hidden="true">
