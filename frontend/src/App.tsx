@@ -54,6 +54,17 @@ export default function App() {
     }),
   [queryClient])
 
+  // Keep tabs in sync
+  useEffect(() => {
+    const onStorage = (e: StorageEvent) => {
+      if (e.key !== 'auth') return
+      void useAuthStore.persist.rehydrate()
+      queryClient.invalidateQueries()
+    }
+    window.addEventListener('storage', onStorage)
+    return () => window.removeEventListener('storage', onStorage)
+  }, [queryClient])
+
   useEffect(() => {
     const startupToken = startupTokenRef.current
     if (startupToken) {
