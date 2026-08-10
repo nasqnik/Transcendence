@@ -21,6 +21,10 @@ export default function ReviewModal({ completion, onClose }: ReviewModalProps) {
       reviewCompletion(completion.id, { status: reviewStatus, review_note: note }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['parentCompletions'] })
+      // Confirming awards XP/honesty, so the insights and category progress are
+      // now stale too — refresh them, not just the approvals queue.
+      queryClient.invalidateQueries({ queryKey: ['kidAnalytics'] })
+      queryClient.invalidateQueries({ queryKey: ['kidStats'] })
       onClose()
     },
   })
