@@ -16,6 +16,14 @@ interface Props {
   onBack: () => void
 }
 
+/** The inputs this form renders — the only places a field error can be seen. */
+const VISIBLE_FIELDS = ['name', 'username', 'parentEmail'] as const
+
+/** auth-service names this one in snake_case; the form uses camelCase. */
+const SERVER_FIELD_ALIASES: Record<string, string> = {
+  parentEmail: 'parent_email',
+}
+
 export default function SignupKidGoogleProfile({ googleToken, onSuccess, onBack }: Props) {
   const { t } = useTranslation()
   const [name, setName]               = useState('')
@@ -49,9 +57,24 @@ export default function SignupKidGoogleProfile({ googleToken, onSuccess, onBack 
       const result = await signupKidWithGoogle(googleToken, name, username, parentEmail)
       onSuccess(result, parentEmail)
     } catch (err) {
+      // Only the fields this form actually renders can show an error. The
+      // server also rejects on `id_token` and on non-field errors, and routing
+      // those into setFieldErrors put the message on an input that does not
+      // exist — the request failed, nothing appeared, and the button looked
+      // dead. Anything with nowhere to land becomes the form-level alert.
       const fields = getFieldErrors(err)
-      if (Object.keys(fields).length > 0) { setFieldErrors(fields); return }
-      setErrorKey(getApiErrorKey(err))
+      const visible: Record<string, string> = {}
+      for (const key of VISIBLE_FIELDS) {
+        const message = fields[key] ?? fields[SERVER_FIELD_ALIASES[key]]
+        if (message) visible[key] = message
+      }
+      if (Object.keys(visible).length > 0) setFieldErrors(visible)
+      // Not `else`: a payload can carry both a field error and a reason that
+      // belongs above the form, and dropping either leaves the kid guessing.
+      if (Object.keys(visible).length < Object.keys(fields).length ||
+          Object.keys(fields).length === 0) {
+        setErrorKey(getApiErrorKey(err))
+      }
     } finally {
       setIsLoading(false)
     }
