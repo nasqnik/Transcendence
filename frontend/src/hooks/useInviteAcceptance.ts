@@ -6,9 +6,9 @@ import useAuthStore from '../store/authStore'
 import {
   getInvitation,
   acceptInvitation,
-  loginParent,
+  login,
   signupParentWithGoogle,
-  registerParent,
+  signupParent,
   refreshParentToken,
   type InvitationDetails,
 } from '../api/auth'
@@ -45,7 +45,7 @@ async function refreshParentKidIds() {
   try {
     establishParentSession(await refreshParentToken(refreshToken))
   } catch {
-    // ignore — see doc comment
+    // ignore 
   }
 }
 
@@ -161,7 +161,7 @@ export function useInviteAcceptance() {
   }, [hydrated, inviteToken, isAuthenticated, currentUser?.email, currentUser?.role])
 
   // ── Password path: log in if the account exists, otherwise register ────────
-  async function submit(e: React.FormEvent) {
+  async function submit(e: React.SubmitEvent) {
     e.preventDefault()
     if (state.status !== 'form') return
 
@@ -183,13 +183,13 @@ export function useInviteAcceptance() {
     const { invitation } = state
 
     try {
-      const tokens = await loginParent(invitation.invite_email, password)
+      const tokens = await login(invitation.invite_email, password)
       establishParentSession(tokens)
       await doAccept(invitation)
     } catch (err) {
       if (isAccountNotFound(err)) {
         try {
-          await registerParent(invitation.invite_email, username, password)
+          await signupParent(invitation.invite_email, username, password)
           markPendingInviteRegistered()
           setState({ status: 'verify_email', email: invitation.invite_email })
         } catch (registerErr) {

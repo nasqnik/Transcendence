@@ -84,9 +84,41 @@ export default function SignupKidGoogleProfile({ googleToken, onSuccess, onBack 
     <AuthMessageLayout headingId="google-profile-heading" icon="👤" title={t('auth.completeProfile')}>
       <form noValidate className="flex w-full flex-col gap-4" onSubmit={handleSubmit} aria-labelledby="google-profile-heading" aria-busy={isLoading}>
         {errorKey && <FormAlert message={t(errorKey)} />}
-        <FormField id="name" label={t('auth.name')} type="text" value={name} required autoComplete="name" disabled={isLoading} error={fieldErrors.name} onChange={e => { setName(e.target.value); clearFieldError('name') }} />
-        <FormField id="username" label={t('auth.username')} type="text" dir="ltr" value={username} required autoComplete="username" disabled={isLoading} error={fieldErrors.username} onChange={e => { setUsername(e.target.value); clearFieldError('username') }} />
-        <FormField id="parentEmail" label={t('auth.parentEmail')} type="email" value={parentEmail} placeholder={t('auth.emailHint')} required autoComplete="off" disabled={isLoading} error={fieldErrors.parentEmail} onChange={e => { setParentEmail(e.target.value); clearFieldError('parentEmail') }} />
+        <FormField
+          id="name"
+          label={t('auth.name')}
+          type="text"
+          value={name}
+          required
+          autoComplete="name"
+          disabled={isLoading}
+          error={fieldErrors.name}
+          onChange={e => { setName(e.target.value); clearFieldError('name') }}
+        />
+        <FormField
+          id="username"
+          label={t('auth.username')}
+          type="text"
+          dir="ltr"
+          value={username}
+          required
+          autoComplete="username"
+          disabled={isLoading}
+          error={fieldErrors.username}
+          onChange={e => { setUsername(e.target.value); clearFieldError('username') }}
+        />
+        <FormField
+          id="parentEmail"
+          label={t('auth.parentEmail')}
+          type="email"
+          value={parentEmail}
+          placeholder={t('auth.emailHint')}
+          required
+          autoComplete="off"
+          disabled={isLoading}
+          error={fieldErrors.parentEmail}
+          onChange={e => { setParentEmail(e.target.value); clearFieldError('parentEmail') }}
+        />
         <TermsCheckbox
           checked={agreedToTerms}
           onChange={v => { setAgreedToTerms(v); clearFieldError('agreedToTerms') }}
