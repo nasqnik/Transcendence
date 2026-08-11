@@ -1,4 +1,4 @@
-*This project has been created as part of the 42 curriculum by meid, hparveen, mnazar, anikitinn.*
+*This project has been created as part of the 42 curriculum by meid, hparveen, mnazar, anikitin.*
 
 # KiddoPath
 
@@ -35,7 +35,7 @@
 
 ### Prerequisites
 
-- **OS:** Linux (Ubuntu recommended) or any host that runs Docker
+- **OS:** Any host that runs Docker — tested on **Linux**, **macOS**, and **Windows (WSL)**
 - **Docker Engine** and **Docker Compose v2**
 - **Docker Buildx** (Compose Bake)
 - **Make**
