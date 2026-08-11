@@ -27,7 +27,7 @@ export default function ForgotPassword() {
     if (sent) document.getElementById('reset-sent-heading')?.focus()
   }, [sent])
 
-  async function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.SubmitEvent) {
     e.preventDefault()
     if (isEmpty(email)) { setFieldError(t('errors.required')); return }
     if (!isValidEmail(email)) { setFieldError(t('errors.invalidEmail')); return }
