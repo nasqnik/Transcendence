@@ -21,7 +21,7 @@ export default function AddTaskModal({ onClose }: Props) {
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
   const [dueDate, setDueDate] = useState(today)
-  async function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.SubmitEvent) {
     e.preventDefault()
     if (!title.trim() || status === 'streaming') return
 

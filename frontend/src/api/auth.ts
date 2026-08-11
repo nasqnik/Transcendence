@@ -50,12 +50,18 @@ export interface ParentVerifyEmailResponse {
 
 // ─── Auth endpoints ──────────────────────────────────────────────────────────
 
-// POST /auth/token/  — parent login with emailOrUsername + password
-export async function loginParent(identifier: string, password: string): Promise<TokenResponse> {
+// POST /auth/token/  — login with emailOrUsername + password (works for both roles)
+export async function login(identifier: string, password: string): Promise<TokenResponse> {
   const res = await client.post<TokenResponse>('/auth/token/', {
     emailOrUsername: identifier,
     password,
   })
+  return res.data
+}
+
+// POST /auth/google/  — login via Google (does not create an account)
+export async function loginWithGoogle(idToken: string): Promise<TokenResponse> {
+  const res = await client.post<TokenResponse>('/auth/google/', { id_token: idToken })
   return res.data
 }
 
@@ -66,18 +72,10 @@ export async function refreshParentToken(refresh: string): Promise<TokenResponse
   return res.data
 }
 
-// POST /auth/kid/token/  — kid login with emailOrUsername + password
-export async function loginKid(identifier: string, password: string): Promise<TokenResponse> {
-  const res = await client.post<TokenResponse>('/auth/kid/token/', {
-    emailOrUsername: identifier,
-    password,
-  })
-  return res.data
-}
 
 // POST /auth/register/  — parent account creation
 // Returns user info, no tokens — parent verifies email then logs in.
-export async function registerParent(email: string, username: string, password: string) {
+export async function signupParent(email: string, username: string, password: string) {
   const res = await client.post('/auth/register/', { email, username, password })
   return res.data
 }
@@ -130,11 +128,7 @@ export async function inviteParent(parentEmail: string, invitedUsernameHint?: st
   return res.data
 }
 
-// POST /auth/google/  — parent sign-in via Google (does not create an account)
-export async function loginWithGoogle(idToken: string): Promise<TokenResponse> {
-  const res = await client.post<TokenResponse>('/auth/google/', { id_token: idToken })
-  return res.data
-}
+
 
 // POST /auth/google/signup/  — parent sign-up via Google (creates if new)
 export async function signupParentWithGoogle(idToken: string): Promise<TokenResponse> {
@@ -142,11 +136,6 @@ export async function signupParentWithGoogle(idToken: string): Promise<TokenResp
   return res.data
 }
 
-// POST /auth/kid/google/  — kid sign-in via Google (kid must be active)
-export async function loginKidWithGoogle(idToken: string): Promise<TokenResponse> {
-  const res = await client.post<TokenResponse>('/auth/kid/google/', { id_token: idToken })
-  return res.data
-}
 
 /** One in-flight verify POST per token (avoids Strict Mode double-submit). */
 function dedupeByToken<T>(cache: Map<string, Promise<T>>, token: string, request: () => Promise<T>): Promise<T> {
