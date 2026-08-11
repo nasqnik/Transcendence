@@ -1,4 +1,4 @@
-import { loginParent, loginWithGoogle, decodeJWT } from '../api/auth'
+import { login, loginWithGoogle, decodeJWT } from '../api/auth'
 import { getApiErrorKey, isKidNotActiveYet } from '../api/errors'
 import { establishKidSession, establishParentSession, type NavigateFn } from './session'
 
@@ -18,7 +18,7 @@ export async function attemptDualRoleLogin(
   try {
     const tokens =
       credentials.type === 'password'
-        ? await loginParent(credentials.identifier, credentials.password)
+        ? await login(credentials.identifier, credentials.password)
         : await loginWithGoogle(credentials.credential)
 
     if (decodeJWT(tokens.access).role === 'kid') establishKidSession(tokens, navigate)
