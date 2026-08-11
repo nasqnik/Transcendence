@@ -130,7 +130,8 @@ Sign up through the frontend after `make all`. Optional CLI user seeds for devel
 - [React](https://react.dev/) / [Vite](https://vitejs.dev/)
 - [Google Identity Services](https://developers.google.com/identity/gsi/web)
 - Project API notes under `docs/backend/services_api_references/`
-- Internal setup notes: `Developer.md`, `docs/backend/`
+- Architecture notes: `docs/microservices_implementation_plan.md`
+- Internal setup notes: `Developer.md`
 
 ### How AI was used
 
