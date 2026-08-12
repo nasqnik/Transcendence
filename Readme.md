@@ -90,13 +90,13 @@ Both will:
 4. Run migrations  
 5. Seed catalog data  
 
-Then open **https://localhost:8000** (accept the self-signed certificate warning in development). Change the host port with `HTTPS_PORT` in `.env` if needed.
+Then open **http://localhost:8000** (redirects to **https://localhost:8443**) or go straight to HTTPS. Accept the self-signed certificate warning. Change ports with `HTTP_PORT` / `HTTPS_PORT` in `.env` if needed.
 
 | URL | When | What |
 | --- | --- | --- |
-| https://localhost:8000/ | `make all` or `make dev` | App (frontend); port from `HTTPS_PORT` |
-| https://localhost:8000/admin/ | `make dev` only | Django admin |
-| https://localhost:8000/api/docs/ | `make dev` only | Auth Swagger (`/api/<service>/docs/` for others) |
+| https://localhost:8443/ | `make all` or `make dev` | App (frontend); port from `HTTPS_PORT` |
+| https://localhost:8443/admin/ | `make dev` only | Django admin |
+| https://localhost:8443/api/docs/ | `make dev` only | Auth Swagger (`/api/<service>/docs/` for others) |
 
 With `make all`, those admin/docs URLs are not registered (404). Switch modes by running the other target (Compose recreates services when `DJANGO_DEBUG` changes).
 
@@ -115,7 +115,7 @@ Sign up through the frontend after `make all`. Optional CLI user seeds for devel
 
 ### Notes
 
-- All public traffic goes through nginx HTTPS on host port **`HTTPS_PORT`** (default **8000** → container 443).
+- All public traffic goes through nginx: **`HTTP_PORT`** (default **8000** → 80, redirects to HTTPS) and **`HTTPS_PORT`** (default **8443** → 443).
 - Parent JWTs carry `kid_ids` / `kids`; refresh reloads them from the DB after a kid links.
 - Parent and kid must use **different** Google accounts if both sign in with Google.
 
@@ -179,7 +179,7 @@ All members also act as developers: implement assigned work, review when needed,
 - **Microservices + DRF:** Clear ownership per domain (auth, tasks, XP, shop, etc.) and parallel work between Mariam and Henna.
 - **PostgreSQL:** Relational integrity for users ↔ kids ↔ guardians, tasks/completions, and progression ledgers; mature with Django.
 - **React + Vite:** Fast frontend iteration for two dashboards and avatar UI.
-- **nginx + Docker:** One entrypoint (`https://localhost:8000` by default) matching how the project is evaluated and run locally.
+- **nginx + Docker:** One entrypoint (`https://localhost:8443` by default; `http://localhost:8000` redirects) matching how the project is evaluated and run locally.
 
 ### Database Schema
 

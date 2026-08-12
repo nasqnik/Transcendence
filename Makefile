@@ -29,7 +29,7 @@ all: ssl-if-missing
 	$(MAKE) init-dbs
 	$(MAKE) migrate
 	$(MAKE) seed-catalog
-	@echo "==> Stack ready (production-like). Open https://localhost:$${HTTPS_PORT:-8000} — admin/docs are off."
+	@echo "==> Stack ready (production-like). Open http://localhost:$${HTTP_PORT:-8000} (→ https://localhost:$${HTTPS_PORT:-8443}) — admin/docs are off."
 
 # Same stack, with Django admin + Swagger for local development.
 dev: export DJANGO_DEBUG := true
@@ -38,7 +38,7 @@ dev: ssl-if-missing
 	$(MAKE) init-dbs
 	$(MAKE) migrate
 	$(MAKE) seed-catalog
-	@echo "==> Dev tools on: https://localhost:$${HTTPS_PORT:-8000}/admin/ and https://localhost:$${HTTPS_PORT:-8000}/api/docs/ (and /api/<service>/docs/)."
+	@echo "==> Dev tools on: https://localhost:$${HTTPS_PORT:-8443}/admin/ and https://localhost:$${HTTPS_PORT:-8443}/api/docs/ (and /api/<service>/docs/)."
 
 init-dbs: init-auth-db init-task-db init-gamification-db init-analytics-db init-notification-db init-catalog-db init-social-db
 
