@@ -3,7 +3,6 @@ import { useTranslation } from 'react-i18next'
 import FriendCard from '../components/kid/FriendCard'
 import FindFriendResults, { MIN_QUERY } from '../components/kid/FindFriendResults'
 import { useFriends } from '../hooks/useFriends'
-import { usePresence } from '../hooks/usePresence'
 import { usePageTitle } from '../hooks/usePageTitle'
 import LoadError from '../components/LoadError'
 import { type Friend } from '../api/social'
@@ -18,9 +17,6 @@ export default function KidFriends() {
     accept, decline, remove, sendRequest,
     isBusy, actionError, dismissError, isError, requestsError, refetch,
   } = useFriends()
-
-  // Live online dots, and it marks this kid online for their friends too.
-  usePresence(true)
 
   const [query, setQuery] = useState('')
   const trimmed = query.trim()
