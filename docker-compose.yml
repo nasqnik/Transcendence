@@ -1,8 +1,8 @@
 # KiddoPath — Docker Compose
 #
 # Network: default bridge (mariam_backend_default). Services reach each other
-# by name (e.g. auth-service:8000, db). Only nginx publishes HTTPS to the host
-# (HTTPS_PORT, default 8000 → container 443).
+# by name (e.g. auth-service:8000, db). Only nginx publishes to the host:
+# HTTP_PORT (default 8000 → 80, redirects) and HTTPS_PORT (default 8443 → 443).
 #
 # Config: copy .env.example → .env (gitignored). Each Django service loads
 # .env and overrides DB_NAME for its own database.
@@ -141,6 +141,7 @@ services:
     container_name: catalog_service
     volumes:
       - ./services/catalog-service:/app
+      - catalog_media:/app/media
     environment:
       DB_NAME: ${CATALOG_DB_NAME:-catalog_db}
       DJANGO_DEBUG: ${DJANGO_DEBUG:-false}
@@ -207,15 +208,25 @@ services:
       - catalog-service
       - social-service
       - frontend
+    environment:
+      HTTPS_PORT: ${HTTPS_PORT:-8443}
     ports:
-      # Host port is editable via HTTPS_PORT in .env (default 8000).
-      # Container always listens on 443 (TLS). Open https://localhost:${HTTPS_PORT}
-      - "${HTTPS_PORT:-8000}:443"
+      # Plain HTTP (default 8000) → 301 to https://localhost:${HTTPS_PORT}
+      - "${HTTP_PORT:-8000}:80"
+      # TLS app entry (default 8443)
+      - "${HTTPS_PORT:-8443}:443"
     volumes:
-      - ./security/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      # Template: envsubst fills ${HTTPS_PORT} in the HTTP→HTTPS redirect.
+      - ./security/nginx/nginx.conf:/etc/nginx/nginx.conf.template:ro
       - ./security/ssl:/etc/nginx/ssl:ro
-      - ./services/catalog-service/media:/etc/nginx/media:ro
+      - catalog_media:/etc/nginx/media:ro
+    command:
+      - /bin/sh
+      - -c
+      - envsubst '$${HTTPS_PORT}' < /etc/nginx/nginx.conf.template > /etc/nginx/nginx.conf && nginx -g 'daemon off;'
 
 volumes:
   postgres_data:
   frontend_node_modules:
+  catalog_media:
+
