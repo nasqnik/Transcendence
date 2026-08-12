@@ -22,14 +22,27 @@ docker compose exec auth-service python manage.py createsuperuser
 
 To run migrations again later: `make migrate`
 
-| URL | What |
-|-----|------|
-| https://localhost | App via nginx (HTTPS) |
-| https://localhost/admin/ | Django admin via nginx (`make dev` only) |
-| https://localhost/api/… | API via nginx |
-| http://localhost:8001 | auth-service directly |
-| http://localhost:8002 | task-service directly |
-| http://localhost:5173 | Frontend directly (Vite) |
+### App & admin (via nginx)
+
+| What | URL |
+|------|-----|
+| Frontend | https://localhost/ |
+| Django admin | https://localhost/admin/ (`make dev` only) |
+| API | https://localhost/api/… |
+
+### API docs — Swagger (`make dev` only)
+
+| Service | URL |
+|---------|-----|
+| Auth | https://localhost/api/docs/ |
+| Task | https://localhost/api/task/docs/ |
+| Gamification | https://localhost/api/gamification/docs/ |
+| Analytics | https://localhost/api/analytics/docs/ |
+| Notification | https://localhost/api/notification/docs/ |
+| Catalog | https://localhost/api/catalog/docs/ |
+| Social | https://localhost/api/social/docs/ |
+
+All public traffic goes through **nginx** on ports **80** and **443** only (services are not published on the host).
 
 Accept the self-signed certificate warning in the browser (dev only).
 
@@ -113,19 +126,32 @@ Writes `security/ssl/server.key` and `security/ssl/server.crt`. `make all` runs 
 | Service | Container | Role |
 |---------|-------------|------|
 | `db` | `django_db` | PostgreSQL 16 |
-| `auth-service` | `auth_service` | Django auth API on port 8001 (host) → 8000 (container) |
-| `task-service` | `task_service` | Django tasks API on port 8002 (host) → 8000 (container) |
-| `frontend` | `react_frontend` | Vite/React on port 5173 |
-| `nginx` | `nginx_proxy` | HTTPS reverse proxy on port 443 |
+| `redis` | `redis_broker` | Redis (Channels / WebSockets) |
+| `auth-service` | `auth_service` | Auth API (JWT, users, guardians) |
+| `task-service` | `task_service` | Tasks, completions, AI |
+| `gamification-service` | `gamification_service` | XP, levels, coins |
+| `analytics-service` | `analytics_service` | Parent analytics |
+| `catalog-service` | `catalog_service` | Avatar shop / avatars |
+| `notification-service` | `notification_service` | Notifications + `/ws/notifications/` |
+| `social-service` | `social_service` | Friends + `/ws/presence/` |
+| `frontend` | `react_frontend` | Vite/React SPA |
+| `nginx` | `nginx_proxy` | HTTPS reverse proxy on 80/443 |
 
-Compose creates a default network; services reach each other by name (`auth-service`, `frontend`, `db`). No custom network is required.
+Compose creates a default network; services reach each other by name (`auth-service`, `frontend`, `db`, …). Each Django service listens on **:8000** inside Docker only.
 
 **Nginx routing** (`security/nginx/nginx.conf`):
 
 - `/` → frontend
-- `/admin/` → auth-service (Django admin; only with `make dev`)
-- `/api/tasks/`, `/api/completions/`, `/api/health/` → task-service
-- `/api/` (everything else) → auth-service
+- `/admin/`, `/static/` → auth-service (`make dev` for admin)
+- `/api/task/` → task-service
+- `/api/gamification/` → gamification-service
+- `/api/analytics/` → analytics-service
+- `/api/notification/` → notification-service
+- `/api/catalog/`, `/media/` → catalog-service
+- `/api/social/` → social-service
+- `/api/` (catch-all) → auth-service
+- `/ws/notifications/` → notification-service
+- `/ws/presence/` → social-service
 
 After editing nginx config:
 
@@ -151,7 +177,7 @@ Copies `services/_template/` → `services/<slug>-service/` and prints wiring st
 |---------|-------------|
 | `make all` | SSL if needed, build (cached), start all services, init DBs, migrate (no admin/docs) |
 | `make dev` | Same as `make all`, but enables Django admin + Swagger |
-| `make init-dbs` | Create `auth_db` and `task_db` if missing |
+| `make init-dbs` | Create per-service DBs if missing (`auth_db`, `task_db`, …) |
 | `make init-auth-db` | Create `auth_db` only (legacy alias — use `init-dbs`) |
 | `make build-all` | Build all images without starting |
 | `make down` | Stop all services |
@@ -167,13 +193,44 @@ Rebuilds use Docker layer cache: running `make all` again is fast if nothing in 
 | Command | Description |
 |---------|-------------|
 | `make seed-dev` | One parent + kid |
-| `make seed-dev-friend` | Two parent+kid pairs (friend testing) |
-| `make seed-custom-friend` | Custom kid usernames for friend testing |
-| `make seed-dual-parent` | One kid with two parents |
+| `make seed-dev-friend` | Two fixed parent+kid pairs (friend testing) |
+| `make seed-custom-friend` | Two custom parent+kid pairs (see below) |
+| `make seed-dual-parent` | One kid with two accepted parents (see below) |
 | `make seed-parent-two-kids` | One parent with two kids |
 | `make seed-parent-many-kids` | One parent with many kids |
 
 Evaluation should use the frontend to sign up; these are developer shortcuts only.
+
+#### Custom friend seed
+
+Create two parent+kid pairs with your own kid usernames (kids are **not** friends). Password for all: `DevPass123!`
+
+```bash
+# Preferred: pass usernames
+make seed-custom-friend KID1=alice KID2=bob
+
+# Optional display names
+make seed-custom-friend KID1=alice KID2=bob NAME1="Alice" NAME2="Bob"
+
+# Or run without args — it will prompt for usernames
+make seed-custom-friend
+```
+
+The command prints JWTs you can paste into Social Swagger to test search / friend requests.
+
+#### Dual-parent seed
+
+One kid linked to **two** accepted parents (for testing parent delete when another guardian exists):
+
+```bash
+make seed-dual-parent
+```
+
+Accounts (password `DevPass123!`):
+
+- Kid: `dev_kid_shared`
+- Primary parent: `dev_parent_a` / `dev-parent-a@localhost`
+- Secondary parent: `dev_parent_b` / `dev-parent-b@localhost`
 
 ### auth-service
 

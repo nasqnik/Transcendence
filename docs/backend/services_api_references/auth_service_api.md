@@ -175,7 +175,8 @@ without requiring a full log out / log in.
 | Method | Path | Purpose |
 | --- | --- | --- |
 | POST | `/kids/signup/` | Register a kid and invite the primary parent. |
-| POST | `/kids/signup/google/` | Register a kid via Google (not used yet). |
+| POST | `/kids/signup/google/check/` | Check Google identity before the kid profile form (public). |
+| POST | `/kids/signup/google/` | Register a kid via Google (no kid email-verify step; parent must still accept). |
 | POST | `/auth/kid/verify-email/` | Verify a kid's email. |
 | POST | `/kids/invite-parent/` | Logged-in kid invites a second parent. |
 | POST | `/auth/kid/token/` | Log in a kid -> tokens. |
