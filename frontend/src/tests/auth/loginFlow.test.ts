@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 
 vi.mock('../../api/auth', async () => ({
-  loginParent: vi.fn(),
+  login: vi.fn(),
   loginWithGoogle: vi.fn(),
   // Not mocked away: the flow decodes the real token to learn the role, and
   // stubbing that would let a broken decode pass unnoticed.
@@ -16,10 +16,10 @@ vi.mock('../../auth/session', () => ({
 }))
 
 import { attemptDualRoleLogin } from '../../auth/loginFlow'
-import { loginParent, loginWithGoogle } from '../../api/auth'
+import { login, loginWithGoogle } from '../../api/auth'
 import { establishParentSession, establishKidSession } from '../../auth/session'
 
-const mockLoginParent = vi.mocked(loginParent)
+const mockLoginParent = vi.mocked(login)
 const mockLoginWithGoogle = vi.mocked(loginWithGoogle)
 const mockEstablishParentSession = vi.mocked(establishParentSession)
 const mockEstablishKidSession = vi.mocked(establishKidSession)

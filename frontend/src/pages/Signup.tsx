@@ -11,7 +11,7 @@ import SignupParentPending from '../components/SignupParentPending'
 import SignupKidPending from '../components/SignupKidPending'
 import SignupKidGoogleProfile from '../components/SignupKidGoogleProfile'
 import { establishParentSession } from '../auth/session'
-import { registerParent, signupParentWithGoogle, signupKid, type KidSignupResponse } from '../api/auth'
+import { signupParent, signupParentWithGoogle, signupKid, type KidSignupResponse } from '../api/auth'
 import { getApiErrorKey, getFieldErrors } from '../api/errors'
 import { useFormErrors } from '../hooks/useFormErrors'
 import { usePageTitle } from '../hooks/usePageTitle'
@@ -33,7 +33,7 @@ export default function Signup() {
   const [errorKey, setErrorKey]       = useState<string | null>(null)
   const { fieldErrors, setFieldErrors, clearFieldError, resetFieldErrors } = useFormErrors()
 
-  const [parentPendingEmail, setParentPendingEmail] = useState<string | null>(null)
+  const [parentPending, setParentPending] = useState<string | null>(null)
   const [kidPending, setKidPending]                 = useState<KidSignupResponse | null>(null)
   const [kidGoogleToken, setKidGoogleToken]         = useState<string | null>(null)
 
@@ -69,6 +69,35 @@ export default function Signup() {
     return errs
   }
 
+  async function handleGoogleSignup(credential: string) {
+    setErrorKey(null)
+    resetFieldErrors()
+    // Parent only, because Google sign-in creates a parent account straight
+    // away, so this is the last point at which the terms can be
+    // accepted — without it a parent signs up having agreed to
+    // nothing. A kid goes on to SignupKidGoogleProfile, which
+    // collects its own acceptance before any account exists, so
+    // asking here as well made them tick the same box twice (that
+    // step starts unchecked, so the first tick did not even carry).
+    if (role === 'parent' && !agreedToTerms) {
+      setFieldErrors({ agreedToTerms: t('errors.mustAgreeToTerms') })
+      return
+    }
+    if (role === 'parent') {
+      setIsLoading(true)
+      try {
+        const tokens = await signupParentWithGoogle(credential)
+        establishParentSession(tokens, navigate)
+      } catch (err) {
+        setErrorKey(getApiErrorKey(err))
+      } finally {
+        setIsLoading(false)
+      }
+    } else {
+      setKidGoogleToken(credential)
+    }
+  }
+
   async function handleSubmit(e: React.SubmitEvent) {
     e.preventDefault()
     if (!role) return
@@ -79,8 +108,8 @@ export default function Signup() {
     setIsLoading(true)
     try {
       if (role === 'parent') {
-        await registerParent(email, username, password)
-        setParentPendingEmail(email)
+        await signupParent(email, username, password)
+        setParentPending(email)
       } else {
         const result = await signupKid(name, username, email, password, parentEmail)
         setKidPending(result)
@@ -94,7 +123,7 @@ export default function Signup() {
     }
   }
 
-  if (parentPendingEmail) return <SignupParentPending email={parentPendingEmail} />
+  if (parentPending) return <SignupParentPending email={parentPending} />
   if (kidPending) return <SignupKidPending kidPending={kidPending} parentEmail={parentEmail} />
   if (kidGoogleToken) {
     return (
@@ -149,15 +178,72 @@ export default function Signup() {
           <form noValidate className="flex flex-col gap-4" onSubmit={handleSubmit} aria-labelledby="signup-heading" aria-busy={isLoading}>
             {errorKey && <FormAlert message={t(errorKey)} />}
 
-            <FormField id="username" label={t('auth.username')} type="text" dir="ltr" value={username} required autoComplete="username" disabled={isLoading} error={fieldErrors.username} onChange={e => { setUsername(e.target.value); clearFieldError('username') }} />
+            <FormField
+              id="username"
+              label={t('auth.username')}
+              type="text"
+              dir="ltr"
+              value={username}
+              required
+              autoComplete="username"
+              disabled={isLoading}
+              error={fieldErrors.username}
+              onChange={e => { setUsername(e.target.value); clearFieldError('username') }}
+            />
 
-            {role === 'kid' && <FormField id="name" label={t('auth.name')} type="text" value={name} required autoComplete="name" disabled={isLoading} error={fieldErrors.name} onChange={e => { setName(e.target.value); clearFieldError('name') }} />}
+            {role === 'kid' && (
+              <FormField
+                id="name"
+                label={t('auth.name')}
+                type="text"
+                value={name}
+                required
+                autoComplete="name"
+                disabled={isLoading}
+                error={fieldErrors.name}
+                onChange={e => { setName(e.target.value); clearFieldError('name') }}
+              />
+            )}
 
-            <FormField id="email" label={t('auth.email')} type="email" value={email} placeholder={t('auth.emailHint')} required autoComplete="email" disabled={isLoading} error={fieldErrors.email} onChange={e => { setEmail(e.target.value); clearFieldError('email') }} />
+            <FormField
+              id="email"
+              label={t('auth.email')}
+              type="email"
+              value={email}
+              placeholder={t('auth.emailHint')}
+              required
+              autoComplete="email"
+              disabled={isLoading}
+              error={fieldErrors.email}
+              onChange={e => { setEmail(e.target.value); clearFieldError('email') }}
+            />
 
-            <FormField id="password" label={t('auth.password')} type="password" value={password} required autoComplete="new-password" disabled={isLoading} error={fieldErrors.password} onChange={e => { setPassword(e.target.value); clearFieldError('password') }} />
+            <FormField
+              id="password"
+              label={t('auth.password')}
+              type="password"
+              value={password}
+              required
+              autoComplete="new-password"
+              disabled={isLoading}
+              error={fieldErrors.password}
+              onChange={e => { setPassword(e.target.value); clearFieldError('password') }}
+            />
 
-            {role === 'kid' && <FormField id="parentEmail" label={t('auth.parentEmail')} type="email" value={parentEmail} placeholder={t('auth.emailHint')} required autoComplete="off" disabled={isLoading} error={fieldErrors.parentEmail} onChange={e => { setParentEmail(e.target.value); clearFieldError('parentEmail') }} />}
+            {role === 'kid' && (
+              <FormField
+                id="parentEmail"
+                label={t('auth.parentEmail')}
+                type="email"
+                value={parentEmail}
+                placeholder={t('auth.emailHint')}
+                required
+                autoComplete="off"
+                disabled={isLoading}
+                error={fieldErrors.parentEmail}
+                onChange={e => { setParentEmail(e.target.value); clearFieldError('parentEmail') }}
+              />
+            )}
 
             <TermsCheckbox
               checked={agreedToTerms}
@@ -174,34 +260,7 @@ export default function Signup() {
 
           <GoogleSignInSection
             disabled={isLoading}
-            onSuccess={async credential => {
-              setErrorKey(null)
-              resetFieldErrors()
-              // Parent only. Google sign-in creates a parent account straight
-              // away, so this is the last point at which the terms can be
-              // accepted — without it a parent signs up having agreed to
-              // nothing. A kid goes on to SignupKidGoogleProfile, which
-              // collects its own acceptance before any account exists, so
-              // asking here as well made them tick the same box twice (that
-              // step starts unchecked, so the first tick did not even carry).
-              if (role === 'parent' && !agreedToTerms) {
-                setFieldErrors({ agreedToTerms: t('errors.mustAgreeToTerms') })
-                return
-              }
-              if (role === 'parent') {
-                setIsLoading(true)
-                try {
-                  const tokens = await signupParentWithGoogle(credential)
-                  establishParentSession(tokens, navigate)
-                } catch (err) {
-                  setErrorKey(getApiErrorKey(err))
-                } finally {
-                  setIsLoading(false)
-                }
-              } else {
-                setKidGoogleToken(credential)
-              }
-            }}
+            onSuccess={handleGoogleSignup}
             onError={() => { resetFieldErrors(); setErrorKey('errors.api.invalidGoogleToken') }}
           />
         </>
