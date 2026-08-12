@@ -337,7 +337,470 @@
   "legal": {
     "privacy": "Privacy Policy",
     "terms": "Terms of Service",
-    "lastUpdated": "Last updated: {{date}}"
+    "lastUpdated": "Last updated: {{date}}",
+    "privacyPolicy": {
+      "sections": [
+        {
+          "id": "pp-intro",
+          "heading": "1. Introduction",
+          "blocks": [
+            {
+              "type": "p",
+              "text": "KiddoPath (\"we\", \"us\", or \"our\") operates a gamified task and habit management platform designed for children under parental supervision. This Privacy Policy explains what personal data we collect, how we use it, and the rights you have over your information."
+            },
+            {
+              "type": "p",
+              "text": "By creating an account you agree to the practices described in this policy. If you are registering a child account, you confirm that you are the child's parent or legal guardian and that you consent on the child's behalf."
+            }
+          ]
+        },
+        {
+          "id": "pp-collect",
+          "heading": "2. Information We Collect",
+          "blocks": [
+            {
+              "type": "p",
+              "text": "We collect only the information necessary to provide the service:"
+            },
+            {
+              "type": "ul",
+              "items": [
+                {
+                  "label": "Account data:",
+                  "text": "email address, username, display name, and password (stored as a one-way cryptographic hash — we never store your plaintext password)."
+                },
+                {
+                  "label": "Task data:",
+                  "text": "task titles, descriptions, categories, due dates, completion status, and any notes added by a parent or guardian."
+                },
+                {
+                  "label": "Gamification data:",
+                  "text": "experience points (XP) earned per category, level progress, coin balance, and daily streak history."
+                },
+                {
+                  "label": "Usage data:",
+                  "text": "login timestamps and completion timestamps, used to compute streaks and provide activity summaries to parents."
+                },
+                {
+                  "label": "Invitation data:",
+                  "text": "the email address of a parent or guardian entered during child registration, used solely to send the guardian invitation."
+                }
+              ]
+            },
+            {
+              "type": "p",
+              "text": "We do not collect payment information, geolocation data, or any biometric data."
+            }
+          ]
+        },
+        {
+          "id": "pp-use",
+          "heading": "3. How We Use Your Information",
+          "blocks": [
+            {
+              "type": "ul",
+              "items": [
+                {
+                  "text": "To create and maintain your account and authenticate your sessions."
+                },
+                {
+                  "text": "To provide the core service: displaying tasks, recording completions, calculating XP and levels, and showing progress to both the child and the parent."
+                },
+                {
+                  "text": "To send transactional emails such as email verification and guardian invitation links."
+                },
+                {
+                  "text": "To allow parents to review and approve or reject their child's completed tasks where the child's privacy settings require parental review."
+                },
+                {
+                  "text": "To improve the platform based on aggregated, anonymised usage patterns."
+                }
+              ]
+            },
+            {
+              "type": "p",
+              "text": "We do not use your data for advertising, profiling, or automated decision-making that produces legal or similarly significant effects."
+            }
+          ]
+        },
+        {
+          "id": "pp-children",
+          "heading": "4. Children's Privacy",
+          "blocks": [
+            {
+              "type": "p",
+              "text": "KiddoPath is designed specifically for use by children under parental supervision. We take children's privacy seriously and comply with applicable laws including the Children's Online Privacy Protection Act (COPPA) and the General Data Protection Regulation (GDPR)."
+            },
+            {
+              "type": "ul",
+              "items": [
+                {
+                  "text": "A child account can only be activated after a parent or guardian accepts an invitation and confirms their relationship — we do not activate child accounts without verified parental consent."
+                },
+                {
+                  "text": "Parents can review their child's tasks, progress, and completion history at any time through the parent dashboard."
+                },
+                {
+                  "text": "Parents may request deletion of their child's account and all associated data at any time by contacting us (see Section 9)."
+                },
+                {
+                  "text": "We do not display advertising to child users or share their data with advertising networks."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "pp-sharing",
+          "heading": "5. Data Sharing and Disclosure",
+          "blocks": [
+            {
+              "type": "p",
+              "text": "We do not sell, rent, or trade your personal data. We may share data only in the following limited circumstances:"
+            },
+            {
+              "type": "ul",
+              "items": [
+                {
+                  "label": "Within the platform:",
+                  "text": "a child's tasks and progress are visible to their linked parent or guardian as required by the service."
+                },
+                {
+                  "label": "Service providers:",
+                  "text": "we use third-party infrastructure providers (email delivery, cloud hosting) who process data strictly on our behalf under confidentiality agreements."
+                },
+                {
+                  "label": "Legal requirements:",
+                  "text": "we may disclose data if required to do so by law or in response to a valid legal process, and only to the extent required."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "pp-security",
+          "heading": "6. Data Security",
+          "blocks": [
+            {
+              "type": "p",
+              "text": "All data in transit is protected by TLS encryption. Passwords are stored using strong one-way hashing (Django's PBKDF2 with SHA-256). Authentication uses short-lived access tokens and rotating refresh tokens. We conduct regular security reviews of our codebase and infrastructure."
+            },
+            {
+              "type": "p",
+              "text": "No system is completely secure. If you believe your account has been compromised, please contact us immediately."
+            },
+            {
+              "type": "p",
+              "text": "After you sign in, we store authentication tokens (access and refresh JWTs) in your browser's localStorage on your device so you can stay signed in. These tokens are used only to authenticate API requests to KiddoPath. They are not used for advertising. You can remove them by signing out or clearing this site's data in your browser."
+            }
+          ]
+        },
+        {
+          "id": "pp-retention",
+          "heading": "7. Data Retention",
+          "blocks": [
+            {
+              "type": "p",
+              "text": "We retain personal data for as long as your account is active. When an account is deleted, we permanently remove associated personal data within 30 days. Aggregated, anonymised statistics that cannot be linked back to any individual may be retained for product improvement purposes."
+            }
+          ]
+        },
+        {
+          "id": "pp-rights",
+          "heading": "8. Your Rights",
+          "blocks": [
+            {
+              "type": "p",
+              "text": "Depending on your jurisdiction, you may have the following rights regarding your personal data:"
+            },
+            {
+              "type": "ul",
+              "items": [
+                {
+                  "label": "Access:",
+                  "text": "request a copy of the personal data we hold about you."
+                },
+                {
+                  "label": "Rectification:",
+                  "text": "ask us to correct inaccurate or incomplete data."
+                },
+                {
+                  "label": "Erasure:",
+                  "text": "request deletion of your account and personal data (\"right to be forgotten\")."
+                },
+                {
+                  "label": "Portability:",
+                  "text": "receive your data in a structured, machine-readable format."
+                },
+                {
+                  "label": "Withdrawal of consent:",
+                  "text": "where processing is based on consent, you may withdraw it at any time without affecting the lawfulness of prior processing."
+                }
+              ]
+            },
+            {
+              "type": "p",
+              "text": "For children's accounts, these rights are exercised by the parent or legal guardian. To exercise any right, contact us as described in Section 9."
+            }
+          ]
+        },
+        {
+          "id": "pp-contact",
+          "heading": "9. Contact Us",
+          "orgLabel": "KiddoPath Privacy Team",
+          "emailLabel": "Email:",
+          "blocks": [
+            {
+              "type": "p",
+              "text": "For any privacy-related questions, requests, or concerns, please contact us at:"
+            }
+          ],
+          "outro": [
+            {
+              "type": "p",
+              "text": "We will respond to all legitimate requests within 30 days. This policy may be updated from time to time; the \"Last updated\" date at the top of this page will reflect the most recent revision."
+            }
+          ]
+        }
+      ]
+    },
+    "termsOfService": {
+      "sections": [
+        {
+          "id": "tos-acceptance",
+          "heading": "1. Acceptance of Terms",
+          "blocks": [
+            {
+              "type": "p",
+              "text": "By accessing or using KiddoPath (the \"Service\"), you agree to be bound by these Terms of Service (\"Terms\"). If you do not agree to all of these Terms, you may not use the Service. If you are registering on behalf of a child, you represent that you are the child's parent or legal guardian and that you accept these Terms on the child's behalf."
+            },
+            {
+              "type": "p",
+              "text": "These Terms constitute a legally binding agreement between you and KiddoPath. Please read them carefully before creating an account."
+            }
+          ]
+        },
+        {
+          "id": "tos-service",
+          "heading": "2. Description of Service",
+          "blocks": [
+            {
+              "type": "p",
+              "text": "KiddoPath is a gamified task and habit management platform that allows parents or guardians (\"Parent Users\") to create and assign tasks to children (\"Child Users\"). Children earn experience points (XP), gain levels in task categories, and collect virtual coins upon completing tasks. Parents can optionally review and approve or reject completed tasks."
+            },
+            {
+              "type": "p",
+              "text": "The Service is provided for personal, non-commercial, educational, and motivational use by families."
+            }
+          ]
+        },
+        {
+          "id": "tos-eligibility",
+          "heading": "3. Eligibility",
+          "blocks": [
+            {
+              "type": "ul",
+              "items": [
+                {
+                  "label": "Parent Users",
+                  "text": "must be at least 18 years of age and have the legal authority to enter into these Terms."
+                },
+                {
+                  "label": "Child Users",
+                  "text": "may be of any age, provided a parent or legal guardian has created and linked a guardian account, verified their email, and explicitly accepted the guardian invitation."
+                },
+                {
+                  "text": "If you are under 13 years old (or the applicable age of digital consent in your country), you may only use the Service under the direct supervision of a parent or guardian who has provided verifiable parental consent through the platform's invitation flow."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "tos-accounts",
+          "heading": "4. Account Registration and Security",
+          "blocks": [
+            {
+              "type": "p",
+              "text": "You are responsible for maintaining the confidentiality of your account credentials and for all activity that occurs under your account. You agree to:"
+            },
+            {
+              "type": "ul",
+              "items": [
+                {
+                  "text": "Provide accurate, current, and complete information during registration."
+                },
+                {
+                  "text": "Keep your password secure and not share it with anyone."
+                },
+                {
+                  "text": "Notify us immediately of any unauthorised use of your account."
+                },
+                {
+                  "text": "Not create more than one account per person without our express permission."
+                }
+              ]
+            },
+            {
+              "type": "p",
+              "text": "We are not liable for any loss or damage arising from your failure to protect your account credentials."
+            }
+          ]
+        },
+        {
+          "id": "tos-parental",
+          "heading": "5. Parental Responsibilities",
+          "blocks": [
+            {
+              "type": "p",
+              "text": "Parent Users bear full responsibility for:"
+            },
+            {
+              "type": "ul",
+              "items": [
+                {
+                  "text": "Supervising their child's use of the Service and ensuring tasks assigned are age-appropriate and safe."
+                },
+                {
+                  "text": "Keeping their guardian account secure so that only they can approve or reject their child's task completions."
+                },
+                {
+                  "text": "Reviewing the categories and privacy settings configured for their child's account and updating them as appropriate."
+                },
+                {
+                  "text": "Promptly notifying us if a child account is being misused or if the parent-child relationship has changed."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "tos-use",
+          "heading": "6. Acceptable Use",
+          "blocks": [
+            {
+              "type": "p",
+              "text": "You agree not to use the Service to:"
+            },
+            {
+              "type": "ul",
+              "items": [
+                {
+                  "text": "Violate any applicable law, regulation, or third-party rights."
+                },
+                {
+                  "text": "Submit false, misleading, or harmful content as task titles, descriptions, or parent notes."
+                },
+                {
+                  "text": "Attempt to gain unauthorised access to any part of the Service or its infrastructure."
+                },
+                {
+                  "text": "Reverse-engineer, decompile, or otherwise attempt to extract the source code of the Service."
+                },
+                {
+                  "text": "Use automated tools (bots, scrapers) to interact with the Service without our consent."
+                },
+                {
+                  "text": "Impersonate another person or misrepresent your identity or relationship to a child."
+                }
+              ]
+            },
+            {
+              "type": "p",
+              "text": "We reserve the right to suspend or terminate any account that violates these rules."
+            }
+          ]
+        },
+        {
+          "id": "tos-gamification",
+          "heading": "7. Virtual Rewards and Gamification",
+          "blocks": [
+            {
+              "type": "p",
+              "text": "XP points, levels, coins, streaks, and any other gamification elements within KiddoPath are virtual constructs provided solely to motivate and engage users within the platform. They have no monetary value, cannot be exchanged for real currency, transferred between accounts, or redeemed outside the Service in any way."
+            },
+            {
+              "type": "p",
+              "text": "We may adjust, reset, or remove virtual rewards at any time without liability if the system is found to have been manipulated or if we change how the gamification system works."
+            }
+          ]
+        },
+        {
+          "id": "tos-ip",
+          "heading": "8. Intellectual Property",
+          "blocks": [
+            {
+              "type": "p",
+              "text": "The KiddoPath name, logo, software, design, and all associated intellectual property are owned by or licensed to us and are protected by applicable intellectual property laws. You are granted a limited, non-exclusive, non-transferable licence to access and use the Service for its intended purpose. This licence does not include the right to copy, modify, distribute, or create derivative works from any part of the Service."
+            },
+            {
+              "type": "p",
+              "text": "Content you create within the Service (task titles, descriptions, notes) remains yours. By entering it into the platform you grant us a limited licence to store, display, and process it solely to provide the Service."
+            }
+          ]
+        },
+        {
+          "id": "tos-disclaimer",
+          "heading": "9. Disclaimer of Warranties",
+          "blocks": [
+            {
+              "type": "p",
+              "text": "THE SERVICE IS PROVIDED \"AS IS\" AND \"AS AVAILABLE\" WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NON-INFRINGEMENT. We do not warrant that the Service will be uninterrupted, error-free, or free of viruses or other harmful components."
+            }
+          ]
+        },
+        {
+          "id": "tos-liability",
+          "heading": "10. Limitation of Liability",
+          "blocks": [
+            {
+              "type": "p",
+              "text": "TO THE FULLEST EXTENT PERMITTED BY APPLICABLE LAW, KIDDOPATH SHALL NOT BE LIABLE FOR ANY INDIRECT, INCIDENTAL, SPECIAL, CONSEQUENTIAL, OR PUNITIVE DAMAGES, OR ANY LOSS OF PROFITS, DATA, OR GOODWILL, ARISING OUT OF OR IN CONNECTION WITH YOUR USE OF OR INABILITY TO USE THE SERVICE, EVEN IF WE HAVE BEEN ADVISED OF THE POSSIBILITY OF SUCH DAMAGES."
+            },
+            {
+              "type": "p",
+              "text": "Our total aggregate liability for any claims arising under these Terms shall not exceed the amount you paid us in the twelve months preceding the claim (or EUR 50 if no payment was made)."
+            }
+          ]
+        },
+        {
+          "id": "tos-termination",
+          "heading": "11. Termination",
+          "blocks": [
+            {
+              "type": "p",
+              "text": "You may delete your account at any time. We may suspend or terminate your access to the Service at any time, with or without notice, if we reasonably believe you have violated these Terms or applicable law."
+            },
+            {
+              "type": "p",
+              "text": "Upon termination, your right to use the Service ceases immediately. Sections 8–12 of these Terms survive termination."
+            }
+          ]
+        },
+        {
+          "id": "tos-changes",
+          "heading": "12. Changes to These Terms",
+          "blocks": [
+            {
+              "type": "p",
+              "text": "We may revise these Terms at any time. When we make material changes, we will update the \"Last updated\" date at the top of this page. Continued use of the Service after the updated Terms are published constitutes your acceptance of the revised Terms."
+            }
+          ]
+        },
+        {
+          "id": "tos-contact",
+          "heading": "13. Contact Us",
+          "orgLabel": "KiddoPath Legal",
+          "emailLabel": "Email:",
+          "blocks": [
+            {
+              "type": "p",
+              "text": "Questions about these Terms should be sent to:"
+            }
+          ]
+        }
+      ]
+    }
   },
   "parentDash": {
     "title": "Parent Dashboard",
