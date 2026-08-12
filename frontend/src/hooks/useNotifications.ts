@@ -74,6 +74,11 @@ export function useNotifications() {
             queryClient.invalidateQueries({ queryKey: ['gamificationStats'] })
             queryClient.invalidateQueries({ queryKey: ['gamificationProfile'] })
           }
+          // A parent receives this the moment a kid submits a task for review.
+          // Refresh the pending-approvals queue so it appears on the parent
+          if (notification.notification_type === 'task_submitted') {
+            queryClient.invalidateQueries({ queryKey: ['parentCompletions'] })
+          }
           // A friend request arrives over this socket and nowhere else — the
           // presence socket only carries friend_online/friend_offline. Without
           // this the bell would ping while the sidebar badge and the friends
