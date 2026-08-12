@@ -787,6 +787,48 @@ class GoogleLoginTests(APITestCase):
 )
 class KidGoogleAuthTests(APITestCase):
     @patch("users.serializers.verify_google_id_token")
+    def test_kid_google_signup_check_allows_new_identity(self, mock_verify):
+        mock_verify.return_value = {
+            "sub": "kid-google-sub-check-ok",
+            "email": "kid.check@example.com",
+            "email_verified": True,
+            "iss": "accounts.google.com",
+        }
+
+        response = self.client.post(
+            "/api/kids/signup/google/check/",
+            {"id_token": "fake-token"},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data, {"ok": True})
+
+    @patch("users.serializers.verify_google_id_token")
+    def test_kid_google_signup_check_rejects_parent_email(self, mock_verify):
+        CustomUser.objects.create_user(
+            email="parent@example.com",
+            username="parent_one",
+            password="secure-pass-1",
+            role="parent",
+        )
+        mock_verify.return_value = {
+            "sub": "kid-google-sub-check-parent",
+            "email": "parent@example.com",
+            "email_verified": True,
+            "iss": "accounts.google.com",
+        }
+
+        response = self.client.post(
+            "/api/kids/signup/google/check/",
+            {"id_token": "fake-token"},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("already registered", str(response.data))
+
+    @patch("users.serializers.verify_google_id_token")
     def test_kid_google_signup_creates_account_and_invites_parent(self, mock_verify):
         mock_verify.return_value = {
             "sub": "kid-google-sub-1",
@@ -1889,3 +1931,78 @@ class KidInternalDetailTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data["count"], 0)
         self.assertEqual(response.data["results"], [])
+
+
+class SpectacularSchemaTagsTests(APITestCase):
+    """Swagger tag order and endpoint tagging stay aligned with SPECTACULAR_SETTINGS."""
+
+    EXPECTED_TAG_ORDER = [
+        "Parent Registration",
+        "Current User",
+        "Parent Authentication",
+        "Kid Registration",
+        "Kid Invite Parent",
+        "Kid Authentication",
+        "Guardian Invitations",
+        "Internal",
+    ]
+
+    # OpenAPI path → expected tag
+    PATH_TAGS = {
+        "/api/auth/register/": "Parent Registration",
+        "/api/auth/verify-email/": "Parent Registration",
+        "/api/auth/verify-email-change/": "Parent Registration",
+        "/api/auth/me/": "Current User",
+        "/api/auth/me/password/": "Current User",
+        "/api/auth/token/": "Parent Authentication",
+        "/api/auth/google/": "Parent Authentication",
+        "/api/auth/password-reset/": "Parent Authentication",
+        "/api/kids/signup/": "Kid Registration",
+        "/api/kids/signup/google/check/": "Kid Registration",
+        "/api/auth/kid/verify-email/": "Kid Registration",
+        "/api/kids/invite-parent/": "Kid Invite Parent",
+        "/api/auth/kid/token/": "Kid Authentication",
+        "/api/auth/kid/google/": "Kid Authentication",
+        "/api/guardian-invitations/accept/": "Guardian Invitations",
+        "/api/auth/internal/kids/search/": "Internal",
+    }
+
+    def _schema(self):
+        from drf_spectacular.generators import SchemaGenerator
+
+        return SchemaGenerator().get_schema(request=None, public=True)
+
+    def test_spectacular_settings_tag_order(self):
+        from django.conf import settings
+
+        names = [tag["name"] for tag in settings.SPECTACULAR_SETTINGS["TAGS"]]
+        self.assertEqual(names, self.EXPECTED_TAG_ORDER)
+
+    def test_schema_endpoints_use_expected_tags(self):
+        schema = self._schema()
+        paths = schema["paths"]
+        for path, expected_tag in self.PATH_TAGS.items():
+            self.assertIn(path, paths, msg=f"missing path {path}")
+            operations = paths[path]
+            found = False
+            for method, operation in operations.items():
+                if method.startswith("x-") or not isinstance(operation, dict):
+                    continue
+                tags = operation.get("tags") or []
+                self.assertIn(
+                    expected_tag,
+                    tags,
+                    msg=f"{method.upper()} {path} tags={tags}",
+                )
+                found = True
+            self.assertTrue(found, msg=f"no HTTP operations on {path}")
+
+    def test_schema_tag_list_matches_settings_order(self):
+        schema = self._schema()
+        schema_tags = [tag["name"] for tag in schema.get("tags") or []]
+        configured = self.EXPECTED_TAG_ORDER
+        in_schema = [name for name in configured if name in schema_tags]
+        self.assertEqual(
+            [name for name in schema_tags if name in configured],
+            in_schema,
+        )

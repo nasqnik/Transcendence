@@ -54,6 +54,7 @@ Profile is created automatically on first read if it does not exist yet.
 | `learning` | Learning-related tasks. |
 | `responsibility` | Responsibility-related tasks. |
 | `creativity` | Creativity-related tasks. |
+| `honesty` | Parent-confirm reward only (not AI-scored; see Notes). |
 
 `xp_percent` is progress toward the next category level (0–100).  
 `level` is the current category level for that kid.
