@@ -35,7 +35,7 @@
 
 ### Prerequisites
 
-- **OS:** Linux (Ubuntu recommended) or any host that runs Docker
+- **OS:** Any host that runs Docker — tested on **Linux**, **macOS**, and **Windows (WSL)**
 - **Docker Engine** and **Docker Compose v2**
 - **Docker Buildx** (Compose Bake)
 - **Make**
@@ -130,7 +130,8 @@ Sign up through the frontend after `make all`. Optional CLI user seeds for devel
 - [React](https://react.dev/) / [Vite](https://vitejs.dev/)
 - [Google Identity Services](https://developers.google.com/identity/gsi/web)
 - Project API notes under `docs/backend/services_api_references/`
-- Internal setup notes: `Developer.md`, `docs/backend/`
+- Architecture notes: `docs/microservices_implementation_plan.md`
+- Internal setup notes: `Developer.md`
 
 ### How AI was used
 
@@ -151,7 +152,7 @@ All AI-suggested changes were reviewed, adapted to team conventions, and tested 
 | Login | Name | Role(s) | Responsibilities |
 | --- | --- | --- | --- |
 | **meid** | Mariam Eid | Product Owner (PO), Developer | After the team agreed on the idea, defined the product scope and which features ship now vs later; coordinated backend so Henna and the frontend team (Anastasiia, Madiha) had a stable base; gathered submission requirements from peers and staff documentation; implemented **auth-service**, **task-service**, **gamification-service**, **social-service**, and shared infra. |
-| **anikiti** | Anastasiia Nikitina | Project Manager / Scrum Master, Developer | Planned with the PO; set project flow and team organization; scheduled meetings and agendas; enforced the GitHub pipeline and commit conventions; built the **frontend base** and **accessibility** foundations so Madiha had a solid starting point; also built the **kid dashboard**. |
+| **anikitin** | Anastasiia Nikitina | Project Manager / Scrum Master, Developer | Planned with the PO; set project flow and team organization; scheduled meetings and agendas; enforced the GitHub pipeline and commit conventions; built the **frontend base** and **accessibility** foundations so Madiha had a solid starting point; also built the **kid dashboard**. |
 | **mnazar** | Madiha Nazar | Technical Lead / Architect, Developer | Go-to person for critical tech-stack decisions; reviewed PRs into `main`; built the **parent dashboard**, and the **avatar** feature inside the kid dashboard. |
 | **hparveen** | Henna Parveen | Developer, main tester | Active in design discussions; implemented **analytics-service**, **catalog-service**, **notification-service**, and helped with infra; as **main tester**, found bugs early so the team could fix them. |
 
@@ -296,19 +297,19 @@ analytics reads progress over time for parent dashboards
 
 - **Why:** Usable with keyboard, screen readers, and assistive tech — especially important for kids/families.
 - **How:** Accessibility-oriented frontend base (semantics, focus, navigation patterns) carried through the UI.
-- **Who:** Anastasiia.
+- **Who:** Anastasiia / Madiha.
 
 #### 10. Multiple languages (Minor, 1)
 
 - **Why:** Reach families in more than one language.
 - **How:** `i18next` / `react-i18next` with at least **English, Russian, Arabic** locale files.
-- **Who:** Anastasiia.
+- **Who:** Anastasiia / Madiha.
 
 #### 11. RTL support (Minor, 1)
 
 - **Why:** Arabic layout must mirror correctly.
 - **How:** `document.documentElement.dir` from active language; RTL-aware components (`dir`, layout).
-- **Who:** Anastasiia.
+- **Who:** Anastasiia / Madiha.
 
 #### 12. User activity analytics / insights (Minor, 1)
 
@@ -343,7 +344,7 @@ analytics reads progress over time for parent dashboards
 - **Backend:** `auth-service`, `task-service`, `gamification-service`, `social-service`, plus shared infra with Henna.
 - **Modules:** Standard auth, OAuth, advanced permissions, LLM categorization + AI moderation, social presence WebSockets, microservices/ORM share, backend half of the stack.
 
-#### anikiti — Anastasiia Nikitina (PM + Developer)
+#### anikitin — Anastasiia Nikitina (PM + Developer)
 
 - **Process:** Planning with the PO, meeting schedule, GitHub pipeline and commit conventions.
 - **Frontend:** App base, accessibility (WCAG-oriented foundation), i18n (EN / RU / AR) and RTL, kid dashboard; set patterns so Madiha could extend the UI.

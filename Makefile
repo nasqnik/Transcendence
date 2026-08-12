@@ -1,4 +1,6 @@
 # KiddoPath — Makefile
+# Bare `make` must match `make all` (seed.mk is included before `all:` is defined).
+.DEFAULT_GOAL := all
 
 SSL_CERT := security/ssl/server.crt
 SSL_KEY := security/ssl/server.key
