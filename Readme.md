@@ -365,8 +365,8 @@ Sources: `services/*/…/models.py` in each service.
 | 7 | User Management — Advanced permissions | Major | 2 | Mariam (roles, guardians, category review rules) |
 | 8 | Devops — Backend as microservices | Major | 2 | Mariam / Henna (services + Docker / nginx) |
 | 9 | A11y — WCAG 2.1 AA | Major | 2 | Anastasiia (accessibility foundation) |
-| 10 | A11y / i18n — Multiple languages (≥3) | Minor | 1 | Anastasiia (`en` / `ru` / `ar`) |
-| 11 | A11y / i18n — RTL support | Minor | 1 | Anastasiia (Arabic RTL) |
+| 10 | A11y / i18n — Multiple languages (≥3) | Minor | 1 | Anastasiia · Madiha(`en` / `ru` / `ar`) |
+| 11 | A11y / i18n — RTL support | Minor | 1 | Anastasiia · Madiha (Arabic RTL) |
 | 12 | User Management — Activity analytics / insights | Minor | 1 | Henna (`analytics-service`) · Madiha (parent UI) |
 | 13 | AI — Complete LLM system interface | Major | 2 | Mariam (`task-service` + OpenRouter) |
 | 14 | AI — Content moderation | Minor | 1 | Mariam (task moderation before categorize) |
