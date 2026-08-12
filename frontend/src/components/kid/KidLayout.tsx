@@ -6,10 +6,13 @@ import KidBottomNav from './KidBottomNav'
 import LegalLinks from '../LegalLinks'
 import RewardModal from './RewardModal'
 import { useRewards } from '../../hooks/useRewards'
+import { usePresence } from '../../hooks/usePresence'
 
 export default function KidLayout() {
   const { t } = useTranslation()
   const { current: reward, remaining, dismiss } = useRewards()
+  // mounted here, not on the Friends page, so a kid stays online on every page
+  usePresence(true)
 
   return (
     <div className="flex min-h-screen bg-primary-50">
@@ -23,8 +26,6 @@ export default function KidLayout() {
       <div className="flex-1 flex flex-col min-w-0">
         <KidTopbar />
         <Outlet />
-        {/* Clears the fixed bottom bar so the last row of content and the
-            legal links are not hidden under it. */}
         <footer className="border-t border-gray-200 bg-white px-4 sm:px-8 py-3 pb-20 lg:pb-3 flex justify-center sm:justify-end shrink-0">
           <LegalLinks />
         </footer>
