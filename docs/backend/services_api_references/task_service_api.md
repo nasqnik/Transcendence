@@ -9,7 +9,7 @@ Roles: **kid** and **parent** (decided by the JWT). A parent's token carries `ki
 
 | Method | Path | Role | Purpose |
 | --- | --- | --- | --- |
-| GET | `/tasks/` | kid | List the kid's own active tasks. |
+| GET | `/tasks/` | kid | List the kid's own active tasks. (Parent JWT is accepted but returns an empty list.) |
 | POST | `/tasks/` | kid | Create a task. AI moderates text first, then scores categories / summary / `xp_reward`. |
 | GET | `/tasks/{task_id}/` | kid | Get one of the kid's own tasks. |
 | PATCH | `/tasks/{task_id}/` | kid | Edit a task (SSE + moderation when title/description change). |

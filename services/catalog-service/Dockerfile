@@ -13,10 +13,13 @@ ENV PYTHONUNBUFFERED=1
 
 COPY . /app
 RUN if [ -f /app/requirements.txt ]; then pip install --no-cache-dir -r /app/requirements.txt; fi \
-    && chown -R app:app /app
+    && mkdir -p /app/media/parent_avatars \
+    && chown -R app:app /app \
+    && chmod +x /app/docker-entrypoint.sh
 
 EXPOSE 8000
 
-USER app
-
+# Start as root so the entrypoint can chown the named media volume, then
+# runuser drops to "app" before Django starts.
+ENTRYPOINT ["/app/docker-entrypoint.sh"]
 CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]

@@ -15,6 +15,7 @@ from .google_auth import GoogleAuthError, verify_google_id_token
 from .google_kids import (
     GoogleKidAccountConflictError,
     GoogleKidAlreadyExistsError,
+    check_kid_google_signup_available,
     login_kid_from_google,
     signup_kid_from_google,
 )
@@ -673,6 +674,27 @@ class KidVerifyEmailSerializer(serializers.Serializer):
             "registration_status": kid.registration_status,
             "message": "Email verified successfully.",
         }
+
+
+class KidGoogleSignupCheckSerializer(serializers.Serializer):
+    """Verify a Google token can start kid signup (before profile form)."""
+
+    id_token = serializers.CharField()
+
+    def validate(self, attrs):
+        try:
+            idinfo = verify_google_id_token(attrs["id_token"])
+        except GoogleAuthError as exc:
+            raise serializers.ValidationError({"id_token": [str(exc)]}) from exc
+
+        try:
+            check_kid_google_signup_available(idinfo)
+        except GoogleKidAlreadyExistsError as exc:
+            raise serializers.ValidationError(str(exc)) from exc
+        except GoogleKidAccountConflictError as exc:
+            raise serializers.ValidationError(str(exc)) from exc
+
+        return {"ok": True}
 
 
 class KidGoogleSignupSerializer(serializers.Serializer):
