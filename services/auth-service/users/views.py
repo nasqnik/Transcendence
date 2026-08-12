@@ -1,5 +1,5 @@
 from django.db.models import Q
-from drf_spectacular.utils import OpenApiParameter, extend_schema
+from drf_spectacular.utils import extend_schema
 from rest_framework import generics, status
 from rest_framework.exceptions import NotFound, ValidationError
 from rest_framework.permissions import AllowAny, IsAuthenticated
@@ -17,6 +17,7 @@ from .serializers import (
     GuardianInviteDetailSerializer,
     InviteSecondParentSerializer,
     KidGoogleLoginSerializer,
+    KidGoogleSignupCheckSerializer,
     KidGoogleSignupSerializer,
     KidPasswordResetConfirmSerializer,
     KidPasswordResetRequestSerializer,
@@ -48,28 +49,121 @@ from .services import (
     # serialization is the process of converting the data
         # into a format that can be sent over the network
 
-class KidSignupView(generics.CreateAPIView):
-    """Register a kid and email the primary guardian a pending invitation."""
+# Parent Registration
 
-    permission_classes = [AllowAny] # no login required
-    serializer_class = KidSignupSerializer
-
-
-class KidGoogleSignupView(generics.CreateAPIView):
-    """Register a kid via Google and email the primary guardian."""
-
-    permission_classes = [AllowAny]
-    serializer_class = KidGoogleSignupSerializer
-
-
+@extend_schema(tags=["Parent Registration"])
 class ParentRegisterView(generics.CreateAPIView):
     """Create a parent CustomUser account (email + password)."""
 
     permission_classes = [AllowAny]
     serializer_class = ParentRegisterSerializer
 
+@extend_schema(tags=["Parent Registration"], request=ParentVerifyEmailSerializer)
+class ParentVerifyEmailView(APIView):
+    permission_classes = [AllowAny]
 
-@extend_schema(request=GoogleLoginSerializer)
+    def post(self, request):
+        serializer = ParentVerifyEmailSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        return Response(serializer.validated_data, status=status.HTTP_200_OK)
+
+@extend_schema(tags=["Parent Registration"], request=VerifyEmailChangeSerializer)
+class VerifyEmailChangeView(APIView):
+    """Public: confirm a pending email change via token."""
+
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        serializer = VerifyEmailChangeSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        return Response(serializer.validated_data, status=status.HTTP_200_OK)
+
+# Current User
+
+@extend_schema(tags=["Current User"])
+class MeView(APIView):
+    """Return, update, or delete the authenticated parent's or kid's own profile."""
+
+    permission_classes = [IsAuthenticated]
+
+    def get_serializer(self, instance, data=None, partial=False):
+        if isinstance(instance, Kid):
+            serializer_class = KidProfileSerializer
+        else:
+            serializer_class = ParentProfileSerializer
+        if data is None:
+            return serializer_class(instance)
+        return serializer_class(instance, data=data, partial=partial)
+
+    def get(self, request):
+        serializer = self.get_serializer(request.user)
+        return Response(serializer.data)
+
+    def patch(self, request):
+        user = request.user
+        if not isinstance(user, (Kid, CustomUser)):
+            return Response(
+                {"detail": "Authentication credentials were not provided."},
+                status=status.HTTP_401_UNAUTHORIZED,
+            )
+        serializer = self.get_serializer(user, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data)
+
+    def delete(self, request):
+        user = request.user
+        if not isinstance(user, (Kid, CustomUser)):
+            return Response(
+                {"detail": "Authentication credentials were not provided."},
+                status=status.HTTP_401_UNAUTHORIZED,
+            )
+
+        if isinstance(user, CustomUser):
+            try:
+                delete_parent_account(user)
+            except ValueError:
+                return Response(
+                    {"detail": PARENT_HAS_LINKED_KIDS},
+                    status=status.HTTP_409_CONFLICT,
+                )
+            return Response(status=status.HTTP_204_NO_CONTENT)
+
+        user.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+@extend_schema(tags=["Current User"], request=MePasswordSerializer)
+class MePasswordView(APIView):
+    """Set or change the authenticated parent's or kid's app password."""
+
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        serializer = MePasswordSerializer(
+            data=request.data,
+            context={'request': request},
+        )
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+@extend_schema(tags=["Current User"], request=MeEmailChangeSerializer)
+class MeEmailChangeView(APIView):
+    """Request an email change; confirmation is sent to the new address."""
+
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        serializer = MeEmailChangeSerializer(
+            data=request.data,
+            context={'request': request},
+        )
+        serializer.is_valid(raise_exception=True)
+        return Response(serializer.save(), status=status.HTTP_200_OK)
+
+# Parent Authentication
+
+@extend_schema(tags=["Parent Authentication"], request=GoogleLoginSerializer)
 class GoogleLoginView(APIView):
     """Parent sign-in via Google. Does not create an account."""
 
@@ -81,8 +175,7 @@ class GoogleLoginView(APIView):
         serializer.is_valid(raise_exception=True)
         return Response(serializer.validated_data, status=status.HTTP_200_OK)
 
-
-@extend_schema(request=GoogleSignupSerializer)
+@extend_schema(tags=["Parent Authentication"], request=GoogleSignupSerializer)
 class GoogleSignupView(APIView):
     """Parent sign-up via Google Identity Services id_token."""
 
@@ -93,18 +186,7 @@ class GoogleSignupView(APIView):
         serializer.is_valid(raise_exception=True)
         return Response(serializer.validated_data, status=status.HTTP_200_OK)
 
-
-@extend_schema(request=ParentVerifyEmailSerializer)
-class ParentVerifyEmailView(APIView):
-    permission_classes = [AllowAny]
-
-    def post(self, request):
-        serializer = ParentVerifyEmailSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        return Response(serializer.validated_data, status=status.HTTP_200_OK)
-
-
-@extend_schema(request=PasswordResetRequestSerializer)
+@extend_schema(tags=["Parent Authentication"], request=PasswordResetRequestSerializer)
 class PasswordResetRequestView(APIView):
     """Public: email a parent a password-reset link (does not reveal if the email exists)."""
 
@@ -115,8 +197,7 @@ class PasswordResetRequestView(APIView):
         serializer.is_valid(raise_exception=True)
         return Response(serializer.save(), status=status.HTTP_200_OK)
 
-
-@extend_schema(request=PasswordResetConfirmSerializer)
+@extend_schema(tags=["Parent Authentication"], request=PasswordResetConfirmSerializer)
 class PasswordResetConfirmView(APIView):
     """Public: set a new parent password with a reset token."""
 
@@ -127,8 +208,43 @@ class PasswordResetConfirmView(APIView):
         serializer.is_valid(raise_exception=True)
         return Response(serializer.validated_data, status=status.HTTP_200_OK)
 
+# Kid Registration
 
-@extend_schema(request=KidPasswordResetRequestSerializer)
+@extend_schema(tags=["Kid Registration"])
+class KidSignupView(generics.CreateAPIView):
+    """Register a kid and email the primary guardian a pending invitation."""
+
+    permission_classes = [AllowAny] # no login required
+    serializer_class = KidSignupSerializer
+
+@extend_schema(tags=["Kid Registration"], request=KidGoogleSignupCheckSerializer)
+class KidGoogleSignupCheckView(APIView):
+    """Check that a Google identity can start kid signup (no account created)."""
+
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        serializer = KidGoogleSignupCheckSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        return Response(serializer.validated_data, status=status.HTTP_200_OK)
+
+@extend_schema(tags=["Kid Registration"])
+class KidGoogleSignupView(generics.CreateAPIView):
+    """Register a kid via Google and email the primary guardian."""
+
+    permission_classes = [AllowAny]
+    serializer_class = KidGoogleSignupSerializer
+
+@extend_schema(tags=["Kid Registration"], request=KidVerifyEmailSerializer)
+class KidVerifyEmailView(APIView):
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        serializer = KidVerifyEmailSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        return Response(serializer.validated_data, status=status.HTTP_200_OK)
+
+@extend_schema(tags=["Kid Registration"], request=KidPasswordResetRequestSerializer)
 class KidPasswordResetRequestView(APIView):
     """Public: email a kid a password-reset link (does not reveal if the email exists)."""
 
@@ -139,8 +255,7 @@ class KidPasswordResetRequestView(APIView):
         serializer.is_valid(raise_exception=True)
         return Response(serializer.save(), status=status.HTTP_200_OK)
 
-
-@extend_schema(request=KidPasswordResetConfirmSerializer)
+@extend_schema(tags=["Kid Registration"], request=KidPasswordResetConfirmSerializer)
 class KidPasswordResetConfirmView(APIView):
     """Public: set a new kid password with a reset token."""
 
@@ -151,17 +266,54 @@ class KidPasswordResetConfirmView(APIView):
         serializer.is_valid(raise_exception=True)
         return Response(serializer.validated_data, status=status.HTTP_200_OK)
 
+# Kid Invite Parent
 
-@extend_schema(request=KidVerifyEmailSerializer)
-class KidVerifyEmailView(APIView):
+@extend_schema(tags=["Kid Invite Parent"])
+class InviteSecondParentView(generics.CreateAPIView):
+    permission_classes = [IsAuthenticatedKid] #logged in kid required
+    serializer_class = InviteSecondParentSerializer
+
+# Kid Authentication
+
+@extend_schema(tags=["Kid Authentication"], request=KidTokenObtainSerializer)
+class KidTokenObtainView(APIView):
     permission_classes = [AllowAny]
 
     def post(self, request):
-        serializer = KidVerifyEmailSerializer(data=request.data)
+        serializer = KidTokenObtainSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         return Response(serializer.validated_data, status=status.HTTP_200_OK)
 
+@extend_schema(tags=["Kid Authentication"], request=KidTokenRefreshSerializer)
+class KidTokenRefreshView(APIView):
+    permission_classes = [AllowAny]
 
+    def post(self, request):
+        serializer = KidTokenRefreshSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        return Response(serializer.validated_data, status=status.HTTP_200_OK)
+
+@extend_schema(tags=["Kid Authentication"], request=KidTokenVerifySerializer)
+class KidTokenVerifyView(APIView):
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        serializer = KidTokenVerifySerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        return Response(serializer.validated_data, status=status.HTTP_200_OK)
+
+@extend_schema(tags=["Kid Authentication"], request=KidGoogleLoginSerializer)
+class KidGoogleLoginView(APIView):
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        serializer = KidGoogleLoginSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        return Response(serializer.validated_data, status=status.HTTP_200_OK)
+
+# Guardian Invitations
+
+@extend_schema(tags=["Guardian Invitations"])
 class GuardianInviteDetailView(generics.RetrieveAPIView):
     """Public preview of an invitation (for apps / parent UI)."""
 
@@ -175,6 +327,7 @@ class GuardianInviteDetailView(generics.RetrieveAPIView):
             raise NotFound("Invitation not found.") from exc
         return mark_expired_if_needed(invitation)
 
+@extend_schema(tags=["Guardian Invitations"])
 class AcceptGuardianInviteView(generics.GenericAPIView):
     """Authenticated parent accepts a pending guardian invitation."""
 
@@ -190,52 +343,9 @@ class AcceptGuardianInviteView(generics.GenericAPIView):
             status=status.HTTP_200_OK,
         )
 
+# Internal (service-to-service)
 
-@extend_schema(request=KidTokenObtainSerializer)
-class KidTokenObtainView(APIView):
-    permission_classes = [AllowAny]
-
-    def post(self, request):
-        serializer = KidTokenObtainSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        return Response(serializer.validated_data, status=status.HTTP_200_OK)
-
-
-@extend_schema(request=KidTokenRefreshSerializer)
-class KidTokenRefreshView(APIView):
-    permission_classes = [AllowAny]
-
-    def post(self, request):
-        serializer = KidTokenRefreshSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        return Response(serializer.validated_data, status=status.HTTP_200_OK)
-
-
-@extend_schema(request=KidTokenVerifySerializer)
-class KidTokenVerifyView(APIView):
-    permission_classes = [AllowAny]
-
-    def post(self, request):
-        serializer = KidTokenVerifySerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        return Response(serializer.validated_data, status=status.HTTP_200_OK)
-
-
-@extend_schema(request=KidGoogleLoginSerializer)
-class KidGoogleLoginView(APIView):
-    permission_classes = [AllowAny]
-
-    def post(self, request):
-        serializer = KidGoogleLoginSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        return Response(serializer.validated_data, status=status.HTTP_200_OK)
-
-
-class InviteSecondParentView(generics.CreateAPIView):
-    permission_classes = [IsAuthenticatedKid] #logged in kid required
-    serializer_class = InviteSecondParentSerializer
-
-
+@extend_schema(tags=["Internal"])
 class KidParentInternalView(APIView):
     authentication_classes = []
     permission_classes = [IsInternalService]
@@ -255,7 +365,6 @@ class KidParentInternalView(APIView):
             )
         return Response({'parent_id': str(kid.parent_id)})
 
-
 def _serialize_internal_kid(kid):
     return {
         'kid_id': str(kid.id),
@@ -264,7 +373,9 @@ def _serialize_internal_kid(kid):
         'bio': kid.bio or '',
     }
 
+ALLOWED_KID_ORDERINGS = {'username', '-username', 'name', '-name'}
 
+@extend_schema(tags=["Internal"])
 class KidInternalDetailView(APIView):
     """Service-to-service: confirm an active kid exists."""
 
@@ -284,7 +395,7 @@ class KidInternalDetailView(APIView):
             )
         return Response(_serialize_internal_kid(kid))
 
-
+@extend_schema(tags=["Internal"])
 class KidInternalBatchView(APIView):
     """Service-to-service: batch lookup of active kids by id."""
 
@@ -303,16 +414,12 @@ class KidInternalBatchView(APIView):
         )
         return Response([_serialize_internal_kid(kid) for kid in kids])
 
-
-ALLOWED_KID_ORDERINGS = {'username', '-username', 'name', '-name'}
-
-
 class KidSearchPagination(PageNumberPagination):
     page_size = 20
     page_size_query_param = 'page_size'
     max_page_size = 50
 
-
+@extend_schema(tags=["Internal"])
 class KidInternalSearchView(APIView):
     """Service-to-service: search active kids by username/name with sort + pagination."""
 
@@ -365,102 +472,6 @@ class KidInternalSearchView(APIView):
         page = paginator.paginate_queryset(qs, request, view=self)
         data = [_serialize_internal_kid(kid) for kid in page]
         return paginator.get_paginated_response(data)
-
-
-class MeView(APIView):
-    """Return, update, or delete the authenticated parent's or kid's own profile."""
-
-    permission_classes = [IsAuthenticated]
-
-    def get_serializer(self, instance, data=None, partial=False):
-        if isinstance(instance, Kid):
-            serializer_class = KidProfileSerializer
-        else:
-            serializer_class = ParentProfileSerializer
-        if data is None:
-            return serializer_class(instance)
-        return serializer_class(instance, data=data, partial=partial)
-
-    def get(self, request):
-        serializer = self.get_serializer(request.user)
-        return Response(serializer.data)
-
-    def patch(self, request):
-        user = request.user
-        if not isinstance(user, (Kid, CustomUser)):
-            return Response(
-                {"detail": "Authentication credentials were not provided."},
-                status=status.HTTP_401_UNAUTHORIZED,
-            )
-        serializer = self.get_serializer(user, data=request.data, partial=True)
-        serializer.is_valid(raise_exception=True)
-        serializer.save()
-        return Response(serializer.data)
-
-    def delete(self, request):
-        user = request.user
-        if not isinstance(user, (Kid, CustomUser)):
-            return Response(
-                {"detail": "Authentication credentials were not provided."},
-                status=status.HTTP_401_UNAUTHORIZED,
-            )
-
-        if isinstance(user, CustomUser):
-            try:
-                delete_parent_account(user)
-            except ValueError:
-                return Response(
-                    {"detail": PARENT_HAS_LINKED_KIDS},
-                    status=status.HTTP_409_CONFLICT,
-                )
-            return Response(status=status.HTTP_204_NO_CONTENT)
-
-        user.delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
-
-
-@extend_schema(request=MePasswordSerializer)
-class MePasswordView(APIView):
-    """Set or change the authenticated parent's or kid's app password."""
-
-    permission_classes = [IsAuthenticated]
-
-    def post(self, request):
-        serializer = MePasswordSerializer(
-            data=request.data,
-            context={'request': request},
-        )
-        serializer.is_valid(raise_exception=True)
-        serializer.save()
-        return Response(status=status.HTTP_204_NO_CONTENT)
-
-
-@extend_schema(request=MeEmailChangeSerializer)
-class MeEmailChangeView(APIView):
-    """Request an email change; confirmation is sent to the new address."""
-
-    permission_classes = [IsAuthenticated]
-
-    def post(self, request):
-        serializer = MeEmailChangeSerializer(
-            data=request.data,
-            context={'request': request},
-        )
-        serializer.is_valid(raise_exception=True)
-        return Response(serializer.save(), status=status.HTTP_200_OK)
-
-
-@extend_schema(request=VerifyEmailChangeSerializer)
-class VerifyEmailChangeView(APIView):
-    """Public: confirm a pending email change via token."""
-
-    permission_classes = [AllowAny]
-
-    def post(self, request):
-        serializer = VerifyEmailChangeSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        return Response(serializer.validated_data, status=status.HTTP_200_OK)
-
 
 # Permissions:
 # 1. AllowAny            -> no login required (signup, login, verify, invite preview)
