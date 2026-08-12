@@ -28,6 +28,25 @@ class GoogleKidAccountConflictError(Exception):
 class GoogleKidAlreadyExistsError(Exception):
     pass
 
+
+def check_kid_google_signup_available(idinfo: dict) -> None:
+    """Reject if this Google identity cannot start kid signup (no create)."""
+    google_sub = idinfo["sub"]
+    email = idinfo["email"].lower()
+
+    if Kid.objects.filter(google_sub=google_sub).exists():
+        raise GoogleKidAlreadyExistsError(KID_GOOGLE_ACCOUNT_ALREADY_EXISTS)
+
+    if email_belongs_to_parent(email):
+        raise GoogleKidAccountConflictError(EMAIL_ALREADY_REGISTERED)
+
+    existing = Kid.objects.filter(email=email).first()
+    if existing:
+        if existing.google_sub and existing.google_sub != google_sub:
+            raise GoogleKidAccountConflictError(EMAIL_LINKED_TO_DIFFERENT_GOOGLE_ACCOUNT)
+        raise GoogleKidAlreadyExistsError(KID_EMAIL_ALREADY_EXISTS)
+
+
 # will take the kid account and link it to the Google account
 # will take the parent email and create a primary guardian invitation
 @transaction.atomic
@@ -48,20 +67,10 @@ def signup_kid_from_google(
     if email_belongs_to_kid(parent_email):
         raise GoogleKidAccountConflictError(EMAIL_REGISTERED_AS_KID_ACCOUNT)
 
-    if Kid.objects.filter(google_sub=google_sub).exists():
-        raise GoogleKidAlreadyExistsError(KID_GOOGLE_ACCOUNT_ALREADY_EXISTS)
-
     if username_is_taken(username):
         raise GoogleKidAccountConflictError(USERNAME_ALREADY_TAKEN)
 
-    if email_belongs_to_parent(email):
-        raise GoogleKidAccountConflictError(EMAIL_ALREADY_REGISTERED)
-
-    existing = Kid.objects.filter(email=email).first()
-    if existing:
-        if existing.google_sub and existing.google_sub != google_sub:
-            raise GoogleKidAccountConflictError(EMAIL_LINKED_TO_DIFFERENT_GOOGLE_ACCOUNT)
-        raise GoogleKidAlreadyExistsError(KID_EMAIL_ALREADY_EXISTS)
+    check_kid_google_signup_available(idinfo)
 
     kid = Kid.objects.create(
         name=name,

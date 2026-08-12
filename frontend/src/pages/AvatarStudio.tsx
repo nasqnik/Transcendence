@@ -29,7 +29,9 @@ function ItemCard({ item, owned, equipped, canAfford, busy, onBuy, onEquip, onUn
       ) : (
         <div className="w-16 h-16 rounded-lg bg-gray-50 flex items-center justify-center text-2xl" aria-hidden="true">🎨</div>
       )}
-      <p className="font-body text-xs font-semibold text-gray-800 truncate w-full">{item.name}</p>
+      <p className="font-body text-xs font-semibold text-gray-800 truncate w-full">
+        {t(`kidDash.items.${item.param_key}.${item.param_value}`, { defaultValue: item.name })}
+      </p>
 
       {/* Action area pinned to the bottom so buttons line up whether or not
           there's a price line above them. */}
