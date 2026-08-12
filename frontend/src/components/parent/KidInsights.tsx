@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useQuery } from '@tanstack/react-query'
 import {
@@ -86,12 +87,44 @@ function StatTile({ icon, iconBg, value, label, caption, loading }: {
   )
 }
 
-function CardShell({ title, children }: { title: string; children: React.ReactNode }) {
+function CardShell({ title, action, children }: { title: string; action?: React.ReactNode; children: React.ReactNode }) {
   return (
     <section className="bg-white rounded-2xl p-5 sm:p-6">
-      <p className="font-heading text-lg font-bold text-gray-900 mb-3">{title}</p>
+      <div className="flex items-center justify-between gap-2 mb-3">
+        <p className="font-heading text-lg font-bold text-gray-900">{title}</p>
+        {action}
+      </div>
       {children}
     </section>
+  )
+}
+
+const TREND_RANGES = [7, 30, 0] as const
+
+function withinLastDays(dateStr: string, days: number): boolean {
+  const day = new Date(dateStr + 'T00:00:00').getTime()
+  return day >= Date.now() - days * 86_400_000
+}
+
+function RangeSelector({ value, onChange }: { value: number; onChange: (n: number) => void }) {
+  const { t } = useTranslation()
+  const label = (n: number) => (n === 0 ? t('parentDash.allTime') : t('parentDash.lastNDays', { n }))
+  return (
+    <div role="group" aria-label={t('parentDash.dateRange')} className="inline-flex rounded-lg border border-gray-200 overflow-hidden shrink-0">
+      {TREND_RANGES.map(n => (
+        <button
+          key={n}
+          type="button"
+          aria-pressed={value === n}
+          onClick={() => onChange(n)}
+          className={`px-2.5 py-1 font-body text-xs font-semibold transition-colors focus-ring ${
+            value === n ? 'bg-primary-600 text-white' : 'text-gray-500 hover:bg-gray-50'
+          }`}
+        >
+          {label(n)}
+        </button>
+      ))}
+    </div>
   )
 }
 
@@ -123,7 +156,11 @@ export default function KidInsights({ kidId, kidName, stats, statsLoading }: Kid
   // Keep the radar web visible even with no data (all-zero points would collapse it).
   const radarMax = Math.max(10, ...radarData.map(d => d.points))
 
-  const trendData = (data?.daily_trend ?? []).map(d => {
+  const [trendDays, setTrendDays] = useState<number>(30)
+  const visibleTrend = trendDays === 0
+    ? (data?.daily_trend ?? [])
+    : (data?.daily_trend ?? []).filter(d => withinLastDays(d.date, trendDays))
+  const trendData = visibleTrend.map(d => {
     const [y, m, day] = d.date.split('-').map(Number)
     return {
       date: new Date(y, m - 1, day).toLocaleDateString(i18n.language, { month: 'short', day: 'numeric' }),
@@ -220,7 +257,10 @@ export default function KidInsights({ kidId, kidName, stats, statsLoading }: Kid
       {/* Weekly progress + completion */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
         <div className="lg:col-span-2">
-          <CardShell title={t('parentDash.weeklyProgress')}>
+          <CardShell
+            title={t('parentDash.weeklyProgress')}
+            action={<RangeSelector value={trendDays} onChange={setTrendDays} />}
+          >
             {isLoading ? (
               <div className="h-52 rounded-xl bg-gray-100 animate-pulse" />
             ) : isError ? errText : (
