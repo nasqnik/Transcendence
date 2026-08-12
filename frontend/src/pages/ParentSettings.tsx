@@ -187,7 +187,7 @@ function PasswordSection({ profile }: { profile: MeProfile }) {
     onError: (err) => setFieldErrors(getFieldErrors(err)),
   })
 
-  function submit(e: React.FormEvent) {
+  function submit(e: React.SubmitEvent) {
     e.preventDefault()
     resetFieldErrors()
     if (next !== confirm) {

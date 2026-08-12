@@ -86,7 +86,7 @@ export default function ResetPassword({ role }: Props) {
     )
   }
 
-  async function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.SubmitEvent) {
     e.preventDefault()
     const errs: Record<string, string> = {}
     const pwError = validatePasswordField(password, t)
