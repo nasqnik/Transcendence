@@ -33,7 +33,7 @@ export default function EditTaskModal({ task, onClose }: Props) {
   // hook's status with a state the create modal can never reach.
   const [deleting, setDeleting]       = useState(false)
 
-  async function handleSave(e: React.FormEvent) {
+  async function handleSave(e: React.SubmitEvent) {
     e.preventDefault()
     if (!title.trim() || status === 'streaming' || deleting) return
 

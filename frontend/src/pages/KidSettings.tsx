@@ -221,7 +221,7 @@ export default function KidSettings() {
   const [sentTo, setSentTo]                 = useState<string | null>(null)
   const { fieldErrors, setFieldErrors, clearFieldError, resetFieldErrors } = useFormErrors()
 
-  async function handleInvite(e: React.FormEvent) {
+  async function handleInvite(e: React.SubmitEvent) {
     e.preventDefault()
     setInviteErrorKey(null)
     const errs: Record<string, string> = {}
