@@ -1,7 +1,7 @@
 # KiddoPath — Frontend
 
 A gamified task app for children aged 8–12. React 19 + TypeScript single-page
-app, served by nginx at **https://localhost:8000/** (default `HTTPS_PORT`), talking to seven Django
+app, served by nginx at **https://localhost:8443/** (default `HTTPS_PORT`; `http://localhost:8000` redirects), talking to seven Django
 microservices under `/api/`.
 
 Two roles, **kid** and **parent**, decided by the JWT. The same bundle serves
@@ -20,7 +20,7 @@ The frontend is a container in the compose stack — it is not run standalone.
 make all          # start everything + migrate
 ```
 
-Then open **https://localhost:8000/** and accept the self-signed certificate.
+Then open **http://localhost:8000/** (redirects to HTTPS) or **https://localhost:8443/** and accept the self-signed certificate.
 
 > `make all` seeds the **catalog only** — it creates no accounts. After a
 > `make re` or `make fclean` the database has zero users. Run `make seed-dev`

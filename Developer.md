@@ -26,21 +26,21 @@ To run migrations again later: `make migrate`
 
 | What | URL |
 |------|-----|
-| Frontend | https://localhost:8000/ (or `HTTPS_PORT` from `.env`) |
-| Django admin | https://localhost:8000/admin/ (`make dev` only) |
-| API | https://localhost:8000/api/… |
+| Frontend | https://localhost:8443/ (or `HTTPS_PORT` from `.env`) |
+| Django admin | https://localhost:8443/admin/ (`make dev` only) |
+| API | https://localhost:8443/api/… |
 
 ### API docs — Swagger (`make dev` only)
 
 | Service | URL |
 |---------|-----|
-| Auth | https://localhost:8000/api/docs/ |
-| Task | https://localhost:8000/api/task/docs/ |
-| Gamification | https://localhost:8000/api/gamification/docs/ |
-| Analytics | https://localhost:8000/api/analytics/docs/ |
-| Notification | https://localhost:8000/api/notification/docs/ |
-| Catalog | https://localhost:8000/api/catalog/docs/ |
-| Social | https://localhost:8000/api/social/docs/ |
+| Auth | https://localhost:8443/api/docs/ |
+| Task | https://localhost:8443/api/task/docs/ |
+| Gamification | https://localhost:8443/api/gamification/docs/ |
+| Analytics | https://localhost:8443/api/analytics/docs/ |
+| Notification | https://localhost:8443/api/notification/docs/ |
+| Catalog | https://localhost:8443/api/catalog/docs/ |
+| Social | https://localhost:8443/api/social/docs/ |
 
 All public traffic goes through **nginx** on ports **80** and **443** only (services are not published on the host).
 
