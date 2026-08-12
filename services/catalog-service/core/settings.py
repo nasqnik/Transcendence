@@ -118,6 +118,3 @@ if not INTERNAL_SERVICE_TOKEN:
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
-
-# Skip chmod after file upload — prevents PermissionError on Windows/rootless Docker
-FILE_UPLOAD_PERMISSIONS = None
