@@ -33,7 +33,7 @@ Roles: **parent** (decided by the JWT). A parent's token carries `kid_ids` (the 
 
 - `category_breakdown` — XP points earned per task category, sorted alphabetically.
 - `daily_trend` — total XP earned per day, sorted by date.
-- `completion_rates` — overall task completion stats fetched from the task service. `rate` is the confirmation percentage (0–100).
+- `completion_rates` — overall task completion stats fetched from the task service. `rate` is the confirmation percentage (0–100). May be `null` if task-service is unreachable.
 
 Returns `404` if `kid_id` does not belong to the authenticated parent.
 
@@ -57,7 +57,7 @@ Returns `404` if `kid_id` does not belong to the authenticated parent.
 }
 ```
 
-- Idempotent on `completion_id` — duplicate calls return `204` without creating a new record.
+- Success and duplicate ingest both return `204` (idempotent on `completion_id`).
 - `payload` is the raw category/points breakdown from the gamification service.
 
 ## Misc

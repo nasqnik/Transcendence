@@ -1,4 +1,5 @@
 from django.urls import path
+from drf_spectacular.utils import extend_schema
 from rest_framework_simplejwt.views import (
     TokenObtainPairView,
     TokenRefreshView,
@@ -6,33 +7,46 @@ from rest_framework_simplejwt.views import (
 )
 
 from .views import (
-    AcceptGuardianInviteView,
+    # Parent Registration
+    ParentRegisterView,
+    ParentVerifyEmailView,
+    VerifyEmailChangeView,
+    # Current User
+    MeEmailChangeView,
+    MePasswordView,
+    MeView,
+    # Parent Authentication
     GoogleLoginView,
     GoogleSignupView,
-    GuardianInviteDetailView,
-    InviteSecondParentView,
-    KidGoogleLoginView,
+    PasswordResetConfirmView,
+    PasswordResetRequestView,
+    # Kid Registration
+    KidGoogleSignupCheckView,
     KidGoogleSignupView,
+    KidPasswordResetConfirmView,
+    KidPasswordResetRequestView,
+    KidSignupView,
+    KidVerifyEmailView,
+    # Kid Invite Parent
+    InviteSecondParentView,
+    # Kid Authentication
+    KidGoogleLoginView,
+    KidTokenObtainView,
+    KidTokenRefreshView,
+    KidTokenVerifyView,
+    # Guardian Invitations
+    AcceptGuardianInviteView,
+    GuardianInviteDetailView,
+    # Internal
     KidInternalBatchView,
     KidInternalDetailView,
     KidInternalSearchView,
     KidParentInternalView,
-    KidPasswordResetConfirmView,
-    KidPasswordResetRequestView,
-    KidSignupView,
-    KidTokenObtainView,
-    KidTokenRefreshView,
-    KidTokenVerifyView,
-    KidVerifyEmailView,
-    MeEmailChangeView,
-    MePasswordView,
-    MeView,
-    ParentRegisterView,
-    ParentVerifyEmailView,
-    PasswordResetConfirmView,
-    PasswordResetRequestView,
-    VerifyEmailChangeView,
 )
+
+ParentTokenObtainView = extend_schema(tags=["Parent Authentication"])(TokenObtainPairView)
+ParentTokenRefreshView = extend_schema(tags=["Parent Authentication"])(TokenRefreshView)
+ParentTokenVerifyView = extend_schema(tags=["Parent Authentication"])(TokenVerifyView)
 
 urlpatterns = [
     # Parent registration
@@ -46,9 +60,9 @@ urlpatterns = [
     path("auth/me/email/", MeEmailChangeView.as_view()),
 
     # Parent authentication
-    path("auth/token/", TokenObtainPairView.as_view()),
-    path("auth/token/refresh/", TokenRefreshView.as_view()),
-    path("auth/token/verify/", TokenVerifyView.as_view()),
+    path("auth/token/", ParentTokenObtainView.as_view()),
+    path("auth/token/refresh/", ParentTokenRefreshView.as_view()),
+    path("auth/token/verify/", ParentTokenVerifyView.as_view()),
     path("auth/google/", GoogleLoginView.as_view()),
     path("auth/google/signup/", GoogleSignupView.as_view()),
     path("auth/password-reset/", PasswordResetRequestView.as_view()),
@@ -56,6 +70,7 @@ urlpatterns = [
 
     # Kid registration
     path("kids/signup/", KidSignupView.as_view()),
+    path("kids/signup/google/check/", KidGoogleSignupCheckView.as_view()),
     path("kids/signup/google/", KidGoogleSignupView.as_view()),
     path("auth/kid/verify-email/", KidVerifyEmailView.as_view()),
     path("auth/kid/password-reset/", KidPasswordResetRequestView.as_view()),
@@ -119,8 +134,9 @@ urlpatterns = [
 # - /auth/password-reset/confirm/:  "set a new parent password with the token"
 
 # Kid registration
-# - /kids/signup/:            "register a kid and invite the primary parent"
-# - /kids/signup/google/:     "not used yet — register a kid using Google"
+# - /kids/signup/:                  "register a kid and invite the primary parent"
+# - /kids/signup/google/check/:     "check Google identity before kid profile form"
+# - /kids/signup/google/:           "register a kid using Google"
 # - /auth/kid/verify-email/:  "verify a kid's email"
 # - /auth/kid/password-reset/:          "email a kid a password-reset link"
 # - /auth/kid/password-reset/confirm/:  "set a new kid password with the token"
