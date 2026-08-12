@@ -1,7 +1,8 @@
 import axios from 'axios'
 import useAuthStore from '../store/authStore'
 
-// VITE_API_URL should be set to https://localhost/api in docker-compose
+// Relative path — inherits https:// and the host from the page itself,
+// so it works the same whether accessed via localhost, an IP, or a real domain.
 const API_BASE_URL = import.meta.env.VITE_API_URL ?? 'https://localhost/api'
 
 const client = axios.create({

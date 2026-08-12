@@ -38,6 +38,8 @@ export default function ParentDashboard() {
   const { data: kidsAvatars = [] } = useQuery({
     queryKey: ['kidsAvatars'],
     queryFn: getKidsAvatars,
+    refetchInterval: 1000,
+    refetchIntervalInBackground: false,
   })
   const avatarUrlFor = (id: string) => kidsAvatars.find(a => a.kid_id === id)?.avatar_url
 
