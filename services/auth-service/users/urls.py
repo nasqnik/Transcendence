@@ -7,33 +7,41 @@ from rest_framework_simplejwt.views import (
 )
 
 from .views import (
-    AcceptGuardianInviteView,
+    # Parent Registration
+    ParentRegisterView,
+    ParentVerifyEmailView,
+    VerifyEmailChangeView,
+    # Current User
+    MeEmailChangeView,
+    MePasswordView,
+    MeView,
+    # Parent Authentication
     GoogleLoginView,
     GoogleSignupView,
-    GuardianInviteDetailView,
-    InviteSecondParentView,
-    KidGoogleLoginView,
+    PasswordResetConfirmView,
+    PasswordResetRequestView,
+    # Kid Registration
     KidGoogleSignupCheckView,
     KidGoogleSignupView,
+    KidPasswordResetConfirmView,
+    KidPasswordResetRequestView,
+    KidSignupView,
+    KidVerifyEmailView,
+    # Kid Invite Parent
+    InviteSecondParentView,
+    # Kid Authentication
+    KidGoogleLoginView,
+    KidTokenObtainView,
+    KidTokenRefreshView,
+    KidTokenVerifyView,
+    # Guardian Invitations
+    AcceptGuardianInviteView,
+    GuardianInviteDetailView,
+    # Internal
     KidInternalBatchView,
     KidInternalDetailView,
     KidInternalSearchView,
     KidParentInternalView,
-    KidPasswordResetConfirmView,
-    KidPasswordResetRequestView,
-    KidSignupView,
-    KidTokenObtainView,
-    KidTokenRefreshView,
-    KidTokenVerifyView,
-    KidVerifyEmailView,
-    MeEmailChangeView,
-    MePasswordView,
-    MeView,
-    ParentRegisterView,
-    ParentVerifyEmailView,
-    PasswordResetConfirmView,
-    PasswordResetRequestView,
-    VerifyEmailChangeView,
 )
 
 ParentTokenObtainView = extend_schema(tags=["Parent Authentication"])(TokenObtainPairView)
