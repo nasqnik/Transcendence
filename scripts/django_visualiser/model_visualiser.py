@@ -22,29 +22,47 @@ from pathlib import Path
 
 # ─── Parser ───────────────────────────────────────────────────────────────────
 
+def _is_django_model_class(parent: str) -> bool:
+    """True for models.Model / AbstractUser / multi-inheritance that includes a model base."""
+    parts = [p.strip() for p in parent.split(",")]
+    model_bases = ("Model", "AbstractUser", "AbstractBaseUser")
+    return any(any(base in part for base in model_bases) for part in parts)
+
+
 def parse_models(source: str) -> list[dict]:
     models = []
     lines = source.splitlines()
     current = None
     in_meta = False
     in_def = False
+    in_nested_class = False
 
     i = 0
     while i < len(lines):
         line = lines[i]
         stripped = line.strip()
+        indent = len(line) - len(line.lstrip())
 
         class_match = re.match(r'^class\s+(\w+)\s*\(([^)]*)\)\s*:', stripped)
         if class_match:
+            # Nested classes (TextChoices, inner helpers) must not wipe the current model.
+            if indent > 0:
+                if current is not None:
+                    in_nested_class = True
+                    in_meta = in_def = False
+                i += 1
+                continue
+
             name = class_match.group(1)
             parent = class_match.group(2).strip()
-            if "Model" in parent:
+            if _is_django_model_class(parent):
                 if current:
                     models.append(current)
                 current = {"name": name, "fields": []}
-                in_meta = in_def = False
+                in_meta = in_def = in_nested_class = False
             else:
                 current = None
+                in_meta = in_def = in_nested_class = False
             i += 1
             continue
 
@@ -55,20 +73,21 @@ def parse_models(source: str) -> list[dict]:
         if stripped.startswith("class Meta:"):
             in_meta = True
             in_def = False
+            in_nested_class = False
             i += 1
             continue
 
         if stripped.startswith("def "):
             in_def = True
             in_meta = False
+            in_nested_class = False
             i += 1
             continue
 
-        if in_def or in_meta:
+        if in_def or in_meta or in_nested_class:
             # Exit nested block when we hit a line at the model's indentation level (4 spaces)
-            indent = len(line) - len(line.lstrip())
             if stripped and indent <= 4:
-                in_def = in_meta = False
+                in_def = in_meta = in_nested_class = False
             else:
                 i += 1
                 continue
@@ -84,12 +103,16 @@ def parse_models(source: str) -> list[dict]:
             while ")" not in args and j < len(lines) - 1:
                 j += 1
                 args += " " + lines[j].strip()
-            args = re.sub(r'\).*$', '', args)
+            args = re.sub(r'\).*$', '', args).strip()
 
             related = None
             rel_types = {"ForeignKey", "ManyToManyField", "OneToOneField"}
             if ftype in rel_types:
-                rel_match = re.match(r"['\"]?(\w+)['\"]?", args)
+                # First positional arg: ModelName, 'app.Model', or self (may be multi-line)
+                rel_match = re.match(
+                    r"['\"]?(?:[\w]+\.)?(\w+)['\"]?",
+                    args.lstrip(),
+                )
                 if rel_match:
                     related = current["name"] if rel_match.group(1) == "self" else rel_match.group(1)
 
@@ -443,6 +466,10 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
           <span class="type-badge" style="background:#E1F5EE;color:#085041;border-color:#0F6E56">1:1</span>
           OneToOneField
         </div>
+        <div class="legend-item">
+          <span class="type-badge" style="background:#E6F1FB;color:#0C447C;border-color:#185FA5">UUID→</span>
+          Logical UUID ref (cross-service, not a DB FK)
+        </div>
       </div>
     </div>
   </div>
@@ -492,7 +519,68 @@ FIELD_COLORS = {
 DEFAULT_COLOR = {"bg": "#F1EFE8", "text": "#444441", "border": "#888780"}
 
 REL_TYPES = {"ForeignKey", "ManyToManyField", "OneToOneField"}
-REL_LABELS = {"ForeignKey": "FK", "ManyToManyField": "M2M", "OneToOneField": "1:1"}
+REL_LABELS = {
+    "ForeignKey": "FK",
+    "ManyToManyField": "M2M",
+    "OneToOneField": "1:1",
+    "LogicalRef": "UUID→",
+}
+FIELD_COLORS["LogicalRef"] = {"bg": "#E6F1FB", "text": "#0C447C", "border": "#185FA5"}
+
+# Microservices store cross-service links as UUID fields (not Django FKs).
+LOGICAL_UUID_REFS: dict[str, tuple[str, ...]] = {
+    "kid_id": ("Kid",),
+    "from_kid_id": ("Kid",),
+    "to_kid_id": ("Kid",),
+    "parent_id": ("CustomUser",),
+    "created_by": ("CustomUser",),
+    "reviewer_id": ("CustomUser",),
+    "recipient_id": ("Kid", "CustomUser"),
+    "completion_id": ("TaskCompletion",),
+    "equipped_hair": ("AvatarItem",),
+    "equipped_glasses": ("AvatarItem",),
+    "equipped_earrings": ("AvatarItem",),
+    "equipped_background": ("AvatarItem",),
+}
+
+
+def _snake_to_pascal(name: str) -> str:
+    return "".join(part.capitalize() for part in name.split("_") if part)
+
+
+def infer_logical_targets(field_name: str, model_names: set[str]) -> list[str]:
+    """Map UUID *_id fields to model names when targets exist in the diagram."""
+    if field_name == "id" or "token" in field_name:
+        return []
+
+    if field_name in LOGICAL_UUID_REFS:
+        return [t for t in LOGICAL_UUID_REFS[field_name] if t in model_names]
+
+    if field_name.endswith("_id"):
+        candidate = _snake_to_pascal(field_name[:-3])
+        if candidate in model_names:
+            return [candidate]
+    return []
+
+
+def enrich_logical_relationships(models: list[dict]) -> None:
+    """Attach cross-service UUID→Model hints onto parsed fields."""
+    model_names = {m["name"] for m in models}
+    for model in models:
+        for field in model["fields"]:
+            if field["type"] in REL_TYPES:
+                continue
+            if field["type"] != "UUIDField":
+                continue
+            targets = infer_logical_targets(field["name"], model_names)
+            if not targets:
+                continue
+            field["related_targets"] = targets
+            field["related"] = " / ".join(targets)
+
+
+def field_is_relationship(field: dict) -> bool:
+    return field["type"] in REL_TYPES or bool(field.get("related_targets"))
 
 
 # ─── HTML builders ────────────────────────────────────────────────────────────
@@ -509,8 +597,8 @@ def badge(ftype: str) -> str:
 def build_card(model: dict) -> str:
     name = model["name"]
     fields = model["fields"]
-    rel_fields   = [f for f in fields if f["type"] in REL_TYPES]
-    other_fields = [f for f in fields if f["type"] not in REL_TYPES]
+    rel_fields   = [f for f in fields if field_is_relationship(f)]
+    other_fields = [f for f in fields if not field_is_relationship(f)]
 
     card_meta = f"{len(fields)} fields"
     if model.get("source_label"):
@@ -520,7 +608,7 @@ def build_card(model: dict) -> str:
     badge_html = f'<span class="card-badge">{rel_count_str}</span>' if rel_count_str else ''
 
     def row(f):
-        is_rel = f["type"] in REL_TYPES
+        is_rel = field_is_relationship(f)
         rel_hint = f'<span class="fname-related">→ {f["related"]}</span>' if f.get("related") else ''
         cls = 'fname is-rel' if is_rel else 'fname'
         attrs_html = ''.join(f'<span class="attr-pill">{a}</span>' for a in f["attrs"])
@@ -586,22 +674,34 @@ def build_rel_row(rel: dict) -> str:
 
 
 def get_relationships(models: list[dict]) -> list[dict]:
-    # Only link models from the same source file (services don't share FKs).
-    names_by_source: dict[str, set[str]] = {}
-    for model in models:
-        source = model.get("source_label", "")
-        names_by_source.setdefault(source, set()).add(model["name"])
-
+    all_names = {m["name"] for m in models}
     rels = []
+    seen: set[tuple[str, str, str, str]] = set()
+
     for model in models:
-        source = model.get("source_label", "")
-        model_names = names_by_source.get(source, set())
         for field in model["fields"]:
-            if field["type"] in REL_TYPES and field.get("related") in model_names:
+            if field["type"] in REL_TYPES and field.get("related") in all_names:
+                key = (model["name"], field["name"], field["related"], field["type"])
+                if key not in seen:
+                    seen.add(key)
+                    rels.append({
+                        "from": model["name"],
+                        "to": field["related"],
+                        "type": field["type"],
+                        "field": field["name"],
+                    })
+
+            for target in field.get("related_targets") or []:
+                if target not in all_names:
+                    continue
+                key = (model["name"], field["name"], target, "LogicalRef")
+                if key in seen:
+                    continue
+                seen.add(key)
                 rels.append({
-                    "from":  model["name"],
-                    "to":    field["related"],
-                    "type":  field["type"],
+                    "from": model["name"],
+                    "to": target,
+                    "type": "LogicalRef",
                     "field": field["name"],
                 })
     return rels
@@ -627,6 +727,7 @@ def load_models_from_paths(paths: list[Path]) -> tuple[list[dict], list[Path]]:
         models.extend(parsed)
         loaded_paths.append(src_path.resolve())
 
+    enrich_logical_relationships(models)
     return models, loaded_paths
 
 

@@ -271,7 +271,7 @@
 <header>
   <div class="header-left">
     <h1>&#128202; Django Model Visualizer</h1>
-    <p>/home/meid/Desktop/backend_as_microservices/services/gamification-service/gamification/models.py · /home/meid/Desktop/backend_as_microservices/services/task-service/tasks/models.py · /home/meid/Desktop/backend_as_microservices/services/auth-service/users/models.py</p>
+    <p>/home/meid/Desktop/mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm/services/gamification-service/gamification/models.py · /home/meid/Desktop/mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm/services/task-service/tasks/models.py · /home/meid/Desktop/mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm/services/auth-service/users/models.py · /home/meid/Desktop/mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm/services/notification-service/notification/models.py · /home/meid/Desktop/mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm/services/catalog-service/catalog/models.py · /home/meid/Desktop/mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm/services/social-service/social/models.py · /home/meid/Desktop/mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm/services/analytics-service/analytics/models.py</p>
   </div>
   <div class="header-right">
     <button class="tab-btn active" onclick="showTab('tables')" id="btn-tables">Model Tables</button>
@@ -281,15 +281,15 @@
 
 <div class="stats-bar">
   <div class="stat">
-    <span class="stat-val">7</span>
+    <span class="stat-val">18</span>
     <span class="stat-label">Models</span>
   </div>
   <div class="stat">
-    <span class="stat-val">51</span>
+    <span class="stat-val">141</span>
     <span class="stat-label">Fields</span>
   </div>
   <div class="stat">
-    <span class="stat-val">1</span>
+    <span class="stat-val">29</span>
     <span class="stat-label">Relationships</span>
   </div>
 </div>
@@ -305,7 +305,7 @@
       <div class="card-title">KidProfile</div>
       <div class="card-meta">7 fields · gamification/models.py</div>
     </div>
-    
+    <span class="card-badge">1 rel</span>
   </div>
   <table>
     <colgroup>
@@ -316,7 +316,7 @@
         <th>Field</th><th>Type</th><th>Attrs</th>
       </tr>
     </thead>
-    <tbody><tr><td><span class="fname">id</span></td><td><span class="type-badge" style="background:#EEEDFE;color:#3C3489;border-color:#534AB7">UUIDField</span></td><td><div class="attrs"><span class="attr-pill">PK</span></div></td></tr><tr><td><span class="fname">kid_id</span></td><td><span class="type-badge" style="background:#EEEDFE;color:#3C3489;border-color:#534AB7">UUIDField</span></td><td><div class="attrs"><span class="attr-pill">unique</span></div></td></tr><tr><td><span class="fname">main_level</span></td><td><span class="type-badge" style="background:#EEEDFE;color:#3C3489;border-color:#534AB7">PositiveIntegerField</span></td><td><div class="attrs"></div></td></tr><tr><td><span class="fname">overall_xp</span></td><td><span class="type-badge" style="background:#EEEDFE;color:#3C3489;border-color:#534AB7">PositiveIntegerField</span></td><td><div class="attrs"></div></td></tr><tr><td><span class="fname">coins</span></td><td><span class="type-badge" style="background:#EEEDFE;color:#3C3489;border-color:#534AB7">PositiveIntegerField</span></td><td><div class="attrs"></div></td></tr><tr><td><span class="fname">created_at</span></td><td><span class="type-badge" style="background:#FBEAF0;color:#72243E;border-color:#993556">DateTimeField</span></td><td><div class="attrs"><span class="attr-pill">auto_add</span></div></td></tr><tr><td><span class="fname">updated_at</span></td><td><span class="type-badge" style="background:#FBEAF0;color:#72243E;border-color:#993556">DateTimeField</span></td><td><div class="attrs"><span class="attr-pill">auto_now</span></div></td></tr></tbody>
+    <tbody><tr><td><span class="fname">id</span></td><td><span class="type-badge" style="background:#EEEDFE;color:#3C3489;border-color:#534AB7">UUIDField</span></td><td><div class="attrs"><span class="attr-pill">PK</span></div></td></tr><tr><td><span class="fname">main_level</span></td><td><span class="type-badge" style="background:#EEEDFE;color:#3C3489;border-color:#534AB7">PositiveIntegerField</span></td><td><div class="attrs"></div></td></tr><tr><td><span class="fname">overall_xp</span></td><td><span class="type-badge" style="background:#EEEDFE;color:#3C3489;border-color:#534AB7">PositiveIntegerField</span></td><td><div class="attrs"></div></td></tr><tr><td><span class="fname">coins</span></td><td><span class="type-badge" style="background:#EEEDFE;color:#3C3489;border-color:#534AB7">PositiveIntegerField</span></td><td><div class="attrs"></div></td></tr><tr><td><span class="fname">created_at</span></td><td><span class="type-badge" style="background:#FBEAF0;color:#72243E;border-color:#993556">DateTimeField</span></td><td><div class="attrs"><span class="attr-pill">auto_add</span></div></td></tr><tr><td><span class="fname">updated_at</span></td><td><span class="type-badge" style="background:#FBEAF0;color:#72243E;border-color:#993556">DateTimeField</span></td><td><div class="attrs"><span class="attr-pill">auto_now</span></div></td></tr><tr class="section-divider"><td colspan="3">Relationships</td></tr><tr><td><span class="fname is-rel">kid_id<span class="fname-related">→ Kid</span></span></td><td><span class="type-badge" style="background:#EEEDFE;color:#3C3489;border-color:#534AB7">UUIDField</span></td><td><div class="attrs"><span class="attr-pill">unique</span></div></td></tr></tbody>
   </table>
 </div>
 
@@ -327,7 +327,7 @@
       <div class="card-title">KidStat</div>
       <div class="card-meta">5 fields · gamification/models.py</div>
     </div>
-    
+    <span class="card-badge">1 rel</span>
   </div>
   <table>
     <colgroup>
@@ -338,7 +338,7 @@
         <th>Field</th><th>Type</th><th>Attrs</th>
       </tr>
     </thead>
-    <tbody><tr><td><span class="fname">id</span></td><td><span class="type-badge" style="background:#EEEDFE;color:#3C3489;border-color:#534AB7">UUIDField</span></td><td><div class="attrs"><span class="attr-pill">PK</span></div></td></tr><tr><td><span class="fname">kid_id</span></td><td><span class="type-badge" style="background:#EEEDFE;color:#3C3489;border-color:#534AB7">UUIDField</span></td><td><div class="attrs"></div></td></tr><tr><td><span class="fname">category</span></td><td><span class="type-badge" style="background:#EAF3DE;color:#27500A;border-color:#3B6D11">CharField</span></td><td><div class="attrs"><span class="attr-pill">max=255</span></div></td></tr><tr><td><span class="fname">level</span></td><td><span class="type-badge" style="background:#EEEDFE;color:#3C3489;border-color:#534AB7">PositiveIntegerField</span></td><td><div class="attrs"></div></td></tr><tr><td><span class="fname">xp_percent</span></td><td><span class="type-badge" style="background:#EEEDFE;color:#3C3489;border-color:#534AB7">IntegerField</span></td><td><div class="attrs"></div></td></tr></tbody>
+    <tbody><tr><td><span class="fname">id</span></td><td><span class="type-badge" style="background:#EEEDFE;color:#3C3489;border-color:#534AB7">UUIDField</span></td><td><div class="attrs"><span class="attr-pill">PK</span></div></td></tr><tr><td><span class="fname">category</span></td><td><span class="type-badge" style="background:#EAF3DE;color:#27500A;border-color:#3B6D11">CharField</span></td><td><div class="attrs"><span class="attr-pill">max=255</span></div></td></tr><tr><td><span class="fname">level</span></td><td><span class="type-badge" style="background:#EEEDFE;color:#3C3489;border-color:#534AB7">PositiveIntegerField</span></td><td><div class="attrs"></div></td></tr><tr><td><span class="fname">xp_percent</span></td><td><span class="type-badge" style="background:#EEEDFE;color:#3C3489;border-color:#534AB7">IntegerField</span></td><td><div class="attrs"></div></td></tr><tr class="section-divider"><td colspan="3">Relationships</td></tr><tr><td><span class="fname is-rel">kid_id<span class="fname-related">→ Kid</span></span></td><td><span class="type-badge" style="background:#EEEDFE;color:#3C3489;border-color:#534AB7">UUIDField</span></td><td><div class="attrs"></div></td></tr></tbody>
   </table>
 </div>
 
@@ -347,9 +347,9 @@
     <div class="card-avatar">C</div>
     <div>
       <div class="card-title">CompletionEvent</div>
-      <div class="card-meta">4 fields · gamification/models.py</div>
+      <div class="card-meta">7 fields · gamification/models.py</div>
     </div>
-    
+    <span class="card-badge">2 rel</span>
   </div>
   <table>
     <colgroup>
@@ -360,7 +360,7 @@
         <th>Field</th><th>Type</th><th>Attrs</th>
       </tr>
     </thead>
-    <tbody><tr><td><span class="fname">completion_id</span></td><td><span class="type-badge" style="background:#EEEDFE;color:#3C3489;border-color:#534AB7">UUIDField</span></td><td><div class="attrs"><span class="attr-pill">PK</span></div></td></tr><tr><td><span class="fname">kid_id</span></td><td><span class="type-badge" style="background:#EEEDFE;color:#3C3489;border-color:#534AB7">UUIDField</span></td><td><div class="attrs"></div></td></tr><tr><td><span class="fname">payload</span></td><td><span class="type-badge" style="background:#FAEEDA;color:#633806;border-color:#854F0B">JSONField</span></td><td><div class="attrs"></div></td></tr><tr><td><span class="fname">processed_at</span></td><td><span class="type-badge" style="background:#FBEAF0;color:#72243E;border-color:#993556">DateTimeField</span></td><td><div class="attrs"><span class="attr-pill">auto_add</span></div></td></tr></tbody>
+    <tbody><tr><td><span class="fname">payload</span></td><td><span class="type-badge" style="background:#FAEEDA;color:#633806;border-color:#854F0B">JSONField</span></td><td><div class="attrs"></div></td></tr><tr><td><span class="fname">coins_awarded</span></td><td><span class="type-badge" style="background:#EEEDFE;color:#3C3489;border-color:#534AB7">PositiveIntegerField</span></td><td><div class="attrs"></div></td></tr><tr><td><span class="fname">stat_level_ups</span></td><td><span class="type-badge" style="background:#FAEEDA;color:#633806;border-color:#854F0B">JSONField</span></td><td><div class="attrs"></div></td></tr><tr><td><span class="fname">seen_at</span></td><td><span class="type-badge" style="background:#FBEAF0;color:#72243E;border-color:#993556">DateTimeField</span></td><td><div class="attrs"><span class="attr-pill">null</span><span class="attr-pill">blank</span></div></td></tr><tr><td><span class="fname">processed_at</span></td><td><span class="type-badge" style="background:#FBEAF0;color:#72243E;border-color:#993556">DateTimeField</span></td><td><div class="attrs"><span class="attr-pill">auto_add</span></div></td></tr><tr class="section-divider"><td colspan="3">Relationships</td></tr><tr><td><span class="fname is-rel">completion_id<span class="fname-related">→ TaskCompletion</span></span></td><td><span class="type-badge" style="background:#EEEDFE;color:#3C3489;border-color:#534AB7">UUIDField</span></td><td><div class="attrs"><span class="attr-pill">PK</span></div></td></tr><tr><td><span class="fname is-rel">kid_id<span class="fname-related">→ Kid</span></span></td><td><span class="type-badge" style="background:#EEEDFE;color:#3C3489;border-color:#534AB7">UUIDField</span></td><td><div class="attrs"></div></td></tr></tbody>
   </table>
 </div>
 
@@ -369,9 +369,9 @@
     <div class="card-avatar">T</div>
     <div>
       <div class="card-title">Task</div>
-      <div class="card-meta">12 fields · tasks/models.py</div>
+      <div class="card-meta">11 fields · tasks/models.py</div>
     </div>
-    
+    <span class="card-badge">2 rel</span>
   </div>
   <table>
     <colgroup>
@@ -382,7 +382,29 @@
         <th>Field</th><th>Type</th><th>Attrs</th>
       </tr>
     </thead>
-    <tbody><tr><td><span class="fname">id</span></td><td><span class="type-badge" style="background:#EEEDFE;color:#3C3489;border-color:#534AB7">UUIDField</span></td><td><div class="attrs"><span class="attr-pill">PK</span></div></td></tr><tr><td><span class="fname">kid_id</span></td><td><span class="type-badge" style="background:#EEEDFE;color:#3C3489;border-color:#534AB7">UUIDField</span></td><td><div class="attrs"></div></td></tr><tr><td><span class="fname">created_by</span></td><td><span class="type-badge" style="background:#EEEDFE;color:#3C3489;border-color:#534AB7">UUIDField</span></td><td><div class="attrs"></div></td></tr><tr><td><span class="fname">title</span></td><td><span class="type-badge" style="background:#EAF3DE;color:#27500A;border-color:#3B6D11">TextField</span></td><td><div class="attrs"></div></td></tr><tr><td><span class="fname">description</span></td><td><span class="type-badge" style="background:#EAF3DE;color:#27500A;border-color:#3B6D11">TextField</span></td><td><div class="attrs"><span class="attr-pill">blank</span></div></td></tr><tr><td><span class="fname">xp_reward</span></td><td><span class="type-badge" style="background:#EEEDFE;color:#3C3489;border-color:#534AB7">PositiveIntegerField</span></td><td><div class="attrs"></div></td></tr><tr><td><span class="fname">ai_evaluated</span></td><td><span class="type-badge" style="background:#FAEEDA;color:#633806;border-color:#854F0B">BooleanField</span></td><td><div class="attrs"></div></td></tr><tr><td><span class="fname">ai_summary</span></td><td><span class="type-badge" style="background:#EAF3DE;color:#27500A;border-color:#3B6D11">TextField</span></td><td><div class="attrs"><span class="attr-pill">blank</span></div></td></tr><tr><td><span class="fname">is_active</span></td><td><span class="type-badge" style="background:#FAEEDA;color:#633806;border-color:#854F0B">BooleanField</span></td><td><div class="attrs"></div></td></tr><tr><td><span class="fname">due_date</span></td><td><span class="type-badge" style="background:#FBEAF0;color:#72243E;border-color:#993556">DateField</span></td><td><div class="attrs"><span class="attr-pill">null</span><span class="attr-pill">blank</span></div></td></tr><tr><td><span class="fname">created_at</span></td><td><span class="type-badge" style="background:#FBEAF0;color:#72243E;border-color:#993556">DateTimeField</span></td><td><div class="attrs"><span class="attr-pill">auto_add</span></div></td></tr><tr><td><span class="fname">should_be_reviewed</span></td><td><span class="type-badge" style="background:#FAEEDA;color:#633806;border-color:#854F0B">BooleanField</span></td><td><div class="attrs"></div></td></tr></tbody>
+    <tbody><tr><td><span class="fname">id</span></td><td><span class="type-badge" style="background:#EEEDFE;color:#3C3489;border-color:#534AB7">UUIDField</span></td><td><div class="attrs"><span class="attr-pill">PK</span></div></td></tr><tr><td><span class="fname">title</span></td><td><span class="type-badge" style="background:#EAF3DE;color:#27500A;border-color:#3B6D11">TextField</span></td><td><div class="attrs"></div></td></tr><tr><td><span class="fname">description</span></td><td><span class="type-badge" style="background:#EAF3DE;color:#27500A;border-color:#3B6D11">TextField</span></td><td><div class="attrs"><span class="attr-pill">blank</span></div></td></tr><tr><td><span class="fname">xp_reward</span></td><td><span class="type-badge" style="background:#EEEDFE;color:#3C3489;border-color:#534AB7">PositiveIntegerField</span></td><td><div class="attrs"></div></td></tr><tr><td><span class="fname">ai_evaluated</span></td><td><span class="type-badge" style="background:#FAEEDA;color:#633806;border-color:#854F0B">BooleanField</span></td><td><div class="attrs"></div></td></tr><tr><td><span class="fname">ai_summary</span></td><td><span class="type-badge" style="background:#EAF3DE;color:#27500A;border-color:#3B6D11">TextField</span></td><td><div class="attrs"><span class="attr-pill">blank</span></div></td></tr><tr><td><span class="fname">is_active</span></td><td><span class="type-badge" style="background:#FAEEDA;color:#633806;border-color:#854F0B">BooleanField</span></td><td><div class="attrs"></div></td></tr><tr><td><span class="fname">due_date</span></td><td><span class="type-badge" style="background:#FBEAF0;color:#72243E;border-color:#993556">DateField</span></td><td><div class="attrs"><span class="attr-pill">null</span><span class="attr-pill">blank</span></div></td></tr><tr><td><span class="fname">created_at</span></td><td><span class="type-badge" style="background:#FBEAF0;color:#72243E;border-color:#993556">DateTimeField</span></td><td><div class="attrs"><span class="attr-pill">auto_add</span></div></td></tr><tr class="section-divider"><td colspan="3">Relationships</td></tr><tr><td><span class="fname is-rel">kid_id<span class="fname-related">→ Kid</span></span></td><td><span class="type-badge" style="background:#EEEDFE;color:#3C3489;border-color:#534AB7">UUIDField</span></td><td><div class="attrs"></div></td></tr><tr><td><span class="fname is-rel">created_by<span class="fname-related">→ CustomUser</span></span></td><td><span class="type-badge" style="background:#EEEDFE;color:#3C3489;border-color:#534AB7">UUIDField</span></td><td><div class="attrs"></div></td></tr></tbody>
+  </table>
+</div>
+
+<div class="model-card">
+  <div class="card-header">
+    <div class="card-avatar">T</div>
+    <div>
+      <div class="card-title">TaskCompletion</div>
+      <div class="card-meta">8 fields · tasks/models.py</div>
+    </div>
+    <span class="card-badge">3 rel</span>
+  </div>
+  <table>
+    <colgroup>
+      <col class="c-name"><col class="c-type"><col class="c-attrs">
+    </colgroup>
+    <thead>
+      <tr>
+        <th>Field</th><th>Type</th><th>Attrs</th>
+      </tr>
+    </thead>
+    <tbody><tr><td><span class="fname">id</span></td><td><span class="type-badge" style="background:#EEEDFE;color:#3C3489;border-color:#534AB7">UUIDField</span></td><td><div class="attrs"><span class="attr-pill">PK</span></div></td></tr><tr><td><span class="fname">status</span></td><td><span class="type-badge" style="background:#EAF3DE;color:#27500A;border-color:#3B6D11">CharField</span></td><td><div class="attrs"><span class="attr-pill">max=16</span></div></td></tr><tr><td><span class="fname">completed_at</span></td><td><span class="type-badge" style="background:#FBEAF0;color:#72243E;border-color:#993556">DateTimeField</span></td><td><div class="attrs"><span class="attr-pill">auto_add</span></div></td></tr><tr><td><span class="fname">reviewed_at</span></td><td><span class="type-badge" style="background:#FBEAF0;color:#72243E;border-color:#993556">DateTimeField</span></td><td><div class="attrs"><span class="attr-pill">null</span><span class="attr-pill">blank</span></div></td></tr><tr><td><span class="fname">review_note</span></td><td><span class="type-badge" style="background:#EAF3DE;color:#27500A;border-color:#3B6D11">TextField</span></td><td><div class="attrs"><span class="attr-pill">blank</span></div></td></tr><tr class="section-divider"><td colspan="3">Relationships</td></tr><tr><td><span class="fname is-rel">task<span class="fname-related">→ Task</span></span></td><td><span class="type-badge" style="background:#FAECE7;color:#712B13;border-color:#993C1D">ForeignKey</span></td><td><div class="attrs"></div></td></tr><tr><td><span class="fname is-rel">kid_id<span class="fname-related">→ Kid</span></span></td><td><span class="type-badge" style="background:#EEEDFE;color:#3C3489;border-color:#534AB7">UUIDField</span></td><td><div class="attrs"></div></td></tr><tr><td><span class="fname is-rel">reviewer_id<span class="fname-related">→ CustomUser</span></span></td><td><span class="type-badge" style="background:#EEEDFE;color:#3C3489;border-color:#534AB7">UUIDField</span></td><td><div class="attrs"><span class="attr-pill">null</span><span class="attr-pill">blank</span></div></td></tr></tbody>
   </table>
 </div>
 
@@ -415,6 +437,50 @@
       <div class="card-title">KidCategoryVisibility</div>
       <div class="card-meta">5 fields · tasks/models.py</div>
     </div>
+    <span class="card-badge">1 rel</span>
+  </div>
+  <table>
+    <colgroup>
+      <col class="c-name"><col class="c-type"><col class="c-attrs">
+    </colgroup>
+    <thead>
+      <tr>
+        <th>Field</th><th>Type</th><th>Attrs</th>
+      </tr>
+    </thead>
+    <tbody><tr><td><span class="fname">show_health</span></td><td><span class="type-badge" style="background:#FAEEDA;color:#633806;border-color:#854F0B">BooleanField</span></td><td><div class="attrs"></div></td></tr><tr><td><span class="fname">show_learning</span></td><td><span class="type-badge" style="background:#FAEEDA;color:#633806;border-color:#854F0B">BooleanField</span></td><td><div class="attrs"></div></td></tr><tr><td><span class="fname">show_responsibility</span></td><td><span class="type-badge" style="background:#FAEEDA;color:#633806;border-color:#854F0B">BooleanField</span></td><td><div class="attrs"></div></td></tr><tr><td><span class="fname">show_creativity</span></td><td><span class="type-badge" style="background:#FAEEDA;color:#633806;border-color:#854F0B">BooleanField</span></td><td><div class="attrs"></div></td></tr><tr class="section-divider"><td colspan="3">Relationships</td></tr><tr><td><span class="fname is-rel">kid_id<span class="fname-related">→ Kid</span></span></td><td><span class="type-badge" style="background:#EEEDFE;color:#3C3489;border-color:#534AB7">UUIDField</span></td><td><div class="attrs"><span class="attr-pill">unique</span></div></td></tr></tbody>
+  </table>
+</div>
+
+<div class="model-card">
+  <div class="card-header">
+    <div class="card-avatar">M</div>
+    <div>
+      <div class="card-title">ModerationLog</div>
+      <div class="card-meta">7 fields · tasks/models.py</div>
+    </div>
+    <span class="card-badge">1 rel</span>
+  </div>
+  <table>
+    <colgroup>
+      <col class="c-name"><col class="c-type"><col class="c-attrs">
+    </colgroup>
+    <thead>
+      <tr>
+        <th>Field</th><th>Type</th><th>Attrs</th>
+      </tr>
+    </thead>
+    <tbody><tr><td><span class="fname">id</span></td><td><span class="type-badge" style="background:#EEEDFE;color:#3C3489;border-color:#534AB7">UUIDField</span></td><td><div class="attrs"><span class="attr-pill">PK</span></div></td></tr><tr><td><span class="fname">title</span></td><td><span class="type-badge" style="background:#EAF3DE;color:#27500A;border-color:#3B6D11">TextField</span></td><td><div class="attrs"></div></td></tr><tr><td><span class="fname">description</span></td><td><span class="type-badge" style="background:#EAF3DE;color:#27500A;border-color:#3B6D11">TextField</span></td><td><div class="attrs"><span class="attr-pill">blank</span></div></td></tr><tr><td><span class="fname">action</span></td><td><span class="type-badge" style="background:#EAF3DE;color:#27500A;border-color:#3B6D11">CharField</span></td><td><div class="attrs"><span class="attr-pill">max=16</span></div></td></tr><tr><td><span class="fname">reason</span></td><td><span class="type-badge" style="background:#EAF3DE;color:#27500A;border-color:#3B6D11">TextField</span></td><td><div class="attrs"><span class="attr-pill">blank</span></div></td></tr><tr><td><span class="fname">created_at</span></td><td><span class="type-badge" style="background:#FBEAF0;color:#72243E;border-color:#993556">DateTimeField</span></td><td><div class="attrs"><span class="attr-pill">auto_add</span></div></td></tr><tr class="section-divider"><td colspan="3">Relationships</td></tr><tr><td><span class="fname is-rel">kid_id<span class="fname-related">→ Kid</span></span></td><td><span class="type-badge" style="background:#EEEDFE;color:#3C3489;border-color:#534AB7">UUIDField</span></td><td><div class="attrs"></div></td></tr></tbody>
+  </table>
+</div>
+
+<div class="model-card">
+  <div class="card-header">
+    <div class="card-avatar">C</div>
+    <div>
+      <div class="card-title">CustomUser</div>
+      <div class="card-meta">13 fields · users/models.py</div>
+    </div>
     
   </div>
   <table>
@@ -426,7 +492,29 @@
         <th>Field</th><th>Type</th><th>Attrs</th>
       </tr>
     </thead>
-    <tbody><tr><td><span class="fname">kid_id</span></td><td><span class="type-badge" style="background:#EEEDFE;color:#3C3489;border-color:#534AB7">UUIDField</span></td><td><div class="attrs"><span class="attr-pill">unique</span></div></td></tr><tr><td><span class="fname">show_health</span></td><td><span class="type-badge" style="background:#FAEEDA;color:#633806;border-color:#854F0B">BooleanField</span></td><td><div class="attrs"></div></td></tr><tr><td><span class="fname">show_learning</span></td><td><span class="type-badge" style="background:#FAEEDA;color:#633806;border-color:#854F0B">BooleanField</span></td><td><div class="attrs"></div></td></tr><tr><td><span class="fname">show_responsibility</span></td><td><span class="type-badge" style="background:#FAEEDA;color:#633806;border-color:#854F0B">BooleanField</span></td><td><div class="attrs"></div></td></tr><tr><td><span class="fname">show_creativity</span></td><td><span class="type-badge" style="background:#FAEEDA;color:#633806;border-color:#854F0B">BooleanField</span></td><td><div class="attrs"></div></td></tr></tbody>
+    <tbody><tr><td><span class="fname">id</span></td><td><span class="type-badge" style="background:#EEEDFE;color:#3C3489;border-color:#534AB7">UUIDField</span></td><td><div class="attrs"><span class="attr-pill">PK</span></div></td></tr><tr><td><span class="fname">username</span></td><td><span class="type-badge" style="background:#EAF3DE;color:#27500A;border-color:#3B6D11">CharField</span></td><td><div class="attrs"><span class="attr-pill">unique</span></div></td></tr><tr><td><span class="fname">email</span></td><td><span class="type-badge" style="background:#E1F5EE;color:#085041;border-color:#0F6E56">EmailField</span></td><td><div class="attrs"><span class="attr-pill">unique</span></div></td></tr><tr><td><span class="fname">role</span></td><td><span class="type-badge" style="background:#EAF3DE;color:#27500A;border-color:#3B6D11">CharField</span></td><td><div class="attrs"><span class="attr-pill">max=20</span></div></td></tr><tr><td><span class="fname">google_sub</span></td><td><span class="type-badge" style="background:#EAF3DE;color:#27500A;border-color:#3B6D11">CharField</span></td><td><div class="attrs"><span class="attr-pill">unique</span><span class="attr-pill">null</span><span class="attr-pill">blank</span><span class="attr-pill">max=255</span></div></td></tr><tr><td><span class="fname">email_verified</span></td><td><span class="type-badge" style="background:#FAEEDA;color:#633806;border-color:#854F0B">BooleanField</span></td><td><div class="attrs"></div></td></tr><tr><td><span class="fname">pending_email</span></td><td><span class="type-badge" style="background:#E1F5EE;color:#085041;border-color:#0F6E56">EmailField</span></td><td><div class="attrs"><span class="attr-pill">null</span><span class="attr-pill">blank</span></div></td></tr><tr><td><span class="fname">email_verification_token</span></td><td><span class="type-badge" style="background:#EEEDFE;color:#3C3489;border-color:#534AB7">UUIDField</span></td><td><div class="attrs"><span class="attr-pill">unique</span><span class="attr-pill">null</span><span class="attr-pill">blank</span></div></td></tr><tr><td><span class="fname">email_verification_sent_at</span></td><td><span class="type-badge" style="background:#FBEAF0;color:#72243E;border-color:#993556">DateTimeField</span></td><td><div class="attrs"><span class="attr-pill">null</span><span class="attr-pill">blank</span></div></td></tr><tr><td><span class="fname">password_reset_token</span></td><td><span class="type-badge" style="background:#EEEDFE;color:#3C3489;border-color:#534AB7">UUIDField</span></td><td><div class="attrs"><span class="attr-pill">unique</span><span class="attr-pill">null</span><span class="attr-pill">blank</span></div></td></tr><tr><td><span class="fname">password_reset_sent_at</span></td><td><span class="type-badge" style="background:#FBEAF0;color:#72243E;border-color:#993556">DateTimeField</span></td><td><div class="attrs"><span class="attr-pill">null</span><span class="attr-pill">blank</span></div></td></tr><tr><td><span class="fname">bio</span></td><td><span class="type-badge" style="background:#EAF3DE;color:#27500A;border-color:#3B6D11">CharField</span></td><td><div class="attrs"><span class="attr-pill">blank</span><span class="attr-pill">max=300</span></div></td></tr><tr><td><span class="fname">created_at</span></td><td><span class="type-badge" style="background:#FBEAF0;color:#72243E;border-color:#993556">DateTimeField</span></td><td><div class="attrs"><span class="attr-pill">auto_add</span></div></td></tr></tbody>
+  </table>
+</div>
+
+<div class="model-card">
+  <div class="card-header">
+    <div class="card-avatar">K</div>
+    <div>
+      <div class="card-title">Kid</div>
+      <div class="card-meta">17 fields · users/models.py</div>
+    </div>
+    <span class="card-badge">1 rel</span>
+  </div>
+  <table>
+    <colgroup>
+      <col class="c-name"><col class="c-type"><col class="c-attrs">
+    </colgroup>
+    <thead>
+      <tr>
+        <th>Field</th><th>Type</th><th>Attrs</th>
+      </tr>
+    </thead>
+    <tbody><tr><td><span class="fname">id</span></td><td><span class="type-badge" style="background:#EEEDFE;color:#3C3489;border-color:#534AB7">UUIDField</span></td><td><div class="attrs"><span class="attr-pill">PK</span></div></td></tr><tr><td><span class="fname">registration_status</span></td><td><span class="type-badge" style="background:#EAF3DE;color:#27500A;border-color:#3B6D11">CharField</span></td><td><div class="attrs"><span class="attr-pill">max=32</span></div></td></tr><tr><td><span class="fname">name</span></td><td><span class="type-badge" style="background:#EAF3DE;color:#27500A;border-color:#3B6D11">CharField</span></td><td><div class="attrs"><span class="attr-pill">max=100</span></div></td></tr><tr><td><span class="fname">username</span></td><td><span class="type-badge" style="background:#EAF3DE;color:#27500A;border-color:#3B6D11">CharField</span></td><td><div class="attrs"><span class="attr-pill">unique</span></div></td></tr><tr><td><span class="fname">email</span></td><td><span class="type-badge" style="background:#E1F5EE;color:#085041;border-color:#0F6E56">EmailField</span></td><td><div class="attrs"><span class="attr-pill">unique</span><span class="attr-pill">null</span><span class="attr-pill">blank</span></div></td></tr><tr><td><span class="fname">email_verified</span></td><td><span class="type-badge" style="background:#FAEEDA;color:#633806;border-color:#854F0B">BooleanField</span></td><td><div class="attrs"></div></td></tr><tr><td><span class="fname">pending_email</span></td><td><span class="type-badge" style="background:#E1F5EE;color:#085041;border-color:#0F6E56">EmailField</span></td><td><div class="attrs"><span class="attr-pill">null</span><span class="attr-pill">blank</span></div></td></tr><tr><td><span class="fname">google_sub</span></td><td><span class="type-badge" style="background:#EAF3DE;color:#27500A;border-color:#3B6D11">CharField</span></td><td><div class="attrs"><span class="attr-pill">unique</span><span class="attr-pill">null</span><span class="attr-pill">blank</span><span class="attr-pill">max=255</span></div></td></tr><tr><td><span class="fname">email_verification_token</span></td><td><span class="type-badge" style="background:#EEEDFE;color:#3C3489;border-color:#534AB7">UUIDField</span></td><td><div class="attrs"><span class="attr-pill">unique</span><span class="attr-pill">null</span><span class="attr-pill">blank</span></div></td></tr><tr><td><span class="fname">email_verification_sent_at</span></td><td><span class="type-badge" style="background:#FBEAF0;color:#72243E;border-color:#993556">DateTimeField</span></td><td><div class="attrs"><span class="attr-pill">null</span><span class="attr-pill">blank</span></div></td></tr><tr><td><span class="fname">password_reset_token</span></td><td><span class="type-badge" style="background:#EEEDFE;color:#3C3489;border-color:#534AB7">UUIDField</span></td><td><div class="attrs"><span class="attr-pill">unique</span><span class="attr-pill">null</span><span class="attr-pill">blank</span></div></td></tr><tr><td><span class="fname">password_reset_sent_at</span></td><td><span class="type-badge" style="background:#FBEAF0;color:#72243E;border-color:#993556">DateTimeField</span></td><td><div class="attrs"><span class="attr-pill">null</span><span class="attr-pill">blank</span></div></td></tr><tr><td><span class="fname">password_hash</span></td><td><span class="type-badge" style="background:#EAF3DE;color:#27500A;border-color:#3B6D11">TextField</span></td><td><div class="attrs"><span class="attr-pill">null</span><span class="attr-pill">blank</span></div></td></tr><tr><td><span class="fname">avatar_url</span></td><td><span class="type-badge" style="background:#EAF3DE;color:#27500A;border-color:#3B6D11">TextField</span></td><td><div class="attrs"><span class="attr-pill">null</span><span class="attr-pill">blank</span></div></td></tr><tr><td><span class="fname">bio</span></td><td><span class="type-badge" style="background:#EAF3DE;color:#27500A;border-color:#3B6D11">CharField</span></td><td><div class="attrs"><span class="attr-pill">blank</span><span class="attr-pill">max=300</span></div></td></tr><tr><td><span class="fname">created_at</span></td><td><span class="type-badge" style="background:#FBEAF0;color:#72243E;border-color:#993556">DateTimeField</span></td><td><div class="attrs"><span class="attr-pill">auto_add</span></div></td></tr><tr class="section-divider"><td colspan="3">Relationships</td></tr><tr><td><span class="fname is-rel">parent<span class="fname-related">→ CustomUser</span></span></td><td><span class="type-badge" style="background:#FAECE7;color:#712B13;border-color:#993C1D">ForeignKey</span></td><td><div class="attrs"><span class="attr-pill">null</span><span class="attr-pill">blank</span></div></td></tr></tbody>
   </table>
 </div>
 
@@ -448,16 +536,198 @@
         <th>Field</th><th>Type</th><th>Attrs</th>
       </tr>
     </thead>
-    <tbody><tr><td><span class="fname">id</span></td><td><span class="type-badge" style="background:#EEEDFE;color:#3C3489;border-color:#534AB7">UUIDField</span></td><td><div class="attrs"><span class="attr-pill">PK</span></div></td></tr><tr><td><span class="fname">invite_email</span></td><td><span class="type-badge" style="background:#E1F5EE;color:#085041;border-color:#0F6E56">EmailField</span></td><td><div class="attrs"></div></td></tr><tr><td><span class="fname">invited_username_hint</span></td><td><span class="type-badge" style="background:#EAF3DE;color:#27500A;border-color:#3B6D11">CharField</span></td><td><div class="attrs"><span class="attr-pill">blank</span><span class="attr-pill">max=150</span></div></td></tr><tr><td><span class="fname">role</span></td><td><span class="type-badge" style="background:#EAF3DE;color:#27500A;border-color:#3B6D11">CharField</span></td><td><div class="attrs"><span class="attr-pill">max=20</span></div></td></tr><tr><td><span class="fname">status</span></td><td><span class="type-badge" style="background:#EAF3DE;color:#27500A;border-color:#3B6D11">CharField</span></td><td><div class="attrs"><span class="attr-pill">max=20</span></div></td></tr><tr><td><span class="fname">token</span></td><td><span class="type-badge" style="background:#EEEDFE;color:#3C3489;border-color:#534AB7">UUIDField</span></td><td><div class="attrs"><span class="attr-pill">unique</span></div></td></tr><tr><td><span class="fname">created_by_kid</span></td><td><span class="type-badge" style="background:#FAEEDA;color:#633806;border-color:#854F0B">BooleanField</span></td><td><div class="attrs"></div></td></tr><tr><td><span class="fname">sent_at</span></td><td><span class="type-badge" style="background:#FBEAF0;color:#72243E;border-color:#993556">DateTimeField</span></td><td><div class="attrs"><span class="attr-pill">null</span><span class="attr-pill">blank</span></div></td></tr><tr><td><span class="fname">expires_at</span></td><td><span class="type-badge" style="background:#FBEAF0;color:#72243E;border-color:#993556">DateTimeField</span></td><td><div class="attrs"><span class="attr-pill">null</span><span class="attr-pill">blank</span></div></td></tr><tr><td><span class="fname">created_at</span></td><td><span class="type-badge" style="background:#FBEAF0;color:#72243E;border-color:#993556">DateTimeField</span></td><td><div class="attrs"><span class="attr-pill">auto_add</span></div></td></tr><tr><td><span class="fname">responded_at</span></td><td><span class="type-badge" style="background:#FBEAF0;color:#72243E;border-color:#993556">DateTimeField</span></td><td><div class="attrs"><span class="attr-pill">null</span><span class="attr-pill">blank</span></div></td></tr><tr class="section-divider"><td colspan="3">Relationships</td></tr><tr><td><span class="fname is-rel">kid</span></td><td><span class="type-badge" style="background:#FAECE7;color:#712B13;border-color:#993C1D">ForeignKey</span></td><td><div class="attrs"></div></td></tr><tr><td><span class="fname is-rel">parent</span></td><td><span class="type-badge" style="background:#FAECE7;color:#712B13;border-color:#993C1D">ForeignKey</span></td><td><div class="attrs"><span class="attr-pill">null</span><span class="attr-pill">blank</span></div></td></tr></tbody>
+    <tbody><tr><td><span class="fname">id</span></td><td><span class="type-badge" style="background:#EEEDFE;color:#3C3489;border-color:#534AB7">UUIDField</span></td><td><div class="attrs"><span class="attr-pill">PK</span></div></td></tr><tr><td><span class="fname">invite_email</span></td><td><span class="type-badge" style="background:#E1F5EE;color:#085041;border-color:#0F6E56">EmailField</span></td><td><div class="attrs"></div></td></tr><tr><td><span class="fname">invited_username_hint</span></td><td><span class="type-badge" style="background:#EAF3DE;color:#27500A;border-color:#3B6D11">CharField</span></td><td><div class="attrs"><span class="attr-pill">blank</span><span class="attr-pill">max=150</span></div></td></tr><tr><td><span class="fname">role</span></td><td><span class="type-badge" style="background:#EAF3DE;color:#27500A;border-color:#3B6D11">CharField</span></td><td><div class="attrs"><span class="attr-pill">max=20</span></div></td></tr><tr><td><span class="fname">status</span></td><td><span class="type-badge" style="background:#EAF3DE;color:#27500A;border-color:#3B6D11">CharField</span></td><td><div class="attrs"><span class="attr-pill">max=20</span></div></td></tr><tr><td><span class="fname">token</span></td><td><span class="type-badge" style="background:#EEEDFE;color:#3C3489;border-color:#534AB7">UUIDField</span></td><td><div class="attrs"><span class="attr-pill">unique</span></div></td></tr><tr><td><span class="fname">created_by_kid</span></td><td><span class="type-badge" style="background:#FAEEDA;color:#633806;border-color:#854F0B">BooleanField</span></td><td><div class="attrs"></div></td></tr><tr><td><span class="fname">sent_at</span></td><td><span class="type-badge" style="background:#FBEAF0;color:#72243E;border-color:#993556">DateTimeField</span></td><td><div class="attrs"><span class="attr-pill">null</span><span class="attr-pill">blank</span></div></td></tr><tr><td><span class="fname">expires_at</span></td><td><span class="type-badge" style="background:#FBEAF0;color:#72243E;border-color:#993556">DateTimeField</span></td><td><div class="attrs"><span class="attr-pill">null</span><span class="attr-pill">blank</span></div></td></tr><tr><td><span class="fname">created_at</span></td><td><span class="type-badge" style="background:#FBEAF0;color:#72243E;border-color:#993556">DateTimeField</span></td><td><div class="attrs"><span class="attr-pill">auto_add</span></div></td></tr><tr><td><span class="fname">responded_at</span></td><td><span class="type-badge" style="background:#FBEAF0;color:#72243E;border-color:#993556">DateTimeField</span></td><td><div class="attrs"><span class="attr-pill">null</span><span class="attr-pill">blank</span></div></td></tr><tr class="section-divider"><td colspan="3">Relationships</td></tr><tr><td><span class="fname is-rel">kid<span class="fname-related">→ Kid</span></span></td><td><span class="type-badge" style="background:#FAECE7;color:#712B13;border-color:#993C1D">ForeignKey</span></td><td><div class="attrs"></div></td></tr><tr><td><span class="fname is-rel">parent<span class="fname-related">→ CustomUser</span></span></td><td><span class="type-badge" style="background:#FAECE7;color:#712B13;border-color:#993C1D">ForeignKey</span></td><td><div class="attrs"><span class="attr-pill">null</span><span class="attr-pill">blank</span></div></td></tr></tbody>
+  </table>
+</div>
+
+<div class="model-card">
+  <div class="card-header">
+    <div class="card-avatar">N</div>
+    <div>
+      <div class="card-title">Notification</div>
+      <div class="card-meta">6 fields · notification/models.py</div>
+    </div>
+    <span class="card-badge">1 rel</span>
+  </div>
+  <table>
+    <colgroup>
+      <col class="c-name"><col class="c-type"><col class="c-attrs">
+    </colgroup>
+    <thead>
+      <tr>
+        <th>Field</th><th>Type</th><th>Attrs</th>
+      </tr>
+    </thead>
+    <tbody><tr><td><span class="fname">id</span></td><td><span class="type-badge" style="background:#EEEDFE;color:#3C3489;border-color:#534AB7">UUIDField</span></td><td><div class="attrs"><span class="attr-pill">PK</span></div></td></tr><tr><td><span class="fname">notification_type</span></td><td><span class="type-badge" style="background:#EAF3DE;color:#27500A;border-color:#3B6D11">CharField</span></td><td><div class="attrs"><span class="attr-pill">max=50</span></div></td></tr><tr><td><span class="fname">message</span></td><td><span class="type-badge" style="background:#EAF3DE;color:#27500A;border-color:#3B6D11">TextField</span></td><td><div class="attrs"></div></td></tr><tr><td><span class="fname">is_read</span></td><td><span class="type-badge" style="background:#FAEEDA;color:#633806;border-color:#854F0B">BooleanField</span></td><td><div class="attrs"></div></td></tr><tr><td><span class="fname">created_at</span></td><td><span class="type-badge" style="background:#FBEAF0;color:#72243E;border-color:#993556">DateTimeField</span></td><td><div class="attrs"><span class="attr-pill">auto_add</span></div></td></tr><tr class="section-divider"><td colspan="3">Relationships</td></tr><tr><td><span class="fname is-rel">recipient_id<span class="fname-related">→ Kid / CustomUser</span></span></td><td><span class="type-badge" style="background:#EEEDFE;color:#3C3489;border-color:#534AB7">UUIDField</span></td><td><div class="attrs"></div></td></tr></tbody>
+  </table>
+</div>
+
+<div class="model-card">
+  <div class="card-header">
+    <div class="card-avatar">A</div>
+    <div>
+      <div class="card-title">AvatarItem</div>
+      <div class="card-meta">8 fields · catalog/models.py</div>
+    </div>
+    
+  </div>
+  <table>
+    <colgroup>
+      <col class="c-name"><col class="c-type"><col class="c-attrs">
+    </colgroup>
+    <thead>
+      <tr>
+        <th>Field</th><th>Type</th><th>Attrs</th>
+      </tr>
+    </thead>
+    <tbody><tr><td><span class="fname">id</span></td><td><span class="type-badge" style="background:#EEEDFE;color:#3C3489;border-color:#534AB7">UUIDField</span></td><td><div class="attrs"><span class="attr-pill">PK</span></div></td></tr><tr><td><span class="fname">name</span></td><td><span class="type-badge" style="background:#EAF3DE;color:#27500A;border-color:#3B6D11">CharField</span></td><td><div class="attrs"><span class="attr-pill">max=255</span></div></td></tr><tr><td><span class="fname">type</span></td><td><span class="type-badge" style="background:#EAF3DE;color:#27500A;border-color:#3B6D11">CharField</span></td><td><div class="attrs"><span class="attr-pill">max=50</span></div></td></tr><tr><td><span class="fname">image_url</span></td><td><span class="type-badge" style="background:#EAF3DE;color:#27500A;border-color:#3B6D11">TextField</span></td><td><div class="attrs"></div></td></tr><tr><td><span class="fname">coin_cost</span></td><td><span class="type-badge" style="background:#EEEDFE;color:#3C3489;border-color:#534AB7">PositiveIntegerField</span></td><td><div class="attrs"></div></td></tr><tr><td><span class="fname">is_active</span></td><td><span class="type-badge" style="background:#FAEEDA;color:#633806;border-color:#854F0B">BooleanField</span></td><td><div class="attrs"></div></td></tr><tr><td><span class="fname">param_key</span></td><td><span class="type-badge" style="background:#EAF3DE;color:#27500A;border-color:#3B6D11">CharField</span></td><td><div class="attrs"><span class="attr-pill">max=50</span></div></td></tr><tr><td><span class="fname">param_value</span></td><td><span class="type-badge" style="background:#EAF3DE;color:#27500A;border-color:#3B6D11">CharField</span></td><td><div class="attrs"><span class="attr-pill">max=100</span></div></td></tr></tbody>
+  </table>
+</div>
+
+<div class="model-card">
+  <div class="card-header">
+    <div class="card-avatar">K</div>
+    <div>
+      <div class="card-title">KidAvatar</div>
+      <div class="card-meta">9 fields · catalog/models.py</div>
+    </div>
+    <span class="card-badge">5 rel</span>
+  </div>
+  <table>
+    <colgroup>
+      <col class="c-name"><col class="c-type"><col class="c-attrs">
+    </colgroup>
+    <thead>
+      <tr>
+        <th>Field</th><th>Type</th><th>Attrs</th>
+      </tr>
+    </thead>
+    <tbody><tr><td><span class="fname">id</span></td><td><span class="type-badge" style="background:#EEEDFE;color:#3C3489;border-color:#534AB7">UUIDField</span></td><td><div class="attrs"><span class="attr-pill">PK</span></div></td></tr><tr><td><span class="fname">base_character</span></td><td><span class="type-badge" style="background:#EAF3DE;color:#27500A;border-color:#3B6D11">CharField</span></td><td><div class="attrs"><span class="attr-pill">max=50</span></div></td></tr><tr><td><span class="fname">unlocked_items</span></td><td><span class="type-badge" style="background:#FAEEDA;color:#633806;border-color:#854F0B">JSONField</span></td><td><div class="attrs"></div></td></tr><tr><td><span class="fname">updated_at</span></td><td><span class="type-badge" style="background:#FBEAF0;color:#72243E;border-color:#993556">DateTimeField</span></td><td><div class="attrs"><span class="attr-pill">auto_now</span></div></td></tr><tr class="section-divider"><td colspan="3">Relationships</td></tr><tr><td><span class="fname is-rel">kid_id<span class="fname-related">→ Kid</span></span></td><td><span class="type-badge" style="background:#EEEDFE;color:#3C3489;border-color:#534AB7">UUIDField</span></td><td><div class="attrs"><span class="attr-pill">unique</span></div></td></tr><tr><td><span class="fname is-rel">equipped_hair<span class="fname-related">→ AvatarItem</span></span></td><td><span class="type-badge" style="background:#EEEDFE;color:#3C3489;border-color:#534AB7">UUIDField</span></td><td><div class="attrs"><span class="attr-pill">null</span><span class="attr-pill">blank</span></div></td></tr><tr><td><span class="fname is-rel">equipped_glasses<span class="fname-related">→ AvatarItem</span></span></td><td><span class="type-badge" style="background:#EEEDFE;color:#3C3489;border-color:#534AB7">UUIDField</span></td><td><div class="attrs"><span class="attr-pill">null</span><span class="attr-pill">blank</span></div></td></tr><tr><td><span class="fname is-rel">equipped_earrings<span class="fname-related">→ AvatarItem</span></span></td><td><span class="type-badge" style="background:#EEEDFE;color:#3C3489;border-color:#534AB7">UUIDField</span></td><td><div class="attrs"><span class="attr-pill">null</span><span class="attr-pill">blank</span></div></td></tr><tr><td><span class="fname is-rel">equipped_background<span class="fname-related">→ AvatarItem</span></span></td><td><span class="type-badge" style="background:#EEEDFE;color:#3C3489;border-color:#534AB7">UUIDField</span></td><td><div class="attrs"><span class="attr-pill">null</span><span class="attr-pill">blank</span></div></td></tr></tbody>
+  </table>
+</div>
+
+<div class="model-card">
+  <div class="card-header">
+    <div class="card-avatar">R</div>
+    <div>
+      <div class="card-title">RewardPurchase</div>
+      <div class="card-meta">5 fields · catalog/models.py</div>
+    </div>
+    <span class="card-badge">2 rel</span>
+  </div>
+  <table>
+    <colgroup>
+      <col class="c-name"><col class="c-type"><col class="c-attrs">
+    </colgroup>
+    <thead>
+      <tr>
+        <th>Field</th><th>Type</th><th>Attrs</th>
+      </tr>
+    </thead>
+    <tbody><tr><td><span class="fname">id</span></td><td><span class="type-badge" style="background:#EEEDFE;color:#3C3489;border-color:#534AB7">UUIDField</span></td><td><div class="attrs"><span class="attr-pill">PK</span></div></td></tr><tr><td><span class="fname">coins_spent</span></td><td><span class="type-badge" style="background:#EEEDFE;color:#3C3489;border-color:#534AB7">PositiveIntegerField</span></td><td><div class="attrs"></div></td></tr><tr><td><span class="fname">purchased_at</span></td><td><span class="type-badge" style="background:#FBEAF0;color:#72243E;border-color:#993556">DateTimeField</span></td><td><div class="attrs"><span class="attr-pill">auto_add</span></div></td></tr><tr class="section-divider"><td colspan="3">Relationships</td></tr><tr><td><span class="fname is-rel">kid_id<span class="fname-related">→ Kid</span></span></td><td><span class="type-badge" style="background:#EEEDFE;color:#3C3489;border-color:#534AB7">UUIDField</span></td><td><div class="attrs"></div></td></tr><tr><td><span class="fname is-rel">item<span class="fname-related">→ AvatarItem</span></span></td><td><span class="type-badge" style="background:#FAECE7;color:#712B13;border-color:#993C1D">ForeignKey</span></td><td><div class="attrs"></div></td></tr></tbody>
+  </table>
+</div>
+
+<div class="model-card">
+  <div class="card-header">
+    <div class="card-avatar">P</div>
+    <div>
+      <div class="card-title">ParentProfile</div>
+      <div class="card-meta">4 fields · catalog/models.py</div>
+    </div>
+    <span class="card-badge">1 rel</span>
+  </div>
+  <table>
+    <colgroup>
+      <col class="c-name"><col class="c-type"><col class="c-attrs">
+    </colgroup>
+    <thead>
+      <tr>
+        <th>Field</th><th>Type</th><th>Attrs</th>
+      </tr>
+    </thead>
+    <tbody><tr><td><span class="fname">id</span></td><td><span class="type-badge" style="background:#EEEDFE;color:#3C3489;border-color:#534AB7">UUIDField</span></td><td><div class="attrs"><span class="attr-pill">PK</span></div></td></tr><tr><td><span class="fname">profile_picture</span></td><td><span class="type-badge" style="background:#F1EFE8;color:#444441;border-color:#5F5E5A">ImageField</span></td><td><div class="attrs"><span class="attr-pill">null</span><span class="attr-pill">blank</span></div></td></tr><tr><td><span class="fname">updated_at</span></td><td><span class="type-badge" style="background:#FBEAF0;color:#72243E;border-color:#993556">DateTimeField</span></td><td><div class="attrs"><span class="attr-pill">auto_now</span></div></td></tr><tr class="section-divider"><td colspan="3">Relationships</td></tr><tr><td><span class="fname is-rel">parent_id<span class="fname-related">→ CustomUser</span></span></td><td><span class="type-badge" style="background:#EEEDFE;color:#3C3489;border-color:#534AB7">UUIDField</span></td><td><div class="attrs"><span class="attr-pill">unique</span></div></td></tr></tbody>
+  </table>
+</div>
+
+<div class="model-card">
+  <div class="card-header">
+    <div class="card-avatar">F</div>
+    <div>
+      <div class="card-title">Friendship</div>
+      <div class="card-meta">6 fields · social/models.py</div>
+    </div>
+    <span class="card-badge">2 rel</span>
+  </div>
+  <table>
+    <colgroup>
+      <col class="c-name"><col class="c-type"><col class="c-attrs">
+    </colgroup>
+    <thead>
+      <tr>
+        <th>Field</th><th>Type</th><th>Attrs</th>
+      </tr>
+    </thead>
+    <tbody><tr><td><span class="fname">id</span></td><td><span class="type-badge" style="background:#EEEDFE;color:#3C3489;border-color:#534AB7">UUIDField</span></td><td><div class="attrs"><span class="attr-pill">PK</span></div></td></tr><tr><td><span class="fname">status</span></td><td><span class="type-badge" style="background:#EAF3DE;color:#27500A;border-color:#3B6D11">CharField</span></td><td><div class="attrs"><span class="attr-pill">max=20</span></div></td></tr><tr><td><span class="fname">created_at</span></td><td><span class="type-badge" style="background:#FBEAF0;color:#72243E;border-color:#993556">DateTimeField</span></td><td><div class="attrs"><span class="attr-pill">auto_add</span></div></td></tr><tr><td><span class="fname">responded_at</span></td><td><span class="type-badge" style="background:#FBEAF0;color:#72243E;border-color:#993556">DateTimeField</span></td><td><div class="attrs"><span class="attr-pill">null</span><span class="attr-pill">blank</span></div></td></tr><tr class="section-divider"><td colspan="3">Relationships</td></tr><tr><td><span class="fname is-rel">from_kid_id<span class="fname-related">→ Kid</span></span></td><td><span class="type-badge" style="background:#EEEDFE;color:#3C3489;border-color:#534AB7">UUIDField</span></td><td><div class="attrs"></div></td></tr><tr><td><span class="fname is-rel">to_kid_id<span class="fname-related">→ Kid</span></span></td><td><span class="type-badge" style="background:#EEEDFE;color:#3C3489;border-color:#534AB7">UUIDField</span></td><td><div class="attrs"></div></td></tr></tbody>
+  </table>
+</div>
+
+<div class="model-card">
+  <div class="card-header">
+    <div class="card-avatar">A</div>
+    <div>
+      <div class="card-title">ActivityEvent</div>
+      <div class="card-meta">5 fields · analytics/models.py</div>
+    </div>
+    <span class="card-badge">2 rel</span>
+  </div>
+  <table>
+    <colgroup>
+      <col class="c-name"><col class="c-type"><col class="c-attrs">
+    </colgroup>
+    <thead>
+      <tr>
+        <th>Field</th><th>Type</th><th>Attrs</th>
+      </tr>
+    </thead>
+    <tbody><tr><td><span class="fname">id</span></td><td><span class="type-badge" style="background:#EEEDFE;color:#3C3489;border-color:#534AB7">UUIDField</span></td><td><div class="attrs"><span class="attr-pill">PK</span></div></td></tr><tr><td><span class="fname">payload</span></td><td><span class="type-badge" style="background:#FAEEDA;color:#633806;border-color:#854F0B">JSONField</span></td><td><div class="attrs"></div></td></tr><tr><td><span class="fname">processed_at</span></td><td><span class="type-badge" style="background:#FBEAF0;color:#72243E;border-color:#993556">DateTimeField</span></td><td><div class="attrs"><span class="attr-pill">auto_add</span></div></td></tr><tr class="section-divider"><td colspan="3">Relationships</td></tr><tr><td><span class="fname is-rel">completion_id<span class="fname-related">→ TaskCompletion</span></span></td><td><span class="type-badge" style="background:#EEEDFE;color:#3C3489;border-color:#534AB7">UUIDField</span></td><td><div class="attrs"><span class="attr-pill">unique</span></div></td></tr><tr><td><span class="fname is-rel">kid_id<span class="fname-related">→ Kid</span></span></td><td><span class="type-badge" style="background:#EEEDFE;color:#3C3489;border-color:#534AB7">UUIDField</span></td><td><div class="attrs"></div></td></tr></tbody>
   </table>
 </div>
   </div>
 
   <!-- Relationships view -->
   <div id="view-rels" class="rel-container hidden">
-    <p class="rel-summary">1 relationship(s) detected across 7 models</p>
+    <p class="rel-summary">29 relationship(s) detected across 18 models</p>
     <div class="rel-list">
-      <div class="rel-row"><span class="rel-model">TaskCategoryReward</span><span class="rel-field">·task·</span><span class="type-badge" style="background:#FAECE7;color:#712B13;border-color:#993C1D;font-size:10px;font-weight:600">FK</span><span class="rel-arrow">→</span><span class="rel-model">Task</span></div>
+      <div class="rel-row"><span class="rel-model">KidProfile</span><span class="rel-field">·kid_id·</span><span class="type-badge" style="background:#E6F1FB;color:#0C447C;border-color:#185FA5;font-size:10px;font-weight:600">UUID→</span><span class="rel-arrow">→</span><span class="rel-model">Kid</span></div>
+<div class="rel-row"><span class="rel-model">KidStat</span><span class="rel-field">·kid_id·</span><span class="type-badge" style="background:#E6F1FB;color:#0C447C;border-color:#185FA5;font-size:10px;font-weight:600">UUID→</span><span class="rel-arrow">→</span><span class="rel-model">Kid</span></div>
+<div class="rel-row"><span class="rel-model">CompletionEvent</span><span class="rel-field">·completion_id·</span><span class="type-badge" style="background:#E6F1FB;color:#0C447C;border-color:#185FA5;font-size:10px;font-weight:600">UUID→</span><span class="rel-arrow">→</span><span class="rel-model">TaskCompletion</span></div>
+<div class="rel-row"><span class="rel-model">CompletionEvent</span><span class="rel-field">·kid_id·</span><span class="type-badge" style="background:#E6F1FB;color:#0C447C;border-color:#185FA5;font-size:10px;font-weight:600">UUID→</span><span class="rel-arrow">→</span><span class="rel-model">Kid</span></div>
+<div class="rel-row"><span class="rel-model">Task</span><span class="rel-field">·kid_id·</span><span class="type-badge" style="background:#E6F1FB;color:#0C447C;border-color:#185FA5;font-size:10px;font-weight:600">UUID→</span><span class="rel-arrow">→</span><span class="rel-model">Kid</span></div>
+<div class="rel-row"><span class="rel-model">Task</span><span class="rel-field">·created_by·</span><span class="type-badge" style="background:#E6F1FB;color:#0C447C;border-color:#185FA5;font-size:10px;font-weight:600">UUID→</span><span class="rel-arrow">→</span><span class="rel-model">CustomUser</span></div>
+<div class="rel-row"><span class="rel-model">TaskCompletion</span><span class="rel-field">·task·</span><span class="type-badge" style="background:#FAECE7;color:#712B13;border-color:#993C1D;font-size:10px;font-weight:600">FK</span><span class="rel-arrow">→</span><span class="rel-model">Task</span></div>
+<div class="rel-row"><span class="rel-model">TaskCompletion</span><span class="rel-field">·kid_id·</span><span class="type-badge" style="background:#E6F1FB;color:#0C447C;border-color:#185FA5;font-size:10px;font-weight:600">UUID→</span><span class="rel-arrow">→</span><span class="rel-model">Kid</span></div>
+<div class="rel-row"><span class="rel-model">TaskCompletion</span><span class="rel-field">·reviewer_id·</span><span class="type-badge" style="background:#E6F1FB;color:#0C447C;border-color:#185FA5;font-size:10px;font-weight:600">UUID→</span><span class="rel-arrow">→</span><span class="rel-model">CustomUser</span></div>
+<div class="rel-row"><span class="rel-model">TaskCategoryReward</span><span class="rel-field">·task·</span><span class="type-badge" style="background:#FAECE7;color:#712B13;border-color:#993C1D;font-size:10px;font-weight:600">FK</span><span class="rel-arrow">→</span><span class="rel-model">Task</span></div>
+<div class="rel-row"><span class="rel-model">KidCategoryVisibility</span><span class="rel-field">·kid_id·</span><span class="type-badge" style="background:#E6F1FB;color:#0C447C;border-color:#185FA5;font-size:10px;font-weight:600">UUID→</span><span class="rel-arrow">→</span><span class="rel-model">Kid</span></div>
+<div class="rel-row"><span class="rel-model">ModerationLog</span><span class="rel-field">·kid_id·</span><span class="type-badge" style="background:#E6F1FB;color:#0C447C;border-color:#185FA5;font-size:10px;font-weight:600">UUID→</span><span class="rel-arrow">→</span><span class="rel-model">Kid</span></div>
+<div class="rel-row"><span class="rel-model">Kid</span><span class="rel-field">·parent·</span><span class="type-badge" style="background:#FAECE7;color:#712B13;border-color:#993C1D;font-size:10px;font-weight:600">FK</span><span class="rel-arrow">→</span><span class="rel-model">CustomUser</span></div>
+<div class="rel-row"><span class="rel-model">GuardianInvitation</span><span class="rel-field">·kid·</span><span class="type-badge" style="background:#FAECE7;color:#712B13;border-color:#993C1D;font-size:10px;font-weight:600">FK</span><span class="rel-arrow">→</span><span class="rel-model">Kid</span></div>
+<div class="rel-row"><span class="rel-model">GuardianInvitation</span><span class="rel-field">·parent·</span><span class="type-badge" style="background:#FAECE7;color:#712B13;border-color:#993C1D;font-size:10px;font-weight:600">FK</span><span class="rel-arrow">→</span><span class="rel-model">CustomUser</span></div>
+<div class="rel-row"><span class="rel-model">Notification</span><span class="rel-field">·recipient_id·</span><span class="type-badge" style="background:#E6F1FB;color:#0C447C;border-color:#185FA5;font-size:10px;font-weight:600">UUID→</span><span class="rel-arrow">→</span><span class="rel-model">Kid</span></div>
+<div class="rel-row"><span class="rel-model">Notification</span><span class="rel-field">·recipient_id·</span><span class="type-badge" style="background:#E6F1FB;color:#0C447C;border-color:#185FA5;font-size:10px;font-weight:600">UUID→</span><span class="rel-arrow">→</span><span class="rel-model">CustomUser</span></div>
+<div class="rel-row"><span class="rel-model">KidAvatar</span><span class="rel-field">·kid_id·</span><span class="type-badge" style="background:#E6F1FB;color:#0C447C;border-color:#185FA5;font-size:10px;font-weight:600">UUID→</span><span class="rel-arrow">→</span><span class="rel-model">Kid</span></div>
+<div class="rel-row"><span class="rel-model">KidAvatar</span><span class="rel-field">·equipped_hair·</span><span class="type-badge" style="background:#E6F1FB;color:#0C447C;border-color:#185FA5;font-size:10px;font-weight:600">UUID→</span><span class="rel-arrow">→</span><span class="rel-model">AvatarItem</span></div>
+<div class="rel-row"><span class="rel-model">KidAvatar</span><span class="rel-field">·equipped_glasses·</span><span class="type-badge" style="background:#E6F1FB;color:#0C447C;border-color:#185FA5;font-size:10px;font-weight:600">UUID→</span><span class="rel-arrow">→</span><span class="rel-model">AvatarItem</span></div>
+<div class="rel-row"><span class="rel-model">KidAvatar</span><span class="rel-field">·equipped_earrings·</span><span class="type-badge" style="background:#E6F1FB;color:#0C447C;border-color:#185FA5;font-size:10px;font-weight:600">UUID→</span><span class="rel-arrow">→</span><span class="rel-model">AvatarItem</span></div>
+<div class="rel-row"><span class="rel-model">KidAvatar</span><span class="rel-field">·equipped_background·</span><span class="type-badge" style="background:#E6F1FB;color:#0C447C;border-color:#185FA5;font-size:10px;font-weight:600">UUID→</span><span class="rel-arrow">→</span><span class="rel-model">AvatarItem</span></div>
+<div class="rel-row"><span class="rel-model">RewardPurchase</span><span class="rel-field">·kid_id·</span><span class="type-badge" style="background:#E6F1FB;color:#0C447C;border-color:#185FA5;font-size:10px;font-weight:600">UUID→</span><span class="rel-arrow">→</span><span class="rel-model">Kid</span></div>
+<div class="rel-row"><span class="rel-model">RewardPurchase</span><span class="rel-field">·item·</span><span class="type-badge" style="background:#FAECE7;color:#712B13;border-color:#993C1D;font-size:10px;font-weight:600">FK</span><span class="rel-arrow">→</span><span class="rel-model">AvatarItem</span></div>
+<div class="rel-row"><span class="rel-model">ParentProfile</span><span class="rel-field">·parent_id·</span><span class="type-badge" style="background:#E6F1FB;color:#0C447C;border-color:#185FA5;font-size:10px;font-weight:600">UUID→</span><span class="rel-arrow">→</span><span class="rel-model">CustomUser</span></div>
+<div class="rel-row"><span class="rel-model">Friendship</span><span class="rel-field">·from_kid_id·</span><span class="type-badge" style="background:#E6F1FB;color:#0C447C;border-color:#185FA5;font-size:10px;font-weight:600">UUID→</span><span class="rel-arrow">→</span><span class="rel-model">Kid</span></div>
+<div class="rel-row"><span class="rel-model">Friendship</span><span class="rel-field">·to_kid_id·</span><span class="type-badge" style="background:#E6F1FB;color:#0C447C;border-color:#185FA5;font-size:10px;font-weight:600">UUID→</span><span class="rel-arrow">→</span><span class="rel-model">Kid</span></div>
+<div class="rel-row"><span class="rel-model">ActivityEvent</span><span class="rel-field">·completion_id·</span><span class="type-badge" style="background:#E6F1FB;color:#0C447C;border-color:#185FA5;font-size:10px;font-weight:600">UUID→</span><span class="rel-arrow">→</span><span class="rel-model">TaskCompletion</span></div>
+<div class="rel-row"><span class="rel-model">ActivityEvent</span><span class="rel-field">·kid_id·</span><span class="type-badge" style="background:#E6F1FB;color:#0C447C;border-color:#185FA5;font-size:10px;font-weight:600">UUID→</span><span class="rel-arrow">→</span><span class="rel-model">Kid</span></div>
     </div>
     <div class="legend">
       <div class="legend-title">Legend</div>
@@ -473,6 +743,10 @@
         <div class="legend-item">
           <span class="type-badge" style="background:#E1F5EE;color:#085041;border-color:#0F6E56">1:1</span>
           OneToOneField
+        </div>
+        <div class="legend-item">
+          <span class="type-badge" style="background:#E6F1FB;color:#0C447C;border-color:#185FA5">UUID→</span>
+          Logical UUID ref (cross-service, not a DB FK)
         </div>
       </div>
     </div>
